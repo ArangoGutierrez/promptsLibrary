@@ -1,5 +1,12 @@
 # Prompts Library
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/ArangoGutierrez/promptsLibrary?style=social)](https://github.com/ArangoGutierrez/promptsLibrary/stargazers)
+[![Lint](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/lint.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/lint.yml)
+[![Validate Prompts](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-prompts.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-prompts.yml)
+
+> Research-backed prompt templates for Cursor IDE and Claude
+
 A curated collection of AI prompt templates for software engineering. Built for [Cursor](https://cursor.sh/) and Claude, grounded in prompt engineering research.
 
 ## What's This?
