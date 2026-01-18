@@ -1,0 +1,17 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - gosec
+    - bodyclose
+    - noctx
+    - staticcheck
+
+linters-settings:
+  errcheck:
+    check-blank: true
+  gosec:
+    excludes:
+      - G104
