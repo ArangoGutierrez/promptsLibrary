@@ -29,7 +29,7 @@ Legend: →=then|≥=minimum|∴=therefore|⚠=warn|✓=pass|✗=fail|?=uncertai
 - enum>sentences: `1.X 2.Y` not "First X, then Y"
 - delta-only: show only changed lines, not full files
 
-# LIB /path/to/promptsLibrary/prompts/  <-- UPDATE THIS PATH
+# LIB /path/to/prompts-library/prompts/  <-- UPDATE THIS PATH
 # Trigger commands map to prompt files:
 DeepMode→master-agent.md (depth-first,token-optimized,all-protocols)
 MetaEnhance→meta-enhance.md (recursive self-improvement loop)
