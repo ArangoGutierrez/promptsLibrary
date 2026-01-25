@@ -10,6 +10,12 @@
 
 set -e
 
+# Prerequisite check
+if ! command -v jq &> /dev/null; then
+    echo '{"error": "jq is required but not installed. Run: brew install jq"}' >&2
+    exit 0
+fi
+
 # Read JSON input from Cursor
 input=$(cat)
 status=$(echo "$input" | jq -r '.status // "unknown"')
@@ -18,15 +24,138 @@ conversation_id=$(echo "$input" | jq -r '.conversation_id // "unknown"')
 
 # Configuration files
 LOOP_STATE=".cursor/loop-state.json"
+LOCK_DIR=".cursor/loop-state.lock"
 AGENTS_FILE="AGENTS.md"
 TASK_LOG=".cursor/task-log.md"
 
+# Ensure .cursor directory exists for lock file
+mkdir -p .cursor
+
+# Cross-platform lock using mkdir (atomic on all POSIX systems)
+acquire_lock() {
+    local lockdir="$1"
+    local timeout="${2:-5}"
+    local waited=0
+    
+    # Clean up stale locks first
+    cleanup_stale_lock "$lockdir"
+    
+    while ! mkdir "$lockdir" 2>/dev/null; do
+        sleep 0.1
+        waited=$((waited + 1))
+        if [ "$waited" -ge "$((timeout * 10))" ]; then
+            echo "Failed to acquire lock" >&2
+            return 1
+        fi
+    done
+    trap "rm -rf '$lockdir'" EXIT
+    return 0
+}
+
+release_lock() {
+    local lockdir="$1"
+    rm -rf "$lockdir"
+    # Clear the trap since we've explicitly released the lock
+    trap - EXIT
+}
+
+# Clean up stale locks (older than 60 seconds)
+cleanup_stale_lock() {
+    local lockdir="$1"
+    if [ -d "$lockdir" ]; then
+        # macOS uses stat -f %m, Linux uses stat -c %Y
+        local mtime=$(stat -f %m "$lockdir" 2>/dev/null || stat -c %Y "$lockdir" 2>/dev/null || echo "0")
+        local age=$(( $(date +%s) - mtime ))
+        if [ "$age" -gt 60 ]; then
+            rm -rf "$lockdir"
+        fi
+    fi
+}
+
+# Validate state file JSON
+validate_state_file() {
+    if [ -f "$LOOP_STATE" ]; then
+        if ! jq empty "$LOOP_STATE" 2>/dev/null; then
+            echo "Warning: corrupted state file, backing up and resetting" >&2
+            mv "$LOOP_STATE" "${LOOP_STATE}.corrupt.$(date +%s)"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Safe state file update with cross-platform locking
+# Usage: update_state 'jq_expression'
+update_state() {
+    local jq_expr="$1"
+    
+    if ! acquire_lock "$LOCK_DIR" 5; then
+        echo "Failed to acquire lock" >&2
+        return 1
+    fi
+    
+    # Validate state file before reading
+    if ! validate_state_file; then
+        release_lock "$LOCK_DIR"
+        return 1
+    fi
+    
+    if [ -f "$LOOP_STATE" ]; then
+        local tmp="${LOOP_STATE}.tmp.$$"
+        if jq "$jq_expr" "$LOOP_STATE" > "$tmp" 2>/dev/null; then
+            mv "$tmp" "$LOOP_STATE"
+            release_lock "$LOCK_DIR"
+            return 0
+        else
+            rm -f "$tmp"
+            release_lock "$LOCK_DIR"
+            return 1
+        fi
+    fi
+    
+    release_lock "$LOCK_DIR"
+    return 0
+}
+
+# Safe state file read with cross-platform locking
+# Usage: read_state 'jq_expression' 'default'
+read_state() {
+    local jq_expr="$1"
+    local default="$2"
+    
+    if ! acquire_lock "$LOCK_DIR" 5; then
+        echo "$default"
+        return
+    fi
+    
+    # Validate state file before reading
+    validate_state_file || true
+    
+    if [ -f "$LOOP_STATE" ]; then
+        local result=$(jq -r "$jq_expr // \"$default\"" "$LOOP_STATE" 2>/dev/null || echo "$default")
+        release_lock "$LOCK_DIR"
+        echo "$result"
+    else
+        release_lock "$LOCK_DIR"
+        echo "$default"
+    fi
+}
+
 # Load loop configuration (from /loop command or defaults)
+# Validate state file before loading
 if [ -f "$LOOP_STATE" ]; then
-    MAX_ITERATIONS=$(jq -r '.max_iterations // 10' "$LOOP_STATE")
-    COMPLETION_PROMISE=$(jq -r '.completion_promise // "DONE"' "$LOOP_STATE")
-    LOOP_STATUS=$(jq -r '.status // "stopped"' "$LOOP_STATE")
-    TASK_DESCRIPTION=$(jq -r '.task // ""' "$LOOP_STATE")
+    if ! validate_state_file; then
+        # State file was corrupted and reset, exit silently
+        echo '{}'
+        exit 0
+    fi
+fi
+
+if [ -f "$LOOP_STATE" ]; then
+    MAX_ITERATIONS=$(read_state '.max_iterations' '10')
+    COMPLETION_PROMISE=$(read_state '.completion_promise' 'DONE')
+    LOOP_STATUS=$(read_state '.status' 'stopped')
+    TASK_DESCRIPTION=$(read_state '.task' '')
     
     # Only run if loop is active
     if [ "$LOOP_STATUS" != "running" ]; then
@@ -34,8 +163,8 @@ if [ -f "$LOOP_STATE" ]; then
         exit 0
     fi
     
-    # Update iteration count in state
-    jq ".current_iteration = $((loop_count + 1))" "$LOOP_STATE" > "${LOOP_STATE}.tmp" && mv "${LOOP_STATE}.tmp" "$LOOP_STATE"
+    # Update iteration count in state (with locking)
+    update_state ".current_iteration = $((loop_count + 1))"
 else
     # No active loop - exit silently
     # Loop must be started with /loop command which creates the state file
@@ -146,10 +275,8 @@ main() {
     # Check iteration budget
     if [ "$loop_count" -ge "$MAX_ITERATIONS" ]; then
         log_iteration "$loop_count" "budget" "iteration limit reached"
-        # Mark loop as budget exceeded
-        if [ -f "$LOOP_STATE" ]; then
-            jq '.status = "budget_exceeded"' "$LOOP_STATE" > "${LOOP_STATE}.tmp" && mv "${LOOP_STATE}.tmp" "$LOOP_STATE" 2>/dev/null || true
-        fi
+        # Mark loop as budget exceeded (with locking)
+        update_state '.status = "budget_exceeded"'
         echo '{"followup_message": "⚠️ Iteration limit ('$MAX_ITERATIONS') reached. Review progress in AGENTS.md and continue manually if needed."}'
         exit 0
     fi
@@ -162,10 +289,8 @@ main() {
     # Check for completion
     if check_completion; then
         log_iteration "$loop_count" "complete" "all tasks done"
-        # Mark loop as complete in state file
-        if [ -f "$LOOP_STATE" ]; then
-            jq '.status = "complete" | .completed_at = now | .completed_at = (now | todate)' "$LOOP_STATE" > "${LOOP_STATE}.tmp" && mv "${LOOP_STATE}.tmp" "$LOOP_STATE" 2>/dev/null || true
-        fi
+        # Mark loop as complete (with locking)
+        update_state '.status = "complete" | .completed_at = (now | todate)'
         echo '{"followup_message": "✅ Loop complete! All tasks finished."}'
         exit 0
     fi

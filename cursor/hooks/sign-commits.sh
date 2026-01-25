@@ -10,6 +10,12 @@
 
 set -e
 
+# Prerequisite check
+if ! command -v jq &> /dev/null; then
+    echo '{"error": "jq is required but not installed. Run: brew install jq"}' >&2
+    exit 0
+fi
+
 # Read JSON input from stdin
 input=$(cat)
 command=$(echo "$input" | jq -r '.command // empty')
@@ -55,14 +61,19 @@ if [ "$missing_signature" = true ]; then
 fi
 
 # Insert missing flags after "git commit"
-corrected_command=$(echo "$command" | sed "s/^git commit/git commit $add_flags/")
+# Use parameter expansion to avoid sed injection issues
+corrected_command="git commit${add_flags:+ $add_flags}${command#git commit}"
+
+# Escape special characters for JSON output
+# This prevents command injection via specially crafted commit messages
+json_safe_command=$(printf '%s' "$corrected_command" | jq -Rs '.')
 
 # Return modified command - Cursor will execute this instead
 cat << EOF
 {
   "continue": true,
   "permission": "allow",
-  "command": "$corrected_command"
+  "command": ${json_safe_command}
 }
 EOF
 exit 0

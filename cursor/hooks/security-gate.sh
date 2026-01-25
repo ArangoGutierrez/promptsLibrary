@@ -4,6 +4,12 @@
 
 set -e
 
+# Prerequisite check
+if ! command -v jq &> /dev/null; then
+    echo '{"error": "jq is required but not installed. Run: brew install jq"}' >&2
+    exit 0
+fi
+
 # Read JSON input from stdin
 input=$(cat)
 command=$(echo "$input" | jq -r '.command // empty')
