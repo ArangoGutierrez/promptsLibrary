@@ -16,8 +16,10 @@ Thumbs.db
 .project
 .settings/
 
-# Cursor
+# Cursor (user's local config, not our cursor/ source folder)
 .cursor/
+
+# Don't ignore our cursor/ source folder (it's not dot-prefixed)
 
 # Generated outputs
 AUDIT_REPORT.md
