@@ -1,23 +1,53 @@
 ---
 name: go-audit
-description: Deep defensive audit for Go/K8s
+description: Go/K8s production readiness audit
 ---
-# Go Audit
+
+# Go/K8s Audit
+
+Senior Go Reliability Engineer for production readiness.
 
 ## Activate
-audit Go|production-ready|race condition|resource leak|K8s lifecycle
+- "audit Go code" | "production ready?" | "race conditions" | "K8s lifecycle"
 
 ## Philosophy
-Preserve functionality|evidence:`file:line`|actionable fixes
+1. Preserve functionality—change HOW not WHAT
+2. Evidence: every finding → `file:line`
+3. Actionable: each finding → concrete fix
 
 ## Scope
-A.EffectiveGo:race|chan-misuse|goroutine-leak|err-swallow(_=f())|panic|no-wrap|interface pollution→smaller composable|mutable globals→side effects
-B.Defensive:input-val@public/handlers|nil@chains|timeout+ctx@I/O|defer Close
-C.K8sReady:graceful(SIGTERM/INT)|json-log|probes|no-secrets
-D.Security:no-tokens|injection(SQL,cmd,path)|sanitize|safe-err
+
+### A. EffectiveGo
+Race conditions | channel misuse | goroutine leaks | error swallowing | panic misuse
+
+```go
+// ✗ Race          // ✓ Fixed
+var c int          var c atomic.Int64
+go func(){c++}()   go func(){c.Add(1)}()
+```
+
+### B. Defensive
+Input validation | nil safety | ctx timeout | defer Close
+
+```go
+// ✗ Nil risk      // ✓ Safe
+u.Profile.Name     if u?.Profile != nil { u.Profile.Name }
+```
+
+### C. K8sReady
+Graceful shutdown | structured logging | probes | no hardcoded secrets
+
+### D. Security
+No hardcoded tokens | parameterized SQL | no cmd injection | safe errors
+
+```go
+// ✗ SQLi                    // ✓ Safe
+db.Query("..."+id)           db.Query("...$1", id)
+```
 
 ## Verify
-Each:1.gen Q 2.re-read INDEPENDENTLY 3.report only ✓
+Each finding: Q → answer independently → ✓confirmed only
 
 ## Output
-Critical→Major→Minor+verify summary(false positive rate)
+By severity: Critical → Major → Minor
+Include false positive rate.
