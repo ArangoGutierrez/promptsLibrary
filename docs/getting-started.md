@@ -37,6 +37,7 @@ export PROMPTS_LIB="/path/to/promptsLibrary"
 ```
 
 The deployment script will:
+
 - Install commands, skills, agents, hooks, and rules
 - Set up automation (auto-format, security gates, task loops)
 
@@ -95,17 +96,20 @@ This reduces hallucinations and false positives.
 ### Commands Not Loading
 
 Make sure:
+
 - You've run the deployment script (`./scripts/deploy-cursor.sh`)
 - You're using the `/command` syntax correctly: `/audit`, `/research`, etc.
 
 ### Claude Ignoring Instructions
 
 Try:
+
 - Using the `/architect` command for complex tasks
 - Checking that commands are properly installed via the deployment script
 
 ### Path Issues
 
 If you see path errors:
+
 - Use relative paths in prompts: `./prompts/` instead of `~/src/dev/prompts/`
 - Set `PROMPTS_LIB` environment variable for scripts

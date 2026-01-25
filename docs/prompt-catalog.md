@@ -28,11 +28,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Depth-forcing, token-optimized master prompt for complex analysis.
 
 **When to Use:**
+
 - Large codebase navigation
 - Complex multi-step reasoning
 - High-stakes recommendations
 
 **Key Features:**
+
 - Anti-satisficing protocol (enumerate ≥3 options)
 - Chain-of-Draft for token efficiency
 - Solver-Critic-Reviser loop
@@ -47,17 +49,20 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Generate spec-first autonomous task prompts.
 
 **When to Use:**
+
 - Creating structured tasks for AI execution
 - Converting requirements into actionable prompts
 - Any feature/fix that needs systematic approach
 
 **Key Features:**
+
 - Spec-first workflow (understand → specify → plan → implement)
 - Time allocation by complexity
 - Multi-perspective reflection (PR-CoT)
 - Iteration budgets
 
 **Triggers:**
+
 - "Create prompt for Issue #NNN"
 - "Create prompt for: {description}"
 - "Create prompt for recommended solution"
@@ -71,11 +76,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Two-phase planning before implementation.
 
 **When to Use:**
+
 - Before making significant changes
 - When you need approval checkpoints
 - Complex refactoring
 
 **Key Features:**
+
 - Plan-only mode until explicit "GO"
 - Blast radius tracking
 - ≤80 LOC per step, ≤3 files per diff
@@ -91,11 +98,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Deep defensive audit for Go and Kubernetes code.
 
 **When to Use:**
+
 - Before shipping to production
 - When inheriting a codebase
 - Security-sensitive changes
 
 **Scope:**
+
 - **EffectiveGo:** race conditions, error handling, interface pollution
 - **Defensive:** input validation, nil safety, timeouts, resource cleanup
 - **K8sReady:** graceful shutdown, observability, probes, config
@@ -112,11 +121,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Rigorous pull request code review.
 
 **When to Use:**
+
 - Before approving PRs
 - Final gatekeeper review
 - When you need evidence-based feedback
 
 **Scope:**
+
 - Architecture & patterns
 - Security (hardcoded secrets, injection, authz)
 - Safety & error handling
@@ -134,11 +145,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Reconnaissance scan before proposing changes.
 
 **When to Use:**
+
 - Starting work on unfamiliar codebase
 - Before running audits or making changes
 - To understand toolchain and health gates
 
 **Checks:**
+
 - Workspace status (git state)
 - Toolchain detection (go.mod, package.json, etc.)
 - Health gates (format, lint, typecheck)
@@ -157,11 +170,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Rewrite local git history into clean, atomic, signed commits.
 
 **When to Use:**
+
 - Before pushing messy local commits
 - When you need atomic commits for CI
 - Preparing commits for PR
 
 **Features:**
+
 - Non-interactive (no UI editors)
 - DCO sign-off (-s) + SSH signing (-S)
 - Conventional Commits format
@@ -178,11 +193,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Deep analysis of GitHub issues.
 
 **When to Use:**
+
 - Before starting work on an issue
 - When issue is complex or unclear
 - To generate solution options
 
 **Output:** `ISSUE_RESEARCH.md` with:
+
 - Problem classification
 - Root cause analysis
 - 2-3 solution approaches with trade-offs
@@ -197,10 +214,12 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Research issue AND generate task prompt.
 
 **When to Use:**
+
 - Complete workflow: research → task prompt
 - When you want to go from issue to actionable prompt
 
 **Phases:**
+
 1. Research (40%): Fetch issue, analyze, design solutions
 2. Generate (60%): Create spec-first task prompt
 
@@ -215,16 +234,19 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Convert audit findings into task prompts.
 
 **When to Use:**
+
 - After running an audit
 - Mid-PR workflow (fixes go to current branch)
 - Batch processing audit findings
 
 **Features:**
+
 - Groups findings by severity
 - Generates prompts for Critical/Major/Minor
 - No branch creation (uses current branch)
 
 **Triggers:**
+
 - "Create prompts from audit"
 - "Fix audit issues"
 
@@ -235,11 +257,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Recursive self-improvement of the prompt library.
 
 **When to Use:**
+
 - Updating prompts with latest research
 - Finding gaps and inconsistencies
 - Evolving the library
 
 **Protocol:**
+
 1. Audit current state
 2. Research latest findings
 3. Identify gaps
@@ -257,11 +281,13 @@ Complete reference of all prompts in the library, organized by category.
 **Purpose:** Token-optimized version of task-prompt.md.
 
 **When to Use:**
+
 - Large context windows
 - Token-constrained environments
 - When full prompt is too verbose
 
 **Stats:**
+
 - Original: ~430 lines, ~12K chars
 - Compressed: ~220 lines, ~5K chars
 - Reduction: ~58% tokens saved
@@ -285,6 +311,7 @@ Extended documentation explaining the rules and their research basis.
 ### PROMPT_RESEARCH_360.md
 
 Complete research review covering:
+
 - Chain of Verification (CoVe)
 - Self-Planning code generation
 - Multi-perspective reflection
@@ -294,6 +321,7 @@ Complete research review covering:
 ### EVOLUTION_LOG.md
 
 Tracks changes across meta-enhance iterations:
+
 - Research integrated
 - Patterns added
 - Metrics and coverage

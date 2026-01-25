@@ -45,6 +45,7 @@ Type `/` in any Cursor chat to see available commands:
 ## What's Included
 
 ### Commands (`/command`)
+
 Slash commands for common workflows:
 
 | Command | Description |
@@ -66,6 +67,7 @@ Slash commands for common workflows:
 | `/test` | Run and verify tests |
 
 ### Skills (Agent-Decided)
+
 Cursor automatically invokes these based on context:
 
 | Skill | Auto-triggers on |
@@ -76,6 +78,7 @@ Cursor automatically invokes these based on context:
 | `deep-analysis` | "think carefully", "complex problem" |
 
 ### Subagents (Isolated Execution)
+
 Specialized agents for parallel/isolated work:
 
 | Agent | Purpose |
@@ -92,6 +95,7 @@ Specialized agents for parallel/isolated work:
 | `verifier` | Skeptically validates claimed completions |
 
 ### Hooks (Automation)
+
 Automatic behaviors:
 
 | Hook | Trigger | Action |
@@ -101,6 +105,7 @@ Automatic behaviors:
 | `task-loop.sh` | On stop | Auto-continue iteration loops |
 
 ### Rules (Always-On)
+
 Project rules applied to every conversation:
 
 - **Depth-forcing** — Anti-satisficing, enumerate≥3 options
@@ -132,7 +137,7 @@ Project rules applied to every conversation:
 
 ## Project Structure
 
-```
+```text
 cursor/                 → Cursor configurations (deploy these)
 ├── commands/           → Slash commands (/command)
 ├── skills/             → Agent skills (auto-invoked)
@@ -172,6 +177,7 @@ The result: fewer hallucinations, more thorough analysis, and outputs you can tr
 > **Note:** The `prompts/` folder is deprecated. Use the new `cursor/` structure instead.
 
 The original prompts have been migrated to Cursor's native format:
+
 - `prompts/*.md` → `cursor/commands/*.md`
 - Key prompts also converted to Skills for auto-invocation
 
@@ -182,6 +188,7 @@ The `prompts/` folder is kept for reference but will be removed in a future vers
 Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 When adding configurations:
+
 - Explain what problem it solves
 - Include research citations if relevant
 - Test the deployment script before submitting

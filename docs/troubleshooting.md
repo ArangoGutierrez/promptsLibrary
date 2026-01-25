@@ -20,6 +20,7 @@ Centralized troubleshooting guide for common issues with Cursor commands, hooks,
 #### Command Not Found
 
 **Symptoms:**
+
 - Error message: "Command not found" or "Unknown command"
 - Command doesn't execute
 
@@ -33,6 +34,7 @@ Centralized troubleshooting guide for common issues with Cursor commands, hooks,
 | Commands not deployed | Run `scripts/deploy-cursor.sh` |
 
 **Verification:**
+
 ```bash
 # Check command file exists
 ls cursor/commands/{command-name}.md
@@ -46,6 +48,7 @@ ls cursor/commands/{command-name}.md
 #### Command Produces Unexpected Output
 
 **Symptoms:**
+
 - Command runs but output doesn't match expected format
 - Missing information in output
 - Wrong files modified
@@ -60,6 +63,7 @@ ls cursor/commands/{command-name}.md
 | Hook interference | Check hooks.json, temporarily disable hooks |
 
 **Debug Steps:**
+
 1. Check AGENTS.md syntax: `cat AGENTS.md`
 2. Verify git status: `git status`
 3. Check for state files: `ls -la .cursor/`
@@ -70,6 +74,7 @@ ls cursor/commands/{command-name}.md
 #### AGENTS.md Not Created
 
 **Symptoms:**
+
 - `/code` fails with "No AGENTS.md found"
 - `/issue` or `/task` doesn't create AGENTS.md
 
@@ -83,6 +88,7 @@ ls cursor/commands/{command-name}.md
 | Existing file blocked | Check if AGENTS.md exists but is malformed |
 
 **Fix:**
+
 ```bash
 # Manually create AGENTS.md if needed
 cat > AGENTS.md << 'EOF'
@@ -110,6 +116,7 @@ EOF
 #### Hook Not Running
 
 **Symptoms:**
+
 - Format hook doesn't format files
 - Security gate doesn't block dangerous commands
 - Commit signing hook doesn't add flags
@@ -126,6 +133,7 @@ EOF
 | Cursor not loading hooks | Restart Cursor, check `.cursor/` directory |
 
 **Verification:**
+
 ```bash
 # Check hooks.json structure
 cat cursor/hooks.json | jq '.'
@@ -141,6 +149,7 @@ grep -A 5 "{hook-name}" cursor/hooks.json
 ```
 
 **Common Hook Paths:**
+
 - Local: `cursor/hooks/{hook}.sh` (relative to project)
 - Global: `~/.cursor/hooks/{hook}.sh` (user home)
 
@@ -149,6 +158,7 @@ grep -A 5 "{hook-name}" cursor/hooks.json
 #### Format Hook Failing
 
 **Symptoms:**
+
 - Files not auto-formatted after edit
 - Format errors in output
 - Wrong formatter used
@@ -163,6 +173,7 @@ grep -A 5 "{hook-name}" cursor/hooks.json
 | Formatter command failed | Check formatter works: `gofmt -w file.go` |
 
 **Debug:**
+
 ```bash
 # Test formatter directly
 gofmt -w test.go
@@ -179,6 +190,7 @@ command -v ruff
 ```
 
 **Fix:**
+
 ```bash
 # Install missing formatters
 # Go
@@ -198,6 +210,7 @@ pip install black
 #### Security Gate Blocking Valid Commands
 
 **Symptoms:**
+
 - Normal git commands require confirmation
 - Safe commands blocked
 - False positives
@@ -211,11 +224,13 @@ pip install black
 | Hook misconfigured | Check hooks.json configuration |
 
 **Common False Positives:**
+
 - `git push origin main` - Matches "push.*origin" pattern
 - `git reset --soft HEAD~1` - Matches "reset" pattern
 - Commands with "rm" in paths or variables
 
 **Workaround:**
+
 ```bash
 # For git history operations, the hook will ask for confirmation
 # This is intentional - confirm if the command is safe
@@ -235,6 +250,7 @@ Edit `cursor/hooks/security-gate.sh` to refine patterns if needed.
 #### Loop Stopping Early
 
 **Symptoms:**
+
 - Loop stops after first iteration
 - Completion phrase matched incorrectly
 - Loop doesn't continue
@@ -249,6 +265,7 @@ Edit `cursor/hooks/security-gate.sh` to refine patterns if needed.
 | AGENTS.md shows DONE | Check AGENTS.md status markers |
 
 **Debug:**
+
 ```bash
 # Check loop state
 cat .cursor/loop-state.json
@@ -264,6 +281,7 @@ echo '{"status":"completed","loop_count":1}' | bash cursor/hooks/task-loop.sh
 ```
 
 **Fix:**
+
 ```bash
 # Restart loop with more specific completion phrase
 /loop "Fix all linter errors" --done "NO LINTER ERRORS" --max 10
@@ -277,6 +295,7 @@ echo '{"status":"completed","loop_count":1}' | bash cursor/hooks/task-loop.sh
 #### State File Corruption
 
 **Symptoms:**
+
 - Loop state file has invalid JSON
 - Loop can't read state
 - State file locked
@@ -290,6 +309,7 @@ echo '{"status":"completed","loop_count":1}' | bash cursor/hooks/task-loop.sh
 | File permissions | Check `.cursor/` directory permissions |
 
 **Fix:**
+
 ```bash
 # Reset loop state
 rm -f .cursor/loop-state.json .cursor/loop-state.lock
@@ -317,6 +337,7 @@ rm -f .cursor/loop-state.lock
 #### Max Iterations Reached
 
 **Symptoms:**
+
 - Loop stops with "Max iterations reached" message
 - Task not complete
 
@@ -329,6 +350,7 @@ rm -f .cursor/loop-state.lock
 | Stuck in loop | Task has blocking issue, resolve manually |
 
 **Fix:**
+
 ```bash
 # Review progress
 cat .cursor/task-log.md
@@ -349,6 +371,7 @@ cat AGENTS.md
 #### Commit Signing Failing
 
 **Symptoms:**
+
 - `git commit` fails with signing error
 - GPG/SSH key not found
 - Signing key not configured
@@ -363,6 +386,7 @@ cat AGENTS.md
 | Hook not adding flags | Check `sign-commits.sh` hook is running |
 
 **Fix:**
+
 ```bash
 # For SSH signing (recommended)
 git config gpg.format ssh
@@ -382,6 +406,7 @@ git log --show-signature -1
 ```
 
 **Verify Hook:**
+
 ```bash
 # Test sign-commits hook
 echo '{"command":"git commit -m \"test\""}' | bash cursor/hooks/sign-commits.sh
@@ -393,6 +418,7 @@ echo '{"command":"git commit -m \"test\""}' | bash cursor/hooks/sign-commits.sh
 #### GPG Key Issues
 
 **Symptoms:**
+
 - "gpg: signing failed: No secret key"
 - "gpg: no valid OpenPGP data found"
 - Key not found errors
@@ -407,6 +433,7 @@ echo '{"command":"git commit -m \"test\""}' | bash cursor/hooks/sign-commits.sh
 | Agent not running | Start GPG agent: `gpg-agent --daemon` |
 
 **Fix:**
+
 ```bash
 # List available keys
 gpg --list-secret-keys --keyid-format LONG
@@ -427,6 +454,7 @@ git config user.signingkey ~/.ssh/id_ed25519.pub
 #### Hook Blocking Git Commands
 
 **Symptoms:**
+
 - Git commands require confirmation unexpectedly
 - Normal operations blocked
 - Security gate interfering
@@ -440,11 +468,13 @@ git config user.signingkey ~/.ssh/id_ed25519.pub
 | Intentional safety check | Some operations (force push, reset) require confirmation |
 
 **Common Blocked Operations:**
+
 - `git push --force` - Requires confirmation (intentional)
 - `git reset --hard` - Requires confirmation (intentional)
 - `git push origin` - May require confirmation (pattern match)
 
 **Workaround:**
+
 ```bash
 # For intentional safety checks, confirm when prompted
 # The hook will ask: "Please confirm this is intentional"
@@ -461,6 +491,7 @@ git config user.signingkey ~/.ssh/id_ed25519.pub
 ### How to Check Hook Execution
 
 **1. Test Hook Manually:**
+
 ```bash
 # For file edit hooks
 echo '{"file_path":"test.go"}' | bash -x cursor/hooks/format.sh
@@ -473,6 +504,7 @@ echo '{"status":"completed","loop_count":1}' | bash -x cursor/hooks/task-loop.sh
 ```
 
 **2. Check Hook Registration:**
+
 ```bash
 # View hooks.json
 cat cursor/hooks.json | jq '.'
@@ -485,6 +517,7 @@ file cursor/hooks/{hook-name}.sh
 ```
 
 **3. Enable Debug Mode:**
+
 ```bash
 # Add set -x to hook script for verbose output
 # Or run with bash -x
@@ -492,6 +525,7 @@ bash -x cursor/hooks/{hook-name}.sh
 ```
 
 **4. Check Hook Logs:**
+
 - Hooks output to stderr, check Cursor's output panel
 - Some hooks create log files in `.cursor/` directory
 
@@ -500,6 +534,7 @@ bash -x cursor/hooks/{hook-name}.sh
 ### How to Verify Command Loading
 
 **1. Check Command Files:**
+
 ```bash
 # List all commands
 ls cursor/commands/*.md
@@ -509,11 +544,13 @@ cat cursor/commands/{command-name}.md
 ```
 
 **2. Check Cursor Integration:**
+
 - Commands should appear in Cursor's command palette
 - Type `/` to see available commands
 - Commands are loaded from `cursor/commands/` directory
 
 **3. Verify Project Structure:**
+
 ```bash
 # Check .cursor directory exists
 ls -la .cursor/
@@ -526,6 +563,7 @@ test -d cursor/commands && echo "commands directory exists"
 ```
 
 **4. Test Command Execution:**
+
 ```bash
 # Run command and check output
 # Commands execute through Cursor's interface
@@ -537,6 +575,7 @@ test -d cursor/commands && echo "commands directory exists"
 ### How to Reset State Files
 
 **1. Loop State:**
+
 ```bash
 # Reset loop state
 rm -f .cursor/loop-state.json .cursor/loop-state.lock
@@ -554,6 +593,7 @@ EOF
 ```
 
 **2. Context State:**
+
 ```bash
 # Reset context tracking
 rm -f .cursor/context-state.json .cursor/context-state.lock
@@ -563,6 +603,7 @@ rm -f .cursor/context-state.json .cursor/context-state.lock
 ```
 
 **3. Task Log:**
+
 ```bash
 # Clear task log
 rm -f .cursor/task-log.md
@@ -572,6 +613,7 @@ mv .cursor/task-log.md .cursor/task-log.md.bak
 ```
 
 **4. All State Files:**
+
 ```bash
 # Backup first
 mkdir -p .cursor/backup
@@ -586,6 +628,7 @@ rm -f .cursor/*-state.json .cursor/*-state.lock .cursor/task-log.md
 ### Additional Debugging Commands
 
 **Check Git Status:**
+
 ```bash
 git status
 git log --oneline -5
@@ -593,6 +636,7 @@ git diff --stat
 ```
 
 **Check AGENTS.md:**
+
 ```bash
 # View file
 cat AGENTS.md
@@ -606,6 +650,7 @@ grep -c '\[DONE\]' AGENTS.md
 ```
 
 **Check Hook Configuration:**
+
 ```bash
 # Validate JSON
 cat cursor/hooks.json | jq '.'
@@ -615,6 +660,7 @@ cat cursor/hooks.json | jq '.hooks | to_entries[] | .key, .value[].command'
 ```
 
 **Check Dependencies:**
+
 ```bash
 # Required tools
 command -v jq || echo "jq not installed"
@@ -664,6 +710,7 @@ Schemas are available for validation in `cursor/schemas/`:
 | `state-file.schema.json` | Loop and context state files |
 
 **Validate with ajv:**
+
 ```bash
 npm install -g ajv-cli
 ajv validate -s cursor/schemas/hooks.schema.json -d cursor/hooks.json
@@ -680,6 +727,7 @@ Hooks are designed to **fail closed** — if dependencies are missing, they bloc
 | `preflight.sh` | Returns error JSON |
 
 **If hooks are blocking unexpectedly:**
+
 ```bash
 # Check jq is installed
 command -v jq || brew install jq

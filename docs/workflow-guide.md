@@ -104,6 +104,7 @@ When you have multiple independent tasks:
 ```
 
 **Example:**
+
 ```bash
 /issue #123                        # Creates AGENTS.md with tasks
 /parallel --analyze                # Shows which can parallelize
@@ -113,6 +114,7 @@ When you have multiple independent tasks:
 ```
 
 **When to use:**
+
 - Tasks touch different files/packages
 - 3+ independent tasks identified
 - Want to save time on multi-task issues
@@ -138,13 +140,15 @@ For complex tasks that need multiple iterations:
 ```
 
 **Example:**
+
 ```bash
 /issue #123
 /loop Work through all tasks in AGENTS.md --done "Status: DONE" --max 15
 /push
 ```
 
-**When to use:** 
+**When to use:**
+
 - Tasks with 5+ subtasks
 - Well-defined completion criteria
 - Can run with minimal supervision
@@ -169,11 +173,13 @@ For exploring different approaches before committing:
 ```
 
 **Alternative (faster):**
+
 ```bash
 /architect {problem} --quick
 ```
 
 **When to use:**
+
 - ADRs (Architecture Decision Records)
 - Technical RFCs
 - Migration planning
@@ -201,11 +207,13 @@ For thorough multi-perspective review:
 ```
 
 **Focused variants:**
+
 - `/quality --api` - API review only
 - `/quality --perf` - Performance review only  
 - `/quality --fast` - Auditor + verifier only
 
 **When to use:**
+
 - Before merging to main
 - PR reviews
 - After major refactoring
@@ -226,6 +234,7 @@ For understanding before implementing:
 ```
 
 **Example:**
+
 ```bash
 /research #123                    # Analyze GitHub issue
 /research "auth system"           # Explore codebase topic
@@ -233,6 +242,7 @@ For understanding before implementing:
 ```
 
 **When to use:**
+
 - Before `/issue` for complex issues
 - Investigating root causes
 - Evaluating new technologies
@@ -291,6 +301,7 @@ Issue #123: Add user authentication
 ```
 
 **Status markers:**
+
 - `[TODO]` - Not started
 - `[WIP]` - In progress
 - `[DONE]` - Complete
@@ -301,22 +312,27 @@ Issue #123: Add user authentication
 ## Hook Automation
 
 ### format.sh (afterFileEdit)
+
 - Auto-formats files on save
 - Go → gofmt, TS → prettier, Python → ruff/black, Rust → rustfmt
 
 ### security-gate.sh (beforeShellExecution)
+
 - Blocks dangerous commands (force push, rm -rf /, etc.)
 - Requires confirmation for git history changes
 
 ### sign-commits.sh (beforeShellExecution)
+
 - Auto-adds `-s -S` to git commit commands
 - Enforces DCO signoff and GPG signing
 
 ### task-loop.sh (stop)
+
 - Enables `/loop` autonomous execution
 - Continues work until completion phrase detected
 
 ### context-monitor.sh (stop)
+
 - Tracks context health
 - Recommends `/summarize` when context filling
 - Suggests new session when appropriate
@@ -326,6 +342,7 @@ Issue #123: Add user authentication
 ## Decision Trees
 
 ### "I have a GitHub issue to implement"
+
 ```text
 Is it complex (>5 tasks)?
   YES → /research #N → /issue #N → /loop
@@ -337,6 +354,7 @@ Is it complex (>5 tasks)?
 ```
 
 ### "I need to design something"
+
 ```text
 Is it an architecture decision?
   YES → /architect {problem}
@@ -344,6 +362,7 @@ Is it an architecture decision?
 ```
 
 ### "I need to review code"
+
 ```text
 Is it a PR from someone else?
   YES → /review-pr #N
@@ -351,6 +370,7 @@ Is it a PR from someone else?
 ```
 
 ### "Something isn't working"
+
 ```text
 Is it a test failure?
   YES → /test --quick → fix → repeat
@@ -397,6 +417,7 @@ When deployed with `--lazy`:
 | Full cmd | `/command` invoked | ~300-500 | /task, /audit, /issue |
 
 **On-demand modes:**
+
 ```bash
 /deep       # Activate deep analysis (anti-satisficing)
 /security   # Activate security audit mode
@@ -432,6 +453,7 @@ When deployed with `--lazy`:
 ### Agent Conflicts
 
 When agents disagree:
+
 1. **synthesizer** weighs evidence from each
 2. Higher severity wins (security > performance > style)
 3. If still unclear, present options to user
@@ -452,6 +474,7 @@ rm -f .cursor/loop-state.json .cursor/loop-state.lock
 ### AGENTS.md Corruption
 
 If AGENTS.md is malformed:
+
 1. Check git: `git diff AGENTS.md`
 2. Either fix manually or `git checkout AGENTS.md`
 3. Re-run `/issue` to regenerate

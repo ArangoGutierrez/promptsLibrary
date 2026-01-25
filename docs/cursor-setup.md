@@ -134,16 +134,19 @@ For one-off use, paste the prompt content directly into the chat.
 ### Code Review Flow
 
 1. **Run Audit** - Deep analysis
+
    ```bash
    Run Audit on @src/handlers/
    ```
 
 2. **Create Fix Prompts** - Generate task prompts from findings
+
    ```bash
    Create prompts from audit
    ```
 
 3. **Fix Issues** - Execute fixes
+
    ```bash
    Fix audit issues
    ```
@@ -151,6 +154,7 @@ For one-off use, paste the prompt content directly into the chat.
 ### PR Review Flow
 
 1. **Review PR** - Comprehensive review
+
    ```bash
    Review PR #123
    ```
@@ -162,6 +166,7 @@ For one-off use, paste the prompt content directly into the chat.
 The hooks system includes context monitoring to recommend when to `/summarize` or start a new session.
 
 **How it works:**
+
 - `context-monitor.sh` hook tracks iterations, files touched, and tasks completed
 - Estimates context usage using heuristics (no direct token count access)
 - Recommends actions based on context health + task status from AGENTS.md
@@ -186,6 +191,7 @@ The hooks system includes context monitoring to recommend when to `/summarize` o
 ```
 
 **Commands:**
+
 - `/context-reset` — Reset tracking after manual `/summarize`
 - `/context-reset --status` — Check current context health
 
@@ -239,12 +245,14 @@ verification-trace: show CoVe question/answer pairs
 The repository includes validation tooling:
 
 **CI Workflow** (`.github/workflows/validate-cursor.yml`):
+
 - Validates `hooks.json` structure and referenced scripts
 - Checks agent/skill/rule frontmatter
 - Validates command structure (required sections)
 - Detects sync drift between main and optimized
 
 **Local Validation:**
+
 ```bash
 # Check hooks.json
 jq empty cursor/hooks.json
