@@ -18,6 +18,11 @@ When working on code changes, automatically consider using these agents:
 - After implementing a feature → use `verifier` to confirm it works
 - Before marking `[WIP]` → `[DONE]` → run quality check
 
+### On Multi-Task Planning
+- When AGENTS.md has 3+ `[TODO]` tasks → suggest `task-analyzer` for parallelization
+- After `/issue` creates task list → offer `/parallel --analyze`
+- When user asks "what's next?" with multiple tasks → identify parallel opportunities
+
 ### On Architectural Discussions
 - When user says "how should we..." → suggest `arch-explorer`
 - When user says "let's do X" (major change) → suggest `devil-advocate`
