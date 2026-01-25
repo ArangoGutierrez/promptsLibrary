@@ -4,7 +4,7 @@ description: >
   API design specialist. Use PROACTIVELY when creating or modifying HTTP handlers,
   REST endpoints, gRPC services, or public package interfaces. Always use for:
   new routes, API changes, breaking changes.
-model: fast
+model: inherit
 readonly: true
 ---
 

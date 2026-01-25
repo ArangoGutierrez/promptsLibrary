@@ -4,7 +4,7 @@ description: >
   Performance specialist. Use PROACTIVELY when reviewing handlers, database
   operations, loops over collections, or any code touching hot paths. Always
   use for: API endpoints, batch operations, data transformations.
-model: fast
+model: inherit
 readonly: true
 ---
 

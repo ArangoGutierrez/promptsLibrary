@@ -4,7 +4,7 @@ description: >
   Deep issue research specialist for investigating GitHub issues, analyzing
   codebase for root causes, and generating solution alternatives. Use when
   exploring unfamiliar code, investigating bugs, or planning implementations.
-model: fast
+model: inherit
 readonly: true
 ---
 
