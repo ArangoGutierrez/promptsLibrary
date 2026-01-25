@@ -629,13 +629,93 @@ command -v ruff || echo "ruff not installed"
 
 ---
 
+---
+
+## Validation Tools
+
+### Validating Configuration
+
+Use the CI workflow or run checks locally:
+
+```bash
+# Validate hooks.json syntax
+jq empty cursor/hooks.json
+
+# Validate hook scripts
+for script in cursor/hooks/*.sh; do
+  bash -n "$script" && echo "✓ $script" || echo "✗ $script"
+done
+
+# Check for sync drift between main and optimized
+./scripts/sync-optimized.sh --check
+
+# Full drift report
+./scripts/sync-optimized.sh --report
+```
+
+### JSON Schemas
+
+Schemas are available for validation in `cursor/schemas/`:
+
+| Schema | Validates |
+|--------|-----------|
+| `hooks.schema.json` | `hooks.json` structure |
+| `hook-output.schema.json` | Hook JSON responses |
+| `state-file.schema.json` | Loop and context state files |
+
+**Validate with ajv:**
+```bash
+npm install -g ajv-cli
+ajv validate -s cursor/schemas/hooks.schema.json -d cursor/hooks.json
+```
+
+### Hook Security
+
+Hooks are designed to **fail closed** — if dependencies are missing, they block rather than allow:
+
+| Hook | Missing `jq` Behavior |
+|------|----------------------|
+| `security-gate.sh` | Blocks all commands |
+| `sign-commits.sh` | Blocks commits |
+| `preflight.sh` | Returns error JSON |
+
+**If hooks are blocking unexpectedly:**
+```bash
+# Check jq is installed
+command -v jq || brew install jq
+
+# Test hook manually
+echo '{"command":"git status"}' | bash -x cursor/hooks/security-gate.sh
+```
+
+### Sync Drift Detection
+
+Check if optimized versions are out of sync with main:
+
+```bash
+# Quick check
+./scripts/sync-optimized.sh --check
+
+# Detailed report with token estimates
+./scripts/sync-optimized.sh --report
+
+# List all missing optimized files
+./scripts/sync-optimized.sh --list-missing
+
+# Create stubs for missing files
+./scripts/sync-optimized.sh --create
+```
+
+---
+
 ## Getting Help
 
 If issues persist:
 
-1. **Check Logs**: Review `.cursor/` directory for log files
-2. **Verify Setup**: Run `scripts/deploy-cursor.sh` to ensure proper setup
-3. **Review Documentation**: Check `docs/cursor-setup.md` and `docs/getting-started.md`
-4. **Reset State**: Clear state files and restart
-5. **Check Cursor Version**: Ensure Cursor is up to date
-6. **Report Issue**: Include error messages, state files, and steps to reproduce
+1. **Validate Config**: Run `./scripts/sync-optimized.sh --check` and check CI workflow
+2. **Check Logs**: Review `.cursor/` directory for log files
+3. **Verify Setup**: Run `scripts/deploy-cursor.sh` to ensure proper setup
+4. **Review Documentation**: Check `docs/cursor-setup.md` and `docs/getting-started.md`
+5. **Reset State**: Clear state files and restart
+6. **Check Cursor Version**: Ensure Cursor is up to date
+7. **Report Issue**: Include error messages, state files, and steps to reproduce

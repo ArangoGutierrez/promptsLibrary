@@ -229,6 +229,63 @@ cite-prompt-line: reference which prompt instruction is being followed
 verification-trace: show CoVe question/answer pairs
 ```
 
+## Validation and Error Prevention
+
+### Configuration Validation
+
+The repository includes validation tooling:
+
+**CI Workflow** (`.github/workflows/validate-cursor.yml`):
+- Validates `hooks.json` structure and referenced scripts
+- Checks agent/skill/rule frontmatter
+- Validates command structure (required sections)
+- Detects sync drift between main and optimized
+
+**Local Validation:**
+```bash
+# Check hooks.json
+jq empty cursor/hooks.json
+
+# Validate all hook scripts
+for f in cursor/hooks/*.sh; do bash -n "$f"; done
+
+# Check sync status
+./scripts/sync-optimized.sh --report
+```
+
+### JSON Schemas
+
+Schemas in `cursor/schemas/` provide validation for:
+
+| File | Schema |
+|------|--------|
+| `hooks.json` | `hooks.schema.json` |
+| Hook outputs | `hook-output.schema.json` |
+| State files | `state-file.schema.json` |
+
+### Hook Security Model
+
+Hooks follow a **fail-closed** security model:
+
+- If `jq` is missing, security-sensitive hooks **block** rather than allow
+- `sign-commits.sh` validates GPG configuration before adding `-S` flag
+- `preflight.sh` escapes error messages to prevent JSON injection
+
+### Sync Tooling
+
+Keep main and optimized versions in sync:
+
+```bash
+# Check for drift
+./scripts/sync-optimized.sh --check
+
+# Full report with token analysis
+./scripts/sync-optimized.sh --report
+
+# Create stubs for missing optimized files
+./scripts/sync-optimized.sh --create
+```
+
 ## Troubleshooting
 
 ### "Prompt not found"
