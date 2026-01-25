@@ -466,6 +466,12 @@ When generating, present research summary and ask:
 
 ---
 
+## Token Protocol
+- Refs over paste: `path:line` instead of copying code
+- Tables over prose for comparisons
+- Delta-only: show changes, not unchanged
+- No filler: skip "Let me...", "I'll..."
+
 ## CONSTRAINTS
 - **research-first:** complete Phase 1 before generating prompt
 - **spec-from-research:** specification must derive from research findings

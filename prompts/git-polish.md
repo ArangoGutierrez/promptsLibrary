@@ -86,6 +86,18 @@ Confirm:
 - Each commit compiles (if CI available) ✓
 - Conventional Commits format ✓
 
+## Reflection (PR-CoT)
+Before finalizing:
+1. **Logic**: Does this approach make sense?
+2. **Completeness**: Any missing edge cases?
+3. **Error handling**: What could go wrong?
+4. **Integration**: Does it fit existing patterns?
+
+## Iteration Budget (PASR)
+- **Max iterations**: 3 before escalating
+- **Per-iteration**: One focused change
+- **Escalate if**: Same error 2x, unclear requirements, need human decision
+
 ## TOKEN PROTOCOL
 | Rule | Implementation |
 |------|----------------|

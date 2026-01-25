@@ -287,6 +287,19 @@ Search for new findings on topic, then apply to library
 
 ---
 
+## Reflection (PR-CoT)
+Before finalizing:
+1. **Logic**: Does this approach make sense?
+2. **Completeness**: Any missing edge cases?
+3. **Error handling**: What could go wrong?
+4. **Integration**: Does it fit existing patterns?
+
+## Token Protocol
+- Refs over paste: `path:line` instead of copying code
+- Tables over prose for comparisons
+- Delta-only: show changes, not unchanged
+- No filler: skip "Let me...", "I'll..."
+
 ## CONSTRAINTS
 
 ```
