@@ -302,7 +302,7 @@ Tracks changes across meta-enhance iterations:
 
 ## Choosing the Right Prompt
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ What are you trying to do?                                  │
 ├─────────────────────────────────────────────────────────────┤

@@ -27,16 +27,19 @@ Complete reference guide for all Cursor commands in this project.
 **Full architectural exploration pipeline with parallel prototyping.**
 
 ### Description
+
 Explores multiple architectural approaches for a problem, challenges the top recommendation, creates parallel prototypes, and synthesizes a final recommendation.
 
 ### Usage
-```
+
+```text
 /architect {problem}
 /architect {problem} --quick
 /architect {problem} --prototype N
 ```
 
 **Arguments:**
+
 - `{problem}` - Problem statement to explore
 - `--quick` - Skip prototyping, just compare approaches
 - `--prototype N` - Prototype top N approaches (default: 2)
@@ -49,7 +52,9 @@ Explores multiple architectural approaches for a problem, challenges the top rec
 4. **Synthesis Phase**: Launches `synthesizer` to combine all findings
 
 ### Output
+
 Generates an architecture decision document with:
+
 - Executive summary
 - Comparison matrix of approaches
 - Final recommendation with evidence
@@ -57,6 +62,7 @@ Generates an architecture decision document with:
 - Prototype validation results
 
 ### Related Commands
+
 - `/research` - Deep investigation without implementation
 - `/quality` - Multi-perspective code review
 - `/parallel` - Execute independent tasks concurrently
@@ -68,16 +74,19 @@ Generates an architecture decision document with:
 **Deep defensive audit with integrated fix workflow.**
 
 ### Description
+
 Performs comprehensive security and reliability audits on Go code, checking for race conditions, resource leaks, security vulnerabilities, and K8s readiness issues.
 
 ### Usage
-```
+
+```text
 /audit
 /audit --full
 /audit --fix
 ```
 
 **Options:**
+
 - (no args) - Audit recent changes (`git diff`)
 - `--full` - Full codebase audit
 - `--fix` - Generate fixes for findings
@@ -90,13 +99,16 @@ Performs comprehensive security and reliability audits on Go code, checking for 
 4. **Fix Workflow** (if `--fix`): Applies fixes, adds tests, re-runs audit
 
 ### Output
+
 Creates `AUDIT_REPORT.md` with findings categorized by severity:
+
 - Critical issues
 - Major issues
 - Minor issues
 - Summary with verification counts
 
 ### Related Commands
+
 - `/quality` - Multi-perspective quality review
 - `/code` - Implement fixes for audit findings
 - `/test` - Verify fixes don't break tests
@@ -108,15 +120,18 @@ Creates `AUDIT_REPORT.md` with findings categorized by severity:
 **Work on the next TODO task from AGENTS.md.**
 
 ### Description
+
 Processes tasks from AGENTS.md one at a time, updating status and committing changes atomically.
 
 ### Usage
-```
+
+```text
 /code
 /code #{N}
 ```
 
 **Options:**
+
 - (no args) - Work on next `[TODO]` task
 - `#{N}` - Work on specific task number
 
@@ -131,13 +146,16 @@ Processes tasks from AGENTS.md one at a time, updating status and committing cha
 7. **Report**: Shows progress and next task
 
 ### Output
+
 Reports task completion with:
+
 - Commit hash
 - Changed files
 - Progress (X/total tasks)
 - Next task preview
 
 ### Related Commands
+
 - `/issue` - Create AGENTS.md from GitHub issue
 - `/task` - Create AGENTS.md for ad-hoc task
 - `/loop` - Automatically work through all tasks
@@ -150,15 +168,18 @@ Reports task completion with:
 **Reset or inspect context tracking state.**
 
 ### Description
+
 Manages context tracking state used by `context-monitor.sh` hook to estimate token usage and recommend session management.
 
 ### Usage
-```
+
+```text
 /context-reset
 /context-reset --status
 ```
 
 **Options:**
+
 - (no args) - Reset metrics to zero
 - `--status` - Show current health without resetting
 
@@ -168,16 +189,19 @@ Manages context tracking state used by `context-monitor.sh` hook to estimate tok
 2. **Reset** (default): Removes state files to reset tracking
 
 ### Output
+
 - **Status mode**: Shows health state, score percentage, tasks completed, recommendations
 - **Reset mode**: Confirms reset completion
 
 ### When to Use
+
 - After manual `/summarize` to recalibrate score
 - When "stuck" detection is a false positive
 - Starting fresh work on the same branch
 - Checking health without resetting
 
 ### Related Commands
+
 - `/summarize` - Reduces context usage (recovered by context-monitor)
 - `/task` - Start new task (may trigger context recommendations)
 
@@ -188,10 +212,12 @@ Manages context tracking state used by `context-monitor.sh` hook to estimate tok
 **Rewrite local history into atomic, signed commits.**
 
 ### Description
+
 Refactors local git history into clean, atomic commits with proper signing and conventional commit messages.
 
 ### Usage
-```
+
+```text
 /git-polish
 ```
 
@@ -204,13 +230,16 @@ Refactors local git history into clean, atomic commits with proper signing and c
 5. **Verify**: Confirms all commits are signed and compile
 
 ### Output
+
 Creates a clean commit history with:
+
 - Atomic commits (each compiles independently)
 - Conventional commit format: `type(scope): description`
 - All commits signed with SSH/GPG
 - DCO signoff on all commits
 
 ### Related Commands
+
 - `/push` - Push polished commits and create PR
 - `/code` - Creates properly formatted commits automatically
 
@@ -221,10 +250,12 @@ Creates a clean commit history with:
 **Read a GitHub issue and create atomic task breakdown.**
 
 ### Description
+
 Analyzes a GitHub issue, researches the codebase, designs solutions, and creates an atomic task breakdown in AGENTS.md.
 
 ### Usage
-```
+
+```text
 /issue #{number}
 ```
 
@@ -242,7 +273,9 @@ Analyzes a GitHub issue, researches the codebase, designs solutions, and creates
 7. **Create Branch**: Checks out new branch `{type}/issue-{number}-{slug}`
 
 ### Output
+
 Creates or updates `AGENTS.md` with:
+
 - Issue context and classification
 - Recommended solution approach
 - Atomic task breakdown table
@@ -250,6 +283,7 @@ Creates or updates `AGENTS.md` with:
 - Acceptance criteria
 
 ### Related Commands
+
 - `/code` - Work through tasks from AGENTS.md
 - `/loop` - Automatically complete all tasks
 - `/research` - Deep investigation without creating tasks
@@ -262,10 +296,12 @@ Creates or updates `AGENTS.md` with:
 **Ralph-Loop style persistent task execution until completion.**
 
 ### Description
+
 Continuously works on a task until a completion phrase is detected or max iterations reached. Implements autonomous task continuation.
 
 ### Usage
-```
+
+```text
 /loop {task description}
 /loop {task description} --done "{completion phrase}"
 /loop {task description} --max {N}
@@ -285,17 +321,20 @@ Continuously works on a task until a completion phrase is detected or max iterat
 5. **Complete**: Reports when done or max iterations reached
 
 ### Output
+
 - **Start**: Shows task, completion criteria, max iterations
 - **Each Iteration**: Progress updates
 - **Complete**: Summary of work done, iterations used, result
 
 ### Best Practices
+
 - Use clear, machine-verifiable completion criteria
 - Set appropriate max iterations
 - Break large tasks into phases
 - Use with AGENTS.md for structured tasks
 
 ### Related Commands
+
 - `/code` - Single task execution
 - `/issue` - Create task breakdown for loop
 - `/task` - Create task plan for loop
@@ -308,10 +347,12 @@ Continuously works on a task until a completion phrase is detected or max iterat
 **Execute independent tasks concurrently using subagents.**
 
 ### Description
+
 Identifies and executes independent tasks in parallel to speed up work, with dependency analysis to ensure correct ordering.
 
 ### Usage
-```
+
+```text
 /parallel task1 | task2 | task3
 /parallel --analyze
 /parallel --from-agents
@@ -331,13 +372,16 @@ Identifies and executes independent tasks in parallel to speed up work, with dep
 5. **Merge Results**: Combines outputs and reports time saved
 
 ### Output
+
 Shows:
+
 - Tasks completed in parallel
 - Sequential tasks (with dependencies)
 - Summary with time savings estimate
 - Next steps
 
 ### Related Commands
+
 - `/code` - Sequential task execution
 - `/loop` - Can use parallel for batch processing
 - `/task` - Create tasks that can be parallelized
@@ -349,10 +393,12 @@ Shows:
 **Push changes and create PR.**
 
 ### Description
+
 Verifies all tasks are complete, pushes branch, and creates a pull request with proper linking to the issue.
 
 ### Usage
-```
+
+```text
 /push
 ```
 
@@ -366,19 +412,24 @@ Verifies all tasks are complete, pushes branch, and creates a pull request with 
 6. **Update AGENTS.md**: Records PR number and status
 
 ### Output
+
 Reports:
+
 - PR number and link
 - Branch name
 - Issue closure reference
 - Next steps (CI, reviews, merge)
 
 ### Pre-Checks
+
 Warns if:
+
 - Tasks still `[TODO]`
 - Tests not run
 - Self-review not done
 
 ### Related Commands
+
 - `/test` - Run tests before pushing
 - `/self-review` - Review changes before pushing
 - `/code` - Complete remaining tasks
@@ -391,10 +442,12 @@ Warns if:
 **Multi-perspective code quality review using parallel subagents.**
 
 ### Description
+
 Launches 4 parallel agents (auditor, perf-critic, api-reviewer, verifier) to comprehensively review code quality from multiple angles.
 
 ### Usage
-```
+
+```text
 /quality
 /quality {path}
 /quality #{PR}
@@ -419,7 +472,9 @@ Launches 4 parallel agents (auditor, perf-critic, api-reviewer, verifier) to com
 4. **Generate Verdict**: Ready / Fix Required / Blocked
 
 ### Output
+
 Quality report with:
+
 - Risk level (High/Medium/Low)
 - Findings by category (Security, Performance, API, Functionality)
 - Summary table with issue counts
@@ -428,6 +483,7 @@ Quality report with:
 - Final verdict
 
 ### Related Commands
+
 - `/audit` - Deep security/reliability audit
 - `/review-pr` - PR review with confidence scoring
 - `/self-review` - Review before pushing
@@ -439,10 +495,12 @@ Quality report with:
 **Deep investigation without implementation.**
 
 ### Description
+
 Conducts thorough research on GitHub issues or codebase topics, generating solution alternatives without implementing them.
 
 ### Usage
-```
+
+```text
 /research #{number}
 /research {topic}
 /research brainstorm: {idea}
@@ -464,7 +522,9 @@ Conducts thorough research on GitHub issues or codebase topics, generating solut
 7. **Comparison**: Creates comparison matrix
 
 ### Brainstorm Mode
+
 For `brainstorm:` prefix:
+
 - Extracts core idea
 - Performs web research
 - Multi-perspective analysis (User, Technical, Business, Market, Risk, Contrarian)
@@ -473,7 +533,9 @@ For `brainstorm:` prefix:
 - Action matrix
 
 ### Output
+
 Research report with:
+
 - Problem summary
 - Root cause analysis
 - 2-3 solution alternatives
@@ -481,6 +543,7 @@ Research report with:
 - Open questions
 
 ### Related Commands
+
 - `/issue` - Research + create task breakdown
 - `/architect` - Architectural exploration
 - `/task` - Research + implement
@@ -492,10 +555,12 @@ Research report with:
 **Rigorous code review with confidence scoring.**
 
 ### Description
+
 Reviews pull requests with multiple passes (security, bugs, architecture) and only reports findings with ≥80 confidence.
 
 ### Usage
-```
+
+```text
 /review-pr #{number}
 /review-pr
 ```
@@ -514,7 +579,9 @@ Reviews pull requests with multiple passes (security, bugs, architecture) and on
 6. **Verification**: Re-reads independently to confirm
 
 ### Output
+
 PR review with:
+
 - Summary (files, risk areas)
 - Blocking issues (confidence ≥80)
 - Health suggestions
@@ -522,6 +589,7 @@ PR review with:
 - Verdict (Approved / Changes Requested / Blocked)
 
 ### Related Commands
+
 - `/quality` - Multi-perspective quality review
 - `/audit` - Deep security audit
 - `/self-review` - Review your own changes
@@ -533,10 +601,12 @@ PR review with:
 **Review all changes before pushing.**
 
 ### Description
+
 Reviews all changes in current branch compared to main, checking correctness, style, security, and tests.
 
 ### Usage
-```
+
+```text
 /self-review
 ```
 
@@ -549,7 +619,9 @@ Reviews all changes in current branch compared to main, checking correctness, st
 5. **Update AGENTS.md**: Marks review task as `[DONE]`
 
 ### Output
+
 Review report with:
+
 - Summary of changes
 - ✅ Good observations
 - ⚠️ Consider (suggestions)
@@ -558,6 +630,7 @@ Review report with:
 - Verdict (Ready / Minor fixes / Needs work)
 
 ### Related Commands
+
 - `/push` - Push after self-review
 - `/quality` - Multi-perspective review
 - `/test` - Verify tests pass
@@ -569,10 +642,12 @@ Review report with:
 **Create and execute a spec-first task with optional planning and TDD modes.**
 
 ### Description
+
 Creates structured tasks with specification-first approach, optional planning phase, and TDD support.
 
 ### Usage
-```
+
+```text
 /task {description}
 /task #{number}
 /task {description} --plan
@@ -594,13 +669,16 @@ Creates structured tasks with specification-first approach, optional planning ph
 5. **VERIFY**: Checks compilation, tests, acceptance criteria, edge cases
 
 ### Output
+
 Creates or updates `AGENTS.md` with:
+
 - Task specification
 - Approach comparison (if `--plan`)
 - Progress tracker
 - Acceptance criteria
 
 ### Related Commands
+
 - `/code` - Work through task from AGENTS.md
 - `/loop` - Automatically complete task
 - `/issue` - Create task from GitHub issue
@@ -613,10 +691,12 @@ Creates or updates `AGENTS.md` with:
 **Run tests and verify everything works.**
 
 ### Description
+
 Auto-detects test framework and runs appropriate test suite, reporting results and suggesting fixes for failures.
 
 ### Usage
-```
+
+```text
 /test
 /test --quick
 /test --file {path}
@@ -635,7 +715,9 @@ Auto-detects test framework and runs appropriate test suite, reporting results a
 4. **Update AGENTS.md**: Marks test task status
 
 ### Output
+
 Test report with:
+
 - Status (PASS/FAIL)
 - Test counts (passed/total)
 - Duration
@@ -644,6 +726,7 @@ Test report with:
 - Suggested fixes for failures
 
 ### Related Commands
+
 - `/code` - Fix test failures
 - `/quality` - Includes test verification
 - `/push` - Requires tests to pass
@@ -654,26 +737,31 @@ Test report with:
 ## Command Relationships
 
 ### Task Management Flow
-```
+
+```text
 /issue or /task → /code or /loop → /test → /self-review → /push
 ```
 
 ### Quality Assurance Flow
-```
+
+```text
 /audit or /quality → /code (fixes) → /test → /self-review
 ```
 
 ### Architecture Flow
-```
+
+```text
 /research → /architect → /parallel (prototypes) → /quality → /code
 ```
 
 ### Parallel Execution
-```
+
+```text
 /parallel --analyze → /parallel task1 | task2 → /code (sequential)
 ```
 
 ### Context Management
-```
+
+```text
 /code (many iterations) → /context-reset --status → /summarize → /context-reset
 ```

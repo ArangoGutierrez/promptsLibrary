@@ -15,7 +15,7 @@ This guide covers how to configure Cursor IDE to work with the prompts library.
 
 Update the `# LIB` section with your installation path:
 
-```
+```text
 # LIB /your/path/to/promptsLibrary/prompts/
 DeepMode→master-agent.md (depth-first,token-optimized,all-protocols)
 MetaEnhance→meta-enhance.md (recursive self-improvement loop)
@@ -31,7 +31,7 @@ The user rules are organized into sections:
 
 Forces Claude to think deeply rather than give quick answers:
 
-```
+```text
 model-first: entities→relations→constraints→state BEFORE solve
 enumerate≥3: list ≥3 paths/options before ANY selection
 no-first-solution: 2+ approaches→compare→select-with-rationale
@@ -41,7 +41,7 @@ no-first-solution: 2+ approaches→compare→select-with-rationale
 
 Reduces token usage for large codebases:
 
-```
+```text
 ref>paste: use `path:line` refs, never paste code unless editing
 table>prose: structured data in tables, not sentences
 abbrev: fn|impl|cfg|ctx|err|req|res|auth|val|init|exec
@@ -51,7 +51,7 @@ abbrev: fn|impl|cfg|ctx|err|req|res|auth|val|init|exec
 
 Enables Chain of Verification:
 
-```
+```text
 1.claims→questions 2.answer-independently(no-ref-original) 3.reconcile:✓keep|✗drop|?flag
 ```
 
@@ -59,7 +59,7 @@ Enables Chain of Verification:
 
 Prevents destructive operations:
 
-```
+```text
 approval-required:API-change|dep-install|workspace-modify
 ```
 
@@ -93,7 +93,7 @@ When running audits, focus on:
 
 Reference a prompt file directly:
 
-```
+```bash
 @prompts/audit-go.md Run Audit on the authentication module
 ```
 
@@ -101,7 +101,7 @@ Reference a prompt file directly:
 
 If your rules are set up, use trigger commands:
 
-```
+```bash
 Run Audit on @src/auth/
 ```
 
@@ -114,41 +114,41 @@ For one-off use, paste the prompt content directly into the chat.
 ### Starting a New Task
 
 1. **Pre-Flight Scan** - Understand the codebase state
-   ```
+   ```bash
    Pre-Flight
    ```
 
 2. **Plan Mode** - Design before implementing
-   ```
+   ```bash
    Plan Mode for: implement user authentication
    ```
 
 3. **Execute** - Implement with verification
-   ```
+   ```bash
    GO step 1
    ```
 
 ### Code Review Flow
 
 1. **Run Audit** - Deep analysis
-   ```
+   ```bash
    Run Audit on @src/handlers/
    ```
 
 2. **Create Fix Prompts** - Generate task prompts from findings
-   ```
+   ```bash
    Create prompts from audit
    ```
 
 3. **Fix Issues** - Execute fixes
-   ```
+   ```bash
    Fix audit issues
    ```
 
 ### PR Review Flow
 
 1. **Review PR** - Comprehensive review
-   ```
+   ```bash
    Review PR #123
    ```
 
@@ -198,7 +198,7 @@ The hooks system includes context monitoring to recommend when to `/summarize` o
 
 If you maintain multiple prompt libraries:
 
-```
+```text
 # LIB-MAIN /path/to/promptsLibrary/prompts/
 # LIB-WORK /path/to/work-prompts/
 
@@ -211,7 +211,7 @@ If you maintain multiple prompt libraries:
 
 For very large codebases, enable aggressive token optimization:
 
-```
+```text
 # TOKEN-AGGRESSIVE
 no-explanation: skip intermediate reasoning unless asked
 compress-output: use abbrevs in all output
@@ -222,7 +222,7 @@ batch-refs: group file refs by directory
 
 When prompts aren't working as expected:
 
-```
+```text
 # DEBUG
 verbose-reasoning: show full thought process
 cite-prompt-line: reference which prompt instruction is being followed

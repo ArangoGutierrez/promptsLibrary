@@ -4,7 +4,7 @@ This guide shows how all Cursor customizations work together as an integrated sy
 
 ## System Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                         RULES (Always Active)                    │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
@@ -59,7 +59,7 @@ This guide shows how all Cursor customizations work together as an integrated sy
 
 The most common workflow for implementing GitHub issues:
 
-```
+```text
 ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────────┐     ┌─────────┐
 │ /issue  │────→│  /code  │────→│  /test  │────→│/self-review │────→│  /push  │
 │  #123   │     │         │     │         │     │             │     │         │
@@ -86,7 +86,7 @@ The most common workflow for implementing GitHub issues:
 
 When you have multiple independent tasks:
 
-```
+```text
 ┌─────────┐     ┌───────────────────────────────────────┐     ┌─────────┐
 │ /issue  │────→│          /parallel --analyze          │────→│ /push   │
 │  #123   │     │  Identifies independent tasks         │     │         │
@@ -104,7 +104,7 @@ When you have multiple independent tasks:
 ```
 
 **Example:**
-```
+```bash
 /issue #123                        # Creates AGENTS.md with tasks
 /parallel --analyze                # Shows which can parallelize
 /parallel "Add user model | Add handler | Update config"
@@ -123,7 +123,7 @@ When you have multiple independent tasks:
 
 For complex tasks that need multiple iterations:
 
-```
+```text
 ┌─────────┐     ┌─────────────────────────────────────┐     ┌──────────┐
 │ /issue  │────→│              /loop                   │────→│   /push  │
 │  #123   │     │   (iterates until DONE or max)      │     │          │
@@ -138,7 +138,7 @@ For complex tasks that need multiple iterations:
 ```
 
 **Example:**
-```
+```bash
 /issue #123
 /loop Work through all tasks in AGENTS.md --done "Status: DONE" --max 15
 /push
@@ -155,7 +155,7 @@ For complex tasks that need multiple iterations:
 
 For exploring different approaches before committing:
 
-```
+```text
 ┌──────────┐     ┌─────────────┐     ┌────────────────┐     ┌────────────┐
 │/research │────→│arch-explorer│────→│devil-advocate  │────→│ prototyper │
 │ problem  │     │ 3-5 options │     │ challenge each │     │ validate   │
@@ -169,7 +169,7 @@ For exploring different approaches before committing:
 ```
 
 **Alternative (faster):**
-```
+```bash
 /architect {problem} --quick
 ```
 
@@ -185,7 +185,7 @@ For exploring different approaches before committing:
 
 For thorough multi-perspective review:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      /quality (parallel)                     │
 ├──────────────┬──────────────┬──────────────┬────────────────┤
@@ -216,7 +216,7 @@ For thorough multi-perspective review:
 
 For understanding before implementing:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                        /research                                │
 ├────────────────────┬──────────────────┬────────────────────────┤
@@ -226,7 +226,7 @@ For understanding before implementing:
 ```
 
 **Example:**
-```
+```bash
 /research #123                    # Analyze GitHub issue
 /research "auth system"           # Explore codebase topic
 /research brainstorm: new cache   # Full SWOT analysis with web research
@@ -326,7 +326,7 @@ Issue #123: Add user authentication
 ## Decision Trees
 
 ### "I have a GitHub issue to implement"
-```
+```text
 Is it complex (>5 tasks)?
   YES → /research #N → /issue #N → /loop
   NO  → /issue #N → /parallel --analyze
@@ -337,21 +337,21 @@ Is it complex (>5 tasks)?
 ```
 
 ### "I need to design something"
-```
+```text
 Is it an architecture decision?
   YES → /architect {problem}
   NO  → /research {topic}
 ```
 
 ### "I need to review code"
-```
+```text
 Is it a PR from someone else?
   YES → /review-pr #N
   NO (my own code) → /self-review
 ```
 
 ### "Something isn't working"
-```
+```text
 Is it a test failure?
   YES → /test --quick → fix → repeat
 Is it a linting error?
@@ -397,7 +397,7 @@ When deployed with `--lazy`:
 | Full cmd | `/command` invoked | ~300-500 | /task, /audit, /issue |
 
 **On-demand modes:**
-```
+```bash
 /deep       # Activate deep analysis (anti-satisficing)
 /security   # Activate security audit mode
 /perf       # Activate performance review mode

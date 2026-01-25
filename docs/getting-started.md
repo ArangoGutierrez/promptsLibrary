@@ -67,7 +67,7 @@ Each command has a **trigger** - a slash command that tells Claude which workflo
 
 In Cursor, use slash commands to trigger workflows:
 
-```
+```text
 /audit Run Audit on the auth package
 ```
 
