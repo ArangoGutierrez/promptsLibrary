@@ -123,3 +123,97 @@ The loop will:
 - **Completion phrase**: Exact match required
 - **State file**: `.cursor/loop-state.json` tracks progress
 - **Interruptible**: User can cancel anytime
+
+## Troubleshooting
+
+### Loop Not Continuing
+```
+Loop stops after first iteration
+```
+**Causes & Fixes:**
+| Cause | Check | Fix |
+|-------|-------|-----|
+| Completion phrase matched | Review last output | Use more specific phrase |
+| Hook not installed | `cat cursor/hooks.json` | Ensure `task-loop.sh` in `stop` array |
+| State file missing | `ls .cursor/` | Re-run `/loop` to initialize |
+
+### Loop State Corrupted
+```bash
+# Reset loop state
+rm .cursor/loop-state.json
+
+# Or fix manually
+cat > .cursor/loop-state.json << 'EOF'
+{
+  "task": "your task",
+  "completion_promise": "DONE",
+  "max_iterations": 10,
+  "current_iteration": 0,
+  "status": "running"
+}
+EOF
+```
+
+### Loop Stuck on Same Step
+```
+Iteration 5: Same error as iteration 4
+```
+**Actions:**
+1. Say "cancel loop" to stop
+2. Analyze what's blocking progress
+3. Fix blocking issue manually
+4. Restart loop with adjusted task description
+
+### Max Iterations Reached Without Completion
+```
+Loop stopped: Max iterations (10) reached
+```
+**Actions:**
+1. Review progress in `.cursor/task-log.md`
+2. Analyze what's left incomplete
+3. Either:
+   - Restart with higher `--max`
+   - Break into smaller sub-tasks
+   - Complete remaining work manually
+
+### AGENTS.md Not Updating
+```
+Loop runs but AGENTS.md tasks stay [TODO]
+```
+**Causes:**
+- Task completion not detected
+- AGENTS.md syntax error
+- Status markers malformed
+
+**Fix:**
+```bash
+# Verify AGENTS.md syntax
+grep -E '\[(TODO|WIP|DONE|BLOCKED)\]' AGENTS.md
+```
+
+### Hook Errors
+```bash
+# Check hook execution
+bash -x cursor/hooks/task-loop.sh << 'EOF'
+{"status":"completed","loop_count":1}
+EOF
+
+# Common issues:
+# - Missing jq: brew install jq
+# - Permission denied: chmod +x cursor/hooks/task-loop.sh
+# - JSON parse error: validate hooks.json syntax
+```
+
+### Recovery From Failed Loop
+```bash
+# 1. Check state
+cat .cursor/loop-state.json
+
+# 2. Check progress log
+cat .cursor/task-log.md
+
+# 3. Reset if needed
+rm .cursor/loop-state.json
+
+# 4. Continue manually with /code
+```

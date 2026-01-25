@@ -88,3 +88,54 @@ Update AGENTS.md: `[BLOCKED:{reason}]`
 - **Atomic commits**: Each task = 1 commit
 - **Update AGENTS.md**: Keep progress current
 - **Refs issue**: All commits reference issue number
+
+## Troubleshooting
+
+### AGENTS.md Not Found
+```
+Error: No AGENTS.md in project root
+```
+**Fix:** Run `/issue #{number}` or `/task {description}` first to create AGENTS.md
+
+### No TODO Tasks Found
+```
+All tasks marked [DONE] or [BLOCKED]
+```
+**Actions:**
+1. Check for `[BLOCKED]` tasks that can be unblocked
+2. Run `/test` and `/self-review` if implementation complete
+3. Run `/push` if ready for PR
+
+### Task Dependencies Missing
+```
+Task requires output from incomplete task
+```
+**Actions:**
+1. Check dependency chain in AGENTS.md
+2. Work on prerequisite task first
+3. If circular dependency, restructure task breakdown
+
+### Commit Failed
+| Error | Cause | Fix |
+|-------|-------|-----|
+| GPG sign failed | Key not configured | `git config --global user.signingkey {KEY}` |
+| Pre-commit hook failed | Linting errors | Fix lint issues, re-commit |
+| Merge conflict | Branch out of date | `git pull --rebase origin main` |
+
+### Build/Compile Fails After Change
+```
+Task implementation breaks build
+```
+**Actions:**
+1. Review the specific error message
+2. Check if imports are correct
+3. Verify interface implementations match
+4. Revert with `git checkout -- {file}` if needed to restart
+
+### AGENTS.md Status Mismatch
+If AGENTS.md shows wrong status:
+```bash
+# Manually fix status markers
+# [TODO] → [WIP] → [DONE] → [BLOCKED:{reason}]
+```
+Then continue with `/code`

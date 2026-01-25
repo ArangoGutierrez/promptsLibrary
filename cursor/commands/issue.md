@@ -129,3 +129,82 @@ git checkout -b {type}/issue-{number}-{slug}
 - **Atomic tasks**: Smallest possible commits
 - **Verified refs**: Confirm files exist
 - **AGENTS.md**: Create or update `AGENTS.md` in project root (preserve existing content)
+
+## Troubleshooting
+
+### Issue Not Found
+```
+Error: Issue #123 not found
+```
+**Causes & Fixes:**
+| Cause | Check | Fix |
+|-------|-------|-----|
+| Wrong repo | `git remote -v` | Use correct issue number for this repo |
+| Private repo | Check access | Ensure `gh auth status` shows access |
+| Issue deleted | Check GitHub UI | Use different issue or create new one |
+
+### GitHub CLI Not Working
+```bash
+# Verify authentication
+gh auth status
+
+# Re-authenticate if needed
+gh auth login
+
+# Common errors:
+# - Token expired: gh auth refresh
+# - Wrong account: gh auth switch
+```
+
+### AGENTS.md Already Exists
+**Behavior:** Existing content preserved, new task section added/updated
+
+**If you want fresh start:**
+```bash
+# Backup existing
+mv AGENTS.md AGENTS.md.bak
+
+# Re-run /issue to create new
+```
+
+### Branch Already Exists
+```
+Error: Branch feature/issue-123-xyz already exists
+```
+**Actions:**
+1. Switch to existing: `git checkout feature/issue-123-xyz`
+2. Or delete and recreate:
+   ```bash
+   git branch -D feature/issue-123-xyz
+   # Re-run /issue
+   ```
+
+### Issue Too Complex for Atomic Tasks
+```
+Issue covers multiple features/systems
+```
+**Actions:**
+1. Suggest splitting issue in GitHub
+2. Or create compound AGENTS.md with phases:
+   - Phase 1: Core feature (tasks 1-3)
+   - Phase 2: Integration (tasks 4-6)
+   - Phase 3: Polish (tasks 7-8)
+
+### Referenced Files Don't Exist
+```
+Warning: Referenced file src/auth.go not found
+```
+**Actions:**
+1. Check if file was renamed/moved
+2. Verify branch is up to date: `git pull`
+3. Research codebase to find current location
+4. Update task plan with correct paths
+
+### Stale Issue Context
+```
+Issue comments reference outdated code
+```
+**Actions:**
+1. Focus on current codebase state
+2. Note discrepancies in AGENTS.md Notes section
+3. Prioritize latest comments and current code over old context
