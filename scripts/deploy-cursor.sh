@@ -313,7 +313,7 @@ create_backup() {
     mkdir -p "$backup_path"
     
     # Backup each directory if it exists
-    for dir in commands skills agents hooks rules; do
+    for dir in commands skills agents hooks rules schemas; do
         if [ -d "$TARGET_DIR/$dir" ]; then
             cp -rL "$TARGET_DIR/$dir" "$backup_path/" 2>/dev/null || true
         fi
@@ -366,7 +366,7 @@ restore_backup() {
     fi
     
     # Restore each directory
-    for dir in commands skills agents hooks rules; do
+    for dir in commands skills agents hooks rules schemas; do
         if [ -d "$backup_path/$dir" ]; then
             rm -rf "$TARGET_DIR/$dir"
             cp -r "$backup_path/$dir" "$TARGET_DIR/"
@@ -716,7 +716,7 @@ uninstall() {
     echo -e "${YELLOW}Uninstalling from: $TARGET_DIR${NC}"
     
     # Remove symlinks to our source only
-    for dir in commands skills agents hooks rules; do
+    for dir in commands skills agents hooks rules schemas; do
         local target="$TARGET_DIR/$dir"
         if [ -d "$target" ]; then
             for item in "$target"/*; do
@@ -850,6 +850,13 @@ deploy() {
     fi
     echo ""
     
+    # Deploy schemas (always from main source, for validation)
+    echo -e "${BLUE}Deploying schemas...${NC}"
+    if [ -d "$REPO_DIR/cursor/schemas" ]; then
+        deploy_directory "$REPO_DIR/cursor/schemas" "$TARGET_DIR/schemas" "*.json"
+    fi
+    echo ""
+    
     # Save version info
     local version=$(get_repo_version)
     local mode_flag=""
@@ -946,7 +953,7 @@ show_status() {
     
     # Check what's deployed
     echo -e "${CYAN}Deployed Components${NC}"
-    for component in commands agents rules hooks skills; do
+    for component in commands agents rules hooks skills schemas; do
         local path="$TARGET_DIR/$component"
         if [ -d "$path" ]; then
             local count=$(ls -1 "$path" 2>/dev/null | wc -l | tr -d ' ')
