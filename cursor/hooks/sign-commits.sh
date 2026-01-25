@@ -75,11 +75,8 @@ if [ "$missing_signature" = true ]; then
     if [ "$gpg_configured" = true ]; then
         add_flags="$add_flags -S"
     else
-        # GPG not configured - still add signoff (-s) but warn about missing signature
-        # Build corrected command with signoff only
-        if [ "$missing_signoff" = true ]; then
-            add_flags="-s"
-        fi
+        # GPG not configured - add_flags already has -s if it was missing (from line 72)
+        # Build corrected command using current add_flags (may be empty if -s already present)
         corrected_command="git commit${add_flags:+ $add_flags}${command#git commit}"
         json_safe_command=$(printf '%s' "$corrected_command" | jq -Rs '.')
         

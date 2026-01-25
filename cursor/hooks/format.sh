@@ -25,22 +25,42 @@ if [[ "$file_path" == *".."* ]]; then
     exit 0
 fi
 
-# 2. Must be within current working directory (project root)
-# Resolve to absolute path and check prefix with trailing slash to prevent
-# sibling directory bypass (e.g., /project-evil matching /project prefix)
-resolved_path=$(realpath -m "$file_path" 2>/dev/null || echo "$file_path")
-project_root=$(pwd)
-
-# Ensure exact directory match by checking path starts with project_root + /
-# or is exactly the project_root itself
-if [[ "$resolved_path" != "$project_root" && "$resolved_path" != "$project_root/"* ]]; then
-    echo "Security: path outside project blocked" >&2
+# 2. File must exist and be a regular file (not directory, device, etc.)
+if [ ! -e "$file_path" ]; then
     exit 0
 fi
 
-# 3. Must be a regular file (not symlink to outside, device, etc.)
-if [ -e "$file_path" ] && [ ! -f "$file_path" ]; then
-    exit 0
+# 3. If it's a symlink, resolve and validate the ACTUAL target
+# This prevents symlink attacks where project/link -> /etc/passwd
+project_root=$(pwd)
+
+if [ -L "$file_path" ]; then
+    # Resolve the symlink target (follows all symlinks to final destination)
+    resolved_target=$(realpath "$file_path" 2>/dev/null)
+    if [ -z "$resolved_target" ]; then
+        echo "Security: cannot resolve symlink target" >&2
+        exit 0
+    fi
+    # Validate the REAL target is within project
+    if [[ "$resolved_target" != "$project_root" && "$resolved_target" != "$project_root/"* ]]; then
+        echo "Security: symlink target outside project blocked" >&2
+        exit 0
+    fi
+    # Must resolve to a regular file
+    if [ ! -f "$resolved_target" ]; then
+        exit 0
+    fi
+else
+    # Not a symlink - validate path directly
+    resolved_path=$(realpath "$file_path" 2>/dev/null || echo "$file_path")
+    if [[ "$resolved_path" != "$project_root" && "$resolved_path" != "$project_root/"* ]]; then
+        echo "Security: path outside project blocked" >&2
+        exit 0
+    fi
+    # Must be a regular file
+    if [ ! -f "$file_path" ]; then
+        exit 0
+    fi
 fi
 
 # Get file extension
