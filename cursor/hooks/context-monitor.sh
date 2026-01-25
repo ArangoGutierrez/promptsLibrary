@@ -75,6 +75,7 @@ cleanup_stale_lock() {
 
 # Safe state update with cross-platform locking
 # Usage: safe_update 'jq_expression'
+# Returns 1 (failure) if state file doesn't exist - caller must handle initialization
 safe_update() {
     local jq_expr="$1"
     
@@ -93,10 +94,11 @@ safe_update() {
             release_lock "$LOCK_DIR"
             return 1
         fi
+    else
+        # State file doesn't exist - return failure so caller knows update didn't happen
+        release_lock "$LOCK_DIR"
+        return 1
     fi
-    
-    release_lock "$LOCK_DIR"
-    return 0
 }
 
 # Safe state read with cross-platform locking
@@ -180,7 +182,9 @@ create_new_state() {
   "last_summarize_at": null,
   "health": "healthy",
   "last_recommendation": null,
-  "stuck_iterations": 0
+  "stuck_iterations": 0,
+  "last_done_count": 0,
+  "last_todo_count": 0
 }
 EOF
 }
@@ -295,22 +299,46 @@ get_health_state() {
     fi
 }
 
-# Detect if stuck (same state, no progress)
+# Detect if stuck (no meaningful progress between invocations)
+# Tracks progress by checking AGENTS.md task completion count changes
 detect_stuck() {
-    local prev_iterations=$(safe_read '.iterations' '0')
     local stuck_count=$(safe_read '.stuck_iterations' '0')
+    local prev_done_count=$(safe_read '.last_done_count' '0')
+    local prev_todo_count=$(safe_read '.last_todo_count' '0')
     
-    # Simple heuristic: if we're on same loop_count repeatedly
-    if [ "$loop_count" -eq "$prev_iterations" ]; then
-        stuck_count=$((stuck_count + 1))
-        safe_update ".stuck_iterations = $stuck_count"
-        if [ "$stuck_count" -ge 2 ]; then
-            return 0  # Stuck
-        fi
-    else
-        safe_update ".stuck_iterations = 0"
+    # Get current task counts from AGENTS.md
+    local current_done_count=0
+    local current_todo_count=0
+    if [ -f "$AGENTS_FILE" ]; then
+        current_done_count=$(grep -c '\[DONE\]' "$AGENTS_FILE" 2>/dev/null || echo "0")
+        current_todo_count=$(grep -c '\[TODO\]' "$AGENTS_FILE" 2>/dev/null || echo "0")
     fi
-    return 1  # Not stuck
+    
+    # Check if any progress was made (tasks completed or started)
+    local progress_made=false
+    if [ "$current_done_count" -gt "$prev_done_count" ]; then
+        progress_made=true
+    elif [ "$current_todo_count" -lt "$prev_todo_count" ]; then
+        # Fewer TODOs means tasks were started (moved to WIP or DONE)
+        progress_made=true
+    fi
+    
+    # Update tracking state
+    safe_update ".last_done_count = $current_done_count | .last_todo_count = $current_todo_count" || true
+    
+    if [ "$progress_made" = true ]; then
+        # Progress made - reset stuck counter
+        safe_update ".stuck_iterations = 0" || true
+        return 1  # Not stuck
+    else
+        # No progress - increment stuck counter
+        stuck_count=$((stuck_count + 1))
+        safe_update ".stuck_iterations = $stuck_count" || true
+        if [ "$stuck_count" -ge 3 ]; then
+            return 0  # Stuck (3+ iterations without progress)
+        fi
+    fi
+    return 1  # Not stuck yet
 }
 
 # Generate recommendation message

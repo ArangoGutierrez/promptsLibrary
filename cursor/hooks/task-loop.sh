@@ -86,6 +86,7 @@ validate_state_file() {
 
 # Safe state file update with cross-platform locking
 # Usage: update_state 'jq_expression'
+# Returns 1 (failure) if state file doesn't exist - caller must handle initialization
 update_state() {
     local jq_expr="$1"
     
@@ -111,10 +112,11 @@ update_state() {
             release_lock "$LOCK_DIR"
             return 1
         fi
+    else
+        # State file doesn't exist - return failure so caller knows update didn't happen
+        release_lock "$LOCK_DIR"
+        return 1
     fi
-    
-    release_lock "$LOCK_DIR"
-    return 0
 }
 
 # Safe state file read with cross-platform locking

@@ -26,11 +26,14 @@ if [[ "$file_path" == *".."* ]]; then
 fi
 
 # 2. Must be within current working directory (project root)
-# Resolve to absolute path and check prefix
+# Resolve to absolute path and check prefix with trailing slash to prevent
+# sibling directory bypass (e.g., /project-evil matching /project prefix)
 resolved_path=$(realpath -m "$file_path" 2>/dev/null || echo "$file_path")
 project_root=$(pwd)
 
-if [[ "$resolved_path" != "$project_root"* ]]; then
+# Ensure exact directory match by checking path starts with project_root + /
+# or is exactly the project_root itself
+if [[ "$resolved_path" != "$project_root" && "$resolved_path" != "$project_root/"* ]]; then
     echo "Security: path outside project blocked" >&2
     exit 0
 fi
