@@ -260,6 +260,7 @@ Analyzes a GitHub issue, researches the codebase, designs solutions, and creates
 ```
 
 **Arguments:**
+
 - `#{number}` - GitHub issue number to analyze
 
 ### Workflow Steps
@@ -308,6 +309,7 @@ Continuously works on a task until a completion phrase is detected or max iterat
 ```
 
 **Arguments:**
+
 - `{task description}` - Task to work on
 - `--done "{phrase}"` - Completion signal (default: "DONE")
 - `--max {N}` - Max iterations (default: 10)
@@ -359,6 +361,7 @@ Identifies and executes independent tasks in parallel to speed up work, with dep
 ```
 
 **Options:**
+
 - `task1 | task2 | task3` - Execute tasks in parallel
 - `--analyze` - Analyze AGENTS.md for parallelization opportunities
 - `--from-agents` - Auto-run parallel tasks from AGENTS.md
@@ -457,6 +460,7 @@ Launches 4 parallel agents (auditor, perf-critic, api-reviewer, verifier) to com
 ```
 
 **Options:**
+
 - (no args) - Review current git diff
 - `{path}` - Review specific file/directory
 - `#{PR}` - Review PR changes
@@ -507,6 +511,7 @@ Conducts thorough research on GitHub issues or codebase topics, generating solut
 ```
 
 **Arguments:**
+
 - `#{number}` - Research GitHub issue
 - `{topic}` - Research codebase topic
 - `brainstorm: {idea}` - Deep-dive idea analysis with web research
@@ -566,6 +571,7 @@ Reviews pull requests with multiple passes (security, bugs, architecture) and on
 ```
 
 **Options:**
+
 - `#{number}` - Review specific PR
 - (no args) - Review current branch diff
 
@@ -655,6 +661,7 @@ Creates structured tasks with specification-first approach, optional planning ph
 ```
 
 **Arguments:**
+
 - `{description}` - Ad-hoc task description
 - `#{number}` - GitHub issue number
 - `--plan` - Plan first, await "GO" before implementing
@@ -703,6 +710,7 @@ Auto-detects test framework and runs appropriate test suite, reporting results a
 ```
 
 **Options:**
+
 - (no args) - Run full test suite
 - `--quick` - Run only tests for changed files
 - `--file {path}` - Run specific test file

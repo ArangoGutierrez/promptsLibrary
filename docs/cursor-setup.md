@@ -114,16 +114,19 @@ For one-off use, paste the prompt content directly into the chat.
 ### Starting a New Task
 
 1. **Pre-Flight Scan** - Understand the codebase state
+
    ```bash
    Pre-Flight
    ```
 
 2. **Plan Mode** - Design before implementing
+
    ```bash
    Plan Mode for: implement user authentication
    ```
 
 3. **Execute** - Implement with verification
+
    ```bash
    GO step 1
    ```
