@@ -30,7 +30,7 @@ The current prompt library contains **high-quality, research-backed prompts** wi
 
 ### 1.1 Directory Structure
 
-```
+```text
 prompts/
 ├── _compressed/
 │   └── task-prompt-min.md       # Token-optimized variant
@@ -55,7 +55,7 @@ prompts/
 
 From `snippets/cursor-rules.md`:
 
-```
+```text
 # LIB /path/to/prompts-library/prompts/
 DeepMode→master-agent.md
 MetaEnhance→meta-enhance.md
@@ -66,6 +66,7 @@ Audit[scope]→audit-go.md
 **How it works:** User types trigger word (e.g., "DeepMode"), agent looks up mapping, references `@prompts/master-agent.md`.
 
 **Problems:**
+
 1. Requires User Rules configuration per user
 2. No autocomplete in chat input
 3. Agent must parse trigger → filename mapping
@@ -96,12 +97,14 @@ Audit[scope]→audit-go.md
 ### 2.1 Commands (`.cursor/commands/`)
 
 **Cursor Feature:**
+
 - Markdown files in `.cursor/commands/` appear as `/command` in chat
 - Autocomplete support in input box
 - Parameters via `{param}` syntax
 - Team sharing via dashboard
 
 **Current Gap:**
+
 - No `.cursor/commands/` directory exists
 - Prompts require manual `@prompts/file.md` reference
 - No autocomplete discovery
@@ -127,6 +130,7 @@ Audit[scope]→audit-go.md
 ### 2.2 Skills (`.cursor/skills/`)
 
 **Cursor Feature:**
+
 - `SKILL.md` files with YAML frontmatter
 - Agent decides when to invoke based on `description`
 - Progressive loading (context-efficient)
@@ -134,6 +138,7 @@ Audit[scope]→audit-go.md
 - `disable-model-invocation: true` for explicit-only skills
 
 **Current Gap:**
+
 - No `.cursor/skills/` directory
 - All prompts loaded via explicit reference
 - No description-based auto-invocation
@@ -142,7 +147,7 @@ Audit[scope]→audit-go.md
 
 **Recommended Skill Structure:**
 
-```
+```text
 .cursor/skills/
 ├── go-audit/
 │   ├── SKILL.md           # Description + when to use
@@ -179,6 +184,7 @@ description: >
 ### 2.3 Subagents (`.cursor/agents/`)
 
 **Cursor Feature:**
+
 - Custom subagents with isolated context
 - Parallel execution
 - Model selection per subagent
@@ -186,6 +192,7 @@ description: >
 - Resume capability via agent ID
 
 **Current Gap:**
+
 - No custom subagents defined
 - All work runs in main conversation context
 - No parallelism for independent research tasks
@@ -250,6 +257,7 @@ readonly: true
 ### 2.4 Hooks (`.cursor/hooks.json`)
 
 **Cursor Feature:**
+
 - `sessionStart/sessionEnd` — inject context, set env vars
 - `beforeShellExecution/afterShellExecution` — gate/audit commands
 - `afterFileEdit` — auto-format
@@ -257,6 +265,7 @@ readonly: true
 - `preToolUse/postToolUse` — generic tool gates
 
 **Current Gap:**
+
 - No hooks configured
 - No auto-formatting after edits
 - No iteration loops (meta-enhance requires manual continuation)
@@ -326,11 +335,13 @@ fi
 ### 2.5 Rules (`.cursor/rules/`)
 
 **Cursor Feature:**
+
 - Project-level rules in `.cursor/rules/*.md`
 - `alwaysApply: true` for global rules
 - `globs` patterns for file-specific rules
 
 **Current State:**
+
 - Rules defined in User Rules (global)
 - Works but not project-portable
 
@@ -377,7 +388,7 @@ alwaysApply: true
 
 **Problem:** User Rules contain hardcoded path:
 
-```
+```text
 # LIB /path/to/prompts-library/prompts/
 ```
 
@@ -406,6 +417,7 @@ Usage: `/issue-to-task #123 focus on auth flow`
 **Problem:** `@prompts/master-agent.md` loads entire 500+ line prompt into context even for simple questions.
 
 **Fix:** Skills with progressive loading:
+
 - Main `SKILL.md` contains description + core instructions
 - `references/` contains detailed patterns loaded on-demand
 - Agent reads only what's needed
@@ -415,6 +427,7 @@ Usage: `/issue-to-task #123 focus on auth flow`
 **Problem:** `meta-enhance.md` defines iteration loop but requires manual "continue" from user.
 
 **Fix:** Hook-based auto-continuation:
+
 - `stop` hook checks completion marker in scratchpad
 - Returns `followup_message` to continue automatically
 - Respects `loop_limit` (default 5)
@@ -468,6 +481,7 @@ esac
 **Problem:** Prompts mention "GitHub MCP" but don't explain setup.
 
 **Fix:** Add setup documentation for MCP servers:
+
 - GitHub MCP for issue/PR operations
 - Figma MCP for design-to-code
 - Database MCPs for schema introspection
@@ -550,6 +564,7 @@ esac
 | Deprecate `_compressed/` | Low (0.5h) | Low | P3 | Skills |
 
 **Recommended Order:**
+
 1. Commands + Rules (same PR, immediate benefit)
 2. Hooks (enables automation)
 3. Skills (enables progressive loading)
@@ -559,7 +574,7 @@ esac
 
 ## 6. Target Directory Structure
 
-```
+```text
 .cursor/
 ├── commands/
 │   ├── audit-go.md
@@ -635,6 +650,7 @@ After migration, verify:
 The prompt library represents **significant engineering investment** in research-backed prompting techniques. The content quality is high. The gap is purely in **Cursor platform integration**.
 
 Migrating to Commands, Skills, Subagents, and Hooks will:
+
 1. **Reduce friction** — `/command` vs `@prompts/path.md`
 2. **Improve efficiency** — Progressive loading vs full prompt
 3. **Enable automation** — Hooks for formatting, iteration, security

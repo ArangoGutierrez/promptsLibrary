@@ -86,7 +86,7 @@ We prioritize changes backed by research. When proposing improvements:
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 feat(prompts): add new code-review prompt
 fix(audit-go): correct security scope reference
 docs: update getting-started guide
@@ -104,12 +104,14 @@ refactor(task-prompt): simplify iteration budget section
 ## Development Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/ArangoGutierrez/promptsLibrary.git
    cd promptsLibrary
    ```
 
 2. Set up your environment (optional):
+
    ```bash
    export PROMPTS_LIB="$(pwd)"
    ```

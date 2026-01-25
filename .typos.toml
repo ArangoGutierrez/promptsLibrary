@@ -18,6 +18,8 @@ extend-ignore-re = [
 # CoVe is Chain of Verification
 CoVe = "CoVe"
 cove = "cove"
+# FoT is Forest-of-Thought
+FoT = "FoT"
 
 [files]
 extend-exclude = [
