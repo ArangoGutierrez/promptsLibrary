@@ -37,10 +37,10 @@ if [ -f "$LOOP_STATE" ]; then
     # Update iteration count in state
     jq ".current_iteration = $((loop_count + 1))" "$LOOP_STATE" > "${LOOP_STATE}.tmp" && mv "${LOOP_STATE}.tmp" "$LOOP_STATE"
 else
-    # Fallback to env vars or defaults (backward compatibility)
-    MAX_ITERATIONS="${CURSOR_MAX_ITERATIONS:-10}"
-    COMPLETION_PROMISE="DONE"
-    TASK_DESCRIPTION=""
+    # No active loop - exit silently
+    # Loop must be started with /loop command which creates the state file
+    echo '{}'
+    exit 0
 fi
 
 # Initialize AGENTS.md only if it doesn't exist
