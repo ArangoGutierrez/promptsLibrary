@@ -71,14 +71,6 @@ For each finding:
 - Generated: N | Confirmed: X | Dropped: Y
 ```
 
-## Workflow
-
-1. Determine audit scope (diff, handlers, or full)
-2. Scan for issues in each category
-3. Apply CoVe verification to Critical/Major
-4. Generate AUDIT_REPORT.md
-5. If `--fix`: apply fixes, add tests, re-audit
-
 ## Fix Workflow (`--fix`)
 
 After audit:

@@ -19,8 +19,7 @@ jobs:
           globs: |
             **/*.md
             !node_modules
-            !cursor/_optimized/**
-            !cursor/_lazy/**
+            !cursor/**
 
   spell-check:
     name: Spell Check

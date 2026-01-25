@@ -6,16 +6,6 @@ Rigorous code review with confidence scoring.
 - `#{number}` — Review specific PR
 - (no args) — Review current branch diff
 
-## Workflow
-
-1. Fetch PR details (files, diff, metadata)
-2. Pre-flight check (skip if closed/draft/trivial)
-3. Security pass on high-risk files
-4. Bug detection pass on changed lines only
-5. Architecture review pass
-6. Apply confidence scoring (report only ≥80)
-7. Generate review with verdict
-
 ## Pre-Flight Skip
 | Condition | Action |
 |-----------|--------|

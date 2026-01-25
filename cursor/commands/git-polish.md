@@ -2,11 +2,6 @@
 
 Rewrite local history into atomic, signed commits.
 
-## Usage
-
-- (no args) — Interactive: asks how many commits
-- `HEAD~N` — Reset N commits back
-
 ## Setup
 ```bash
 export GIT_EDITOR="true"
