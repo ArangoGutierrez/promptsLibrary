@@ -75,20 +75,24 @@ if [ "$missing_signature" = true ]; then
     if [ "$gpg_configured" = true ]; then
         add_flags="$add_flags -S"
     else
-        # Warn but don't add -S if GPG not configured (would fail anyway)
-        cat << 'EOF'
+        # GPG not configured - still add signoff (-s) but warn about missing signature
+        # Build corrected command with signoff only
+        if [ "$missing_signoff" = true ]; then
+            add_flags="-s"
+        fi
+        corrected_command="git commit${add_flags:+ $add_flags}${command#git commit}"
+        json_safe_command=$(printf '%s' "$corrected_command" | jq -Rs '.')
+        
+        # Return ask with the corrected command included
+        cat << EOF
 {
   "continue": true,
   "permission": "ask",
-  "user_message": "⚠️ GPG/SSH signing not configured. Commit will not be cryptographically signed.",
-  "agent_message": "GPG signing key not configured. Run 'git config --global user.signingkey <key-id>' to enable. Proceeding with signoff only."
+  "user_message": "⚠️ GPG/SSH signing not configured. Commit will have signoff (-s) but not cryptographic signature (-S).",
+  "agent_message": "GPG signing key not configured. Run 'git config --global user.signingkey <key-id>' to enable. Proceeding with signoff only.",
+  "command": ${json_safe_command}
 }
 EOF
-        # Only add signoff, skip signature
-        add_flags="-s"
-        # Insert missing signoff after "git commit"
-        corrected_command="git commit${add_flags:+ $add_flags}${command#git commit}"
-        json_safe_command=$(printf '%s' "$corrected_command" | jq -Rs '.')
         exit 0
     fi
 fi
