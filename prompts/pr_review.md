@@ -7,7 +7,7 @@
 - Identify bugs, security flaws, and logic errors
 - Verify code quality and maintainability
 - Ensure PR meets production standards
-- Check compliance with project guidelines (CLAUDE.md, .cursor/rules/, AGENTS.md)
+- Check compliance with project guidelines (.cursor/rules/, AGENTS.md)
 
 ### Boundaries:
 - Evidence-based findings only (cite `file:line`)
@@ -70,7 +70,7 @@ If any skip condition matches, output brief status and exit.
 - mocking: proper isolation of dependencies?
 
 ### F. Guideline Compliance (NEW — Anthropic 2025)
-- project-rules: check CLAUDE.md, .cursor/rules/, AGENTS.md for explicit guidelines
+- project-rules: check .cursor/rules/, AGENTS.md for explicit guidelines
 - naming-conventions: verify against documented standards
 - patterns: ensure PR follows repository-specific patterns
 - NOTE: Only flag if guideline EXPLICITLY states the requirement
@@ -108,7 +108,7 @@ Score each finding 0-100 before reporting:
 ### 0. Pre-Flight Check
 - Check skip conditions (see PRE-FLIGHT SKIP CONDITIONS)
 - If skip → output status and exit
-- Gather project guidelines: CLAUDE.md, .cursor/rules/*.md, AGENTS.md
+- Gather project guidelines: .cursor/rules/*.md, AGENTS.md
 
 ### 1. Context Gather
 - Identify base branch (main/master/develop)
@@ -194,7 +194,7 @@ Re-read diff/file fresh. Check PR description/comments. Search for patterns.
 - **Files changed**: {N}
 - **Additions/Deletions**: +{A}/-{D}
 - **Risk areas**: {list high-risk files}
-- **Guidelines checked**: {list CLAUDE.md, rules files found}
+- **Guidelines checked**: {list .cursor/rules/, AGENTS.md files found}
 
 ## 🔴 Blocking Issues (Must Fix)
 *Critical bugs, security flaws, or logic errors preventing merge*
@@ -282,7 +282,7 @@ Re-read diff/file fresh. Check PR description/comments. Search for patterns.
 ├─────────────────────────────────────────────────────────────┤
 │ PRE-FLIGHT                                                  │
 │ □ Skip conditions checked (closed/draft/trivial/reviewed)?  │
-│ □ Project guidelines gathered (CLAUDE.md, rules, AGENTS)?   │
+│ □ Project guidelines gathered (.cursor/rules/, AGENTS.md)?  │
 ├─────────────────────────────────────────────────────────────┤
 │ SCOPE                                                       │
 │ □ Architecture & patterns reviewed?                         │
