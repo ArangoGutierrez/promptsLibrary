@@ -302,7 +302,9 @@ Creates minimal but functional implementations to validate architectural approac
 - **Is Background**: `true` (runs in background, can run multiple in parallel)
 
 ### Prototype Structure
+
 Creates `.prototypes/{prototype-id}/` with:
+
 - `README.md` - What prototype demonstrates
 - `DECISIONS.md` - Key decisions and rationale
 - `TRADE_OFFS.md` - Discovered pros/cons
@@ -310,6 +312,7 @@ Creates `.prototypes/{prototype-id}/` with:
 - `examples/` - Usage examples
 
 ### Implementation Strategy
+
 - **Core** (60%): Minimum to prove concept
 - **Happy Path** (25%): One working example
 - **Documentation** (15%): Decisions & trade-offs
@@ -406,6 +409,7 @@ Facilitates technical decisions by combining multiple perspectives into actionab
 - Decision time after exploration
 
 ### Model
+
 - **Model**: `inherit`
 - **Read-only**: `true`
 
@@ -461,6 +465,7 @@ Identifies which tasks are independent (parallelizable) vs dependent (sequential
 - Before starting multi-task work
 
 ### Model
+
 - **Model**: Not specified (uses default/inherit)
 - **Read-only**: `true`
 
@@ -474,12 +479,14 @@ Identifies which tasks are independent (parallelizable) vs dependent (sequential
 ### Dependency Detection
 
 **Likely Dependent:**
+
 - "Add tests for X" → depends on X implementation
 - "Update docs for X" → depends on X being done
 - Same file in both tasks
 - "after", "once", "when X is done"
 
 **Likely Independent:**
+
 - Different directories/packages
 - Different concerns (auth vs logging)
 - "Add X" and "Add Y" (new features)
@@ -602,15 +609,18 @@ verifier → (any agent providing implementation)
 ## Agent Invocation Patterns
 
 ### Parallel Execution
+
 - `/quality` - Runs `auditor`, `perf-critic`, `api-reviewer`, `verifier` in parallel
 - `/architect` - Runs `prototyper` agents in parallel (background)
 - `/parallel` - Uses subagents (not these specialized agents)
 
 ### Sequential Execution
+
 - `/architect` - Sequential phases: explorer → advocate → prototypes → synthesizer
 - `/research` → `/issue` - Research informs task creation
 
 ### Conditional Execution
+
 - `api-reviewer` - Only if API changes detected
 - `perf-critic` - Skips for docs-only changes
 - `verifier` - Only if tests exist
