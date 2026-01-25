@@ -26,51 +26,52 @@ For convenience, set an environment variable pointing to your library:
 export PROMPTS_LIB="/path/to/promptsLibrary"
 ```
 
-### 3. Configure Cursor Rules
+### 3. Deploy to Your System
 
-Copy the rules from `snippets/cursor-rules.md` to your Cursor settings:
+```bash
+# Deploy globally (to ~/.cursor/)
+./scripts/deploy-cursor.sh
 
-1. Open Cursor
-2. Go to **Settings** → **Rules** → **User Rules**
-3. Paste the contents of `snippets/cursor-rules.md`
-4. Update the `# LIB` section with your actual path:
-   ```
-   # LIB /path/to/promptsLibrary/prompts/
-   ```
+# Or deploy to a specific project
+./scripts/deploy-cursor.sh --project /path/to/your/project
+```
 
-### 4. Test a Prompt
+The deployment script will:
+- Install commands, skills, agents, hooks, and rules
+- Set up automation (auto-format, security gates, task loops)
 
-Try your first prompt:
+### 4. Test a Command
+
+Try your first command:
 
 1. Open any project in Cursor
-2. In the chat, type: `@prompts/preflight.md`
-3. Watch as Claude scans your repository
+2. In the chat, type: `/research #123` (replace with a real issue number)
+3. Or try `/task describe what you want to build`
 
 ## Core Concepts
 
 ### Trigger Commands
 
-Each prompt has a **trigger** - a command that tells Claude which workflow to execute:
+Each command has a **trigger** - a slash command that tells Claude which workflow to execute:
 
-| Command | Prompt | What It Does |
-|---------|--------|--------------|
-| "Run Audit" | `audit-go.md` | Deep code audit for Go/K8s |
-| "Git Polish" | `git-polish.md` | Clean up git history |
-| "Plan Mode" | `workflow.md` | Two-phase planning workflow |
-| "Pre-Flight" | `preflight.md` | Scan repo before changes |
-| "Research Issue #N" | `research-issue.md` | Deep dive on GitHub issue |
-| "Review PR" | `pr_review.md` | Code review workflow |
-| "Create prompt for..." | `task-prompt.md` | Generate task prompt |
+| Command | What It Does |
+|---------|--------------|
+| `/audit` | Deep code audit for Go/K8s |
+| `/git-polish` | Clean up git history |
+| `/architect` | Architecture exploration with prototyping |
+| `/research #{N}` | Deep dive on GitHub issue |
+| `/review-pr` | Code review workflow |
+| `/task {desc}` | Generate spec-first task |
 
-### Using @-mentions
+### Using Slash Commands
 
-In Cursor, reference prompts using `@` syntax:
+In Cursor, use slash commands to trigger workflows:
 
 ```
-@prompts/audit-go.md Run Audit on the auth package
+/audit Run Audit on the auth package
 ```
 
-This loads the prompt file and applies it to your request.
+This loads the command and applies it to your request.
 
 ### Verification Pattern
 
@@ -87,21 +88,21 @@ This reduces hallucinations and false positives.
 
 - Read [Cursor Setup](cursor-setup.md) for detailed configuration
 - Browse the [Prompt Catalog](prompt-catalog.md) to see all available prompts
-- Check out the research basis in `prompts/PROMPT_RESEARCH_360.md`
+- Check out the [Workflow Guide](workflow-guide.md) for best practices
 
 ## Troubleshooting
 
-### Prompts Not Loading
+### Commands Not Loading
 
 Make sure:
-- The path in your Cursor rules matches your actual installation
-- You're using the `@` syntax correctly: `@prompts/filename.md`
+- You've run the deployment script (`./scripts/deploy-cursor.sh`)
+- You're using the `/command` syntax correctly: `/audit`, `/research`, etc.
 
 ### Claude Ignoring Instructions
 
 Try:
-- Loading the prompt explicitly: paste the content directly
-- Using the "Deep Mode" master agent for complex tasks
+- Using the `/architect` command for complex tasks
+- Checking that commands are properly installed via the deployment script
 
 ### Path Issues
 

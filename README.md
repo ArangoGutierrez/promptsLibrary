@@ -38,9 +38,9 @@ Type `/` in any Cursor chat to see available commands:
 
 - `/task` — Create a spec-first task prompt
 - `/review-pr` — Rigorous PR review with confidence scoring
-- `/audit-go` — Deep defensive audit for Go code
+- `/audit` — Deep defensive audit for Go code
 - `/research` — Research a GitHub issue
-- `/plan` — Two-phase planning workflow
+- `/architect` — Full architectural exploration
 
 ## What's Included
 
@@ -49,14 +49,21 @@ Slash commands for common workflows:
 
 | Command | Description |
 |---------|-------------|
-| `/task` | Generate spec-first task prompt |
-| `/review-pr` | Code review with confidence scoring |
-| `/audit-go` | Go/K8s production audit |
-| `/research` | Deep issue research |
-| `/plan` | Two-phase planning |
-| `/preflight` | Codebase reconnaissance |
-| `/deep-mode` | Anti-satisficing analysis |
+| `/architect` | Full architectural exploration with parallel prototyping |
+| `/audit` | Deep Go/K8s production audit |
+| `/code` | Execute next TODO from AGENTS.md |
+| `/context-reset` | Reset/inspect context tracking state |
 | `/git-polish` | Rewrite commits atomically |
+| `/issue` | Convert GitHub issue to atomic task breakdown |
+| `/loop` | Ralph-loop persistent task execution |
+| `/parallel` | Parallel task execution with dependency analysis |
+| `/push` | Pre-push checks and PR creation |
+| `/quality` | Multi-agent quality review |
+| `/research` | Deep issue research and brainstorming |
+| `/review-pr` | Code review with confidence scoring |
+| `/self-review` | File-by-file self-review checklist |
+| `/task` | Spec-first task execution |
+| `/test` | Run and verify tests |
 
 ### Skills (Agent-Decided)
 Cursor automatically invokes these based on context:
@@ -73,9 +80,16 @@ Specialized agents for parallel/isolated work:
 
 | Agent | Purpose |
 |-------|---------|
-| `verifier` | Skeptically validate claimed completions |
-| `researcher` | Deep issue investigation |
-| `auditor` | Security and reliability checks |
+| `api-reviewer` | API design specialist (REST/gRPC/GraphQL) |
+| `arch-explorer` | Explores 3-5 architectural approaches |
+| `auditor` | Go/K8s security and reliability auditor |
+| `devil-advocate` | Contrarian reviewer, challenges assumptions |
+| `perf-critic` | Performance specialist |
+| `prototyper` | Rapid prototyping specialist |
+| `researcher` | Deep issue research and root cause analysis |
+| `synthesizer` | Combines multiple agent outputs |
+| `task-analyzer` | Identifies parallelization opportunities |
+| `verifier` | Skeptically validates claimed completions |
 
 ### Hooks (Automation)
 Automatic behaviors:
@@ -84,7 +98,7 @@ Automatic behaviors:
 |------|---------|--------|
 | `format.sh` | After file edit | Auto-format (Go, TS, Python, Rust) |
 | `security-gate.sh` | Before shell | Block dangerous commands |
-| `grind.sh` | On stop | Auto-continue iteration loops |
+| `task-loop.sh` | On stop | Auto-continue iteration loops |
 
 ### Rules (Always-On)
 Project rules applied to every conversation:
