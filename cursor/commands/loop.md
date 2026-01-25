@@ -118,6 +118,41 @@ The loop will:
 4. Check if all tasks done
 5. Repeat until `Status: DONE` or max reached
 
+## Output Format
+
+### On Start
+```markdown
+## 🔁 Loop Started
+
+**Task:** {task description}
+**Done when:** "{completion phrase}"
+**Budget:** {N} iterations
+
+Beginning iteration 1/{N}...
+```
+
+### Per Iteration
+```markdown
+📍 Iteration {N}/{max} | {remaining} tasks remaining
+
+Continue working on TODO items in AGENTS.md
+```
+
+### On Complete
+```markdown
+## ✅ Loop Complete
+
+**Task:** {task}
+**Iterations:** {N}/{max}
+**Duration:** {time}
+**Result:** {completion phrase found | max reached | cancelled}
+
+### Summary
+- Tasks completed: {N}
+- Files changed: {list}
+- Commits: {count}
+```
+
 ## Constraints
 - **Max iterations**: Always enforced as safety
 - **Completion phrase**: Exact match required

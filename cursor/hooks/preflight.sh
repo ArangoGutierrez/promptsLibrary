@@ -119,15 +119,35 @@ preflight_loop() {
     return 0
 }
 
+# Escape string for safe JSON inclusion
+# Prevents JSON injection via specially crafted error messages
+json_escape() {
+    printf '%s' "$1" | jq -Rs '.'
+}
+
 # Output JSON result for Cursor hooks
 # Usage: preflight_result "error message" → returns JSON with error
 #        preflight_result → returns JSON with success
 preflight_result() {
     if [ -n "$1" ]; then
+        # Escape error message to prevent JSON injection
+        local escaped_error
+        if command -v jq &>/dev/null; then
+            escaped_error=$(json_escape "$1")
+            # Remove surrounding quotes added by jq -Rs
+            escaped_error="${escaped_error:1:-1}"
+        else
+            # Fallback: basic escaping for quotes and backslashes
+            escaped_error="${1//\\/\\\\}"
+            escaped_error="${escaped_error//\"/\\\"}"
+            escaped_error="${escaped_error//$'\n'/\\n}"
+            escaped_error="${escaped_error//$'\r'/\\r}"
+            escaped_error="${escaped_error//$'\t'/\\t}"
+        fi
         cat << EOF
 {
   "continue": false,
-  "error": "$1"
+  "error": "$escaped_error"
 }
 EOF
     else

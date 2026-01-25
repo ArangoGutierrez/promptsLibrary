@@ -4,9 +4,15 @@
 
 set -e
 
-# Prerequisite check
+# Prerequisite check - CRITICAL: fail closed if jq missing
 if ! command -v jq &> /dev/null; then
-    echo '{"error": "jq is required but not installed. Run: brew install jq"}' >&2
+    # Fail closed: block all commands if we can't validate them
+    cat << 'EOF'
+{
+  "continue": false,
+  "error": "Security gate requires jq but it's not installed. Run: brew install jq"
+}
+EOF
     exit 0
 fi
 

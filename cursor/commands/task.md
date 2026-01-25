@@ -97,6 +97,34 @@ Exceeded → Escalate to human
 git commit -s -S -m "type(scope): description"
 ```
 
+## Output Format
+
+```markdown
+## Task: {description}
+
+### Specification
+| Element | Definition |
+|---------|------------|
+| Inputs | {data/state entering} |
+| Outputs | {what changes} |
+| Constraints | {MUST/SHOULD/MUST NOT} |
+| Acceptance | {verification criteria} |
+
+### Progress
+| # | Task | Status | Commit |
+|---|------|--------|--------|
+| 1 | {task} | `[DONE]` | {hash} |
+| 2 | {task} | `[WIP]` | — |
+
+### Verification
+- [x] Code compiles
+- [x] Tests pass
+- [ ] Acceptance criteria met
+
+### Next
+{what remains or "Ready for PR"}
+```
+
 ## PR
 ```bash
 gh pr create --title "type(scope): desc" --body "Fixes #N"

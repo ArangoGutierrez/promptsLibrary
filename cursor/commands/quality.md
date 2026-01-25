@@ -98,6 +98,36 @@ Combine all agent outputs:
 | `/quality --api` | api-reviewer focus |
 | `/quality --perf` | perf-critic focus |
 
+## Output Format
+
+```markdown
+## Quality Report: {scope}
+
+### Risk Level: 🔴 High / 🟡 Medium / 🟢 Low
+
+### Summary
+| Category | Issues | Severity |
+|----------|--------|----------|
+| Security | {N} | {crit/high/med} |
+| Performance | {N} | {high/med/low} |
+| API | {N} | {major/minor} |
+| Tests | {pass/fail} | — |
+
+### Findings
+
+#### 🔴 Blocking (must fix)
+- `file:line` — {issue} → {fix}
+
+#### 🟡 Should Fix
+- `file:line` — {issue} → {fix}
+
+#### 🟢 Suggestions
+- {recommendation}
+
+### Verdict
+✅ Ready / ⚠️ Fix Required / 🚫 Blocked
+```
+
 ## Constraints
 - **Parallel execution**: All agents run simultaneously
 - **Synthesis required**: Don't dump raw outputs

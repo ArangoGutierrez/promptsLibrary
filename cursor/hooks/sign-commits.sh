@@ -10,9 +10,15 @@
 
 set -e
 
-# Prerequisite check
+# Prerequisite check - CRITICAL: fail closed if jq missing
 if ! command -v jq &> /dev/null; then
-    echo '{"error": "jq is required but not installed. Run: brew install jq"}' >&2
+    # Fail closed: don't allow unsigned commits through
+    cat << 'EOF'
+{
+  "continue": false,
+  "error": "Commit signing requires jq but it's not installed. Run: brew install jq"
+}
+EOF
     exit 0
 fi
 
@@ -51,13 +57,40 @@ EOF
     exit 0
 fi
 
+# Verify GPG signing is configured before adding -S flag
+gpg_configured=true
+if ! git config --get user.signingkey &>/dev/null && ! git config --get gpg.format &>/dev/null; then
+    # Check if SSH signing is configured as alternative
+    if ! git config --get gpg.ssh.allowedSignersFile &>/dev/null; then
+        gpg_configured=false
+    fi
+fi
+
 # Build flags to add
 add_flags=""
 if [ "$missing_signoff" = true ]; then
     add_flags="-s"
 fi
 if [ "$missing_signature" = true ]; then
-    add_flags="$add_flags -S"
+    if [ "$gpg_configured" = true ]; then
+        add_flags="$add_flags -S"
+    else
+        # Warn but don't add -S if GPG not configured (would fail anyway)
+        cat << 'EOF'
+{
+  "continue": true,
+  "permission": "ask",
+  "user_message": "⚠️ GPG/SSH signing not configured. Commit will not be cryptographically signed.",
+  "agent_message": "GPG signing key not configured. Run 'git config --global user.signingkey <key-id>' to enable. Proceeding with signoff only."
+}
+EOF
+        # Only add signoff, skip signature
+        add_flags="-s"
+        # Insert missing signoff after "git commit"
+        corrected_command="git commit${add_flags:+ $add_flags}${command#git commit}"
+        json_safe_command=$(printf '%s' "$corrected_command" | jq -Rs '.')
+        exit 0
+    fi
 fi
 
 # Insert missing flags after "git commit"

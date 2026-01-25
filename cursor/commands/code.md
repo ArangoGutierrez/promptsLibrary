@@ -83,6 +83,42 @@ Update AGENTS.md: `[BLOCKED:{reason}]`
 | Compiles? | ✓/✗ |
 | Tests pass? | ✓/✗ |
 
+## Output Format
+
+### On Task Start
+```markdown
+## Current Task: #{N}
+
+**Task:** {description}
+**Files:** {files to modify}
+**Status:** [TODO] → [WIP]
+```
+
+### On Task Complete
+```markdown
+## ✓ Task #{N} Complete
+
+**Commit:** {hash}
+**Changed:** {files}
+
+### Progress
+| Done | Total | Next |
+|------|-------|------|
+| {X} | {Y} | Task #{N+1}: {desc} |
+
+Run `/code` to continue, or `/test` to verify.
+```
+
+### On Blocked
+```markdown
+## ⚠️ Task #{N} Blocked
+
+**Reason:** {why blocked}
+**Need:** {what's required to unblock}
+
+AGENTS.md updated: `[BLOCKED:{reason}]`
+```
+
 ## Constraints
 - **One task at a time**: Don't scope creep
 - **Atomic commits**: Each task = 1 commit

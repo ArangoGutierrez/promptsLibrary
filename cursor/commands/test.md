@@ -78,6 +78,42 @@ git diff --name-only HEAD~1
 {targeted_test_command}
 ```
 
+## Output Format
+
+### On Success
+```markdown
+## ✅ Tests Passed
+
+**Status:** PASS
+**Tests:** {passed}/{total}
+**Duration:** {time}
+
+### Coverage (if available)
+| Package | Coverage |
+|---------|----------|
+| {pkg} | {%} |
+```
+
+### On Failure
+```markdown
+## ❌ Tests Failed
+
+**Status:** FAIL
+**Passed:** {N}/{total}
+**Failed:** {M}
+
+### Failures
+| Test | Error |
+|------|-------|
+| {test_name} | {error_message} |
+
+### Suggested Fixes
+1. {specific fix for failure 1}
+2. {specific fix for failure 2}
+
+Run `/code` to fix, then `/test` again.
+```
+
 ## Constraints
 - **Auto-detect**: Use project's test toolchain
 - **Report clearly**: Show pass/fail summary
