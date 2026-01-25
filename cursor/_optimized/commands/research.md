@@ -1,5 +1,5 @@
 # Research
-`#{n}`→GH issue|`{topic}`→codebase
+`#{n}`→GH issue|`{topic}`→codebase|`brainstorm: {idea}`→deep-dive
 READ-ONLY
 
 ## Flow
@@ -11,6 +11,24 @@ READ-ONLY
   C1:files exist?|C2:behavior repro?|C3:understanding=code?
 6.Solutions(2-3 each):Approach|Files+why|Complex(LOC)|Trade|Risk
 7.Compare:|Criterion|S1|S2|S3|→Effort/Risk/Maintain(L/M/H)
+
+## Brainstorm Flow (brainstorm: {idea})
+B1.Extract:concept|problem|audience|assumptions
+B2.WebSearch:competitors|market|feasibility|failures|opinions
+B3.Lenses:User(benefit?pain?barriers?)|Tech(feasible?stack?scale?)|Biz(revenue?fit?moat?)|Risk(kills?deps?SPOF?)
+B4.SWOT→B5.Assumptions(valid?evidence?risk-if-wrong)
+B6.Angles:pivots|MVP|full-vision|combos
+B7.Actions:P0(immediate)|P1(next)|P2(later)
+
+## Brainstorm Output
+```
+# Brainstorm: {idea}
+## TL;DR
+## Research Findings
+## SWOT
+## Bull/Bear/Base Case
+## Recommendations (Do|Avoid|Validate)
+```
 
 ## Output
 ```

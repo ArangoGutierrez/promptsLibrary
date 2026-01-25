@@ -16,5 +16,13 @@ Update:[BLOCKED:{reason}]
 ## Reflect
 Single-concern?|Minimal?|Compiles?|Tests?
 
+## Troubleshoot
+|Issue|Fix|
+|no-AGENTS.md|run `/issue #{n}` or `/task {desc}` first|
+|no-TODO|check [BLOCKED] tasks|unblock or run `/test`/`/self-review`|
+|dep-missing|work on prerequisite task first|
+|commit-fail|GPG: `git config --global user.signingkey {KEY}`|hook: fix lint|conflict: `git pull --rebase`|
+|build-fail|check imports/interfaces|revert if needed|
+
 ## Rules
 1task=1commit|atomic|update AGENTS.md|refs issue

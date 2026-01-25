@@ -15,6 +15,14 @@ Report:task,iterations,duration,result,changes
 ## Cancel
 "cancel loop"→status:cancelled,update AGENTS.md
 
+## Troubleshoot
+|Issue|Fix|
+|stops-after-1|phrase matched? use specific|hook missing? check hooks.json|state missing? re-run|
+|state-corrupt|`rm .cursor/loop-state.json`|fix manually|
+|stuck-same-step|cancel|analyze blocker|fix|restart|
+|max-reached|review progress|restart with higher `--max`|break into subtasks|
+|AGENTS-not-update|check syntax|verify markers|
+
 ## +/issue
 `/loop Work through AGENTS.md --done "Status: DONE" --max 15`
 Read AGENTS.md→next[TODO]→impl→commit→[TODO]→[DONE]→repeat
