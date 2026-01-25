@@ -23,11 +23,9 @@ Complete reference guide for all Cursor agents in this project.
 
 ### Purpose
 
-
 Reviews API design for consistency, best practices, versioning, security, and developer experience. Focuses on creating APIs that developers love to use.
 
 ### When It's Used
-
 
 - **Proactively** when creating or modifying HTTP handlers
 - **Proactively** for REST endpoints, gRPC services, GraphQL schemas
@@ -50,14 +48,12 @@ Reviews API design for consistency, best practices, versioning, security, and de
 
 ### Output Format
 
-
 - Summary with endpoint count and issue counts
 - Critical/Major/Minor issues by endpoint
 - Consistency report
 - Recommended standards
 
 ### Related Agents
-
 
 - `auditor` - Security-focused review
 - `perf-critic` - Performance of API endpoints
@@ -189,6 +185,7 @@ Finds weaknesses, challenges assumptions, identifies failure modes, and question
 - Always use for: ADRs, technical RFCs, "we should" statements, migration proposals
 
 ### Model
+
 - **Model**: `inherit`
 - **Read-only**: `true`
 
@@ -257,6 +254,7 @@ Finds real performance issues without premature optimization paranoia. Focuses o
 4. **Concurrency**: Lock contention, unnecessary serialization, blocking operations
 
 ### Severity Levels
+
 - **Critical**: O(n²)+ in hot path, N+1 queries (must fix)
 - **High**: Unbatched I/O, missing indexes (should fix)
 - **Medium**: Suboptimal allocations, lock contention (fix if easy)
@@ -299,6 +297,7 @@ Creates minimal but functional implementations to validate architectural approac
 - Rapid proof-of-concept development
 
 ### Model
+
 - **Model**: `inherit`
 - **Is Background**: `true` (runs in background, can run multiple in parallel)
 
