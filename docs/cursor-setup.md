@@ -154,6 +154,46 @@ For one-off use, paste the prompt content directly into the chat.
 
 ## Advanced Configuration
 
+### Context Awareness
+
+The hooks system includes context monitoring to recommend when to `/summarize` or start a new session.
+
+**How it works:**
+- `context-monitor.sh` hook tracks iterations, files touched, and tasks completed
+- Estimates context usage using heuristics (no direct token count access)
+- Recommends actions based on context health + task status from AGENTS.md
+
+**Global config** (`~/.cursor/context-config.json`):
+
+```json
+{
+  "thresholds": {
+    "healthy_max": 50,
+    "filling_max": 75,
+    "critical_max": 90
+  },
+  "weights": {
+    "iteration": 8,
+    "file": 2,
+    "task": 15,
+    "summarize_recovery": 25
+  },
+  "tasks_before_new_session": 3
+}
+```
+
+**Commands:**
+- `/context-reset` — Reset tracking after manual `/summarize`
+- `/context-reset --status` — Check current context health
+
+**Decision guide:**
+
+| Context State | Mid-Task | Task Done |
+|---------------|----------|-----------|
+| Healthy | Continue | New session (recommended) |
+| Filling | `/summarize` | New session |
+| Critical | `/summarize` + finish | New session (required) |
+
 ### Multiple Prompt Libraries
 
 If you maintain multiple prompt libraries:
