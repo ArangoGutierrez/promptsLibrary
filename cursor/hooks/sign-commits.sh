@@ -5,6 +5,8 @@
 # Enforces:
 # -s : DCO Signoff (Developer Certificate of Origin)
 # -S : GPG/SSH cryptographic signature
+#
+# Auto-adds missing flags to git commit commands.
 
 set -e
 
@@ -21,10 +23,6 @@ EOF
     exit 0
 fi
 
-# Check for --amend (still needs signing)
-# Check for -m or --message (inline commit)
-# Skip if it's just `git commit` with no other args (will open editor)
-
 # Track what's missing
 missing_signoff=false
 missing_signature=false
@@ -39,7 +37,7 @@ if ! echo "$command" | grep -qE "\s-S(\s|$)|--gpg-sign"; then
     missing_signature=true
 fi
 
-# If both present, allow
+# If both present, allow as-is
 if [ "$missing_signoff" = false ] && [ "$missing_signature" = false ]; then
     cat << 'EOF'
 { "continue": true, "permission": "allow" }
@@ -47,29 +45,24 @@ EOF
     exit 0
 fi
 
-# Build message about what's missing
-missing_flags=""
+# Build flags to add
+add_flags=""
 if [ "$missing_signoff" = true ]; then
-    missing_flags="-s (DCO signoff)"
+    add_flags="-s"
 fi
 if [ "$missing_signature" = true ]; then
-    if [ -n "$missing_flags" ]; then
-        missing_flags="$missing_flags and -S (GPG/SSH signature)"
-    else
-        missing_flags="-S (GPG/SSH signature)"
-    fi
+    add_flags="$add_flags -S"
 fi
 
-# Suggest the corrected command
-# Insert -s -S after "git commit"
-corrected_command=$(echo "$command" | sed 's/^git commit/git commit -s -S/')
+# Insert missing flags after "git commit"
+corrected_command=$(echo "$command" | sed "s/^git commit/git commit $add_flags/")
 
+# Return modified command - Cursor will execute this instead
 cat << EOF
 {
   "continue": true,
-  "permission": "ask",
-  "user_message": "⚠️ Unsigned commit detected. Missing: $missing_flags",
-  "agent_message": "This commit is missing required signing flags. Use: $corrected_command"
+  "permission": "allow",
+  "command": "$corrected_command"
 }
 EOF
 exit 0
