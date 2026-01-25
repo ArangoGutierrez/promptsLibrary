@@ -566,13 +566,17 @@ Verifies that work claimed as complete actually works. Trusts nothing, requires 
 ## Agent Model Types
 
 ### `fast` Model
+
 Used for: `api-reviewer`, `auditor`, `perf-critic`, `researcher`, `verifier`
+
 - Faster, more cost-effective
 - Good for focused, specific tasks
 - Suitable for read-only analysis
 
 ### `inherit` Model
+
 Used for: `arch-explorer`, `devil-advocate`, `prototyper`, `synthesizer`
+
 - Uses conversation's current model
 - Better for complex reasoning
 - Suitable for exploration and synthesis
@@ -580,6 +584,7 @@ Used for: `arch-explorer`, `devil-advocate`, `prototyper`, `synthesizer`
 ## Agent Read-Only Status
 
 All agents are **read-only** (`readonly: true`) except:
+
 - `prototyper` - Creates prototype files in `.prototypes/` directory
 
 This ensures agents provide analysis and recommendations without modifying production code.
@@ -587,22 +592,26 @@ This ensures agents provide analysis and recommendations without modifying produ
 ## Agent Relationships
 
 ### Architecture Flow
-```
+
+```text
 arch-explorer → devil-advocate → prototyper (parallel) → synthesizer
 ```
 
 ### Quality Review Flow
-```
+
+```text
 auditor + perf-critic + api-reviewer + verifier → synthesizer
 ```
 
 ### Research Flow
-```
+
+```text
 researcher → arch-explorer → task-analyzer
 ```
 
 ### Verification Flow
-```
+
+```text
 verifier → (any agent providing implementation)
 ```
 
