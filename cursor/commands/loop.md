@@ -19,6 +19,15 @@ Ralph-Loop style persistent task execution until completion.
 /loop Implement feature from AGENTS.md --done "DONE" --max 10
 ```
 
+## Workflow
+
+1. Initialize loop state in `.cursor/loop-state.json`
+2. Display start message with task details
+3. Execute task iteration
+4. Check completion conditions (phrase, max, or AGENTS.md status)
+5. Either stop or continue with next iteration
+6. Generate completion report
+
 ## How It Works
 
 ### 1. Initialize Loop
