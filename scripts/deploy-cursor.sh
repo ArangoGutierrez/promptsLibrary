@@ -19,6 +19,15 @@
 #   --restore         Restore from latest backup
 #   --help            Show this help message
 #
+# Remote Installation (no git clone required):
+#   curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+#   # or with wget:
+#   wget -qO- https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+#
+# Environment Variables:
+#   CURSOR_DEV_REPO   Override the GitHub repo (default: ArangoGutierrez/promptsLibrary)
+#   CURSOR_DEV_BRANCH Override the branch (default: main)
+#
 
 set -e
 
@@ -44,6 +53,13 @@ LAZY=false
 BACKUP=false
 RESTORE=false
 STATUS=false
+DOWNLOAD=false
+
+# GitHub repo settings (can be overridden with environment variables)
+GITHUB_REPO="${CURSOR_DEV_REPO:-ArangoGutierrez/promptsLibrary}"
+GITHUB_BRANCH="${CURSOR_DEV_BRANCH:-main}"
+GITHUB_RAW_BASE="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
+TEMP_DOWNLOAD_DIR=""
 
 # Get script directory (where the repo is)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -112,12 +128,21 @@ while [[ $# -gt 0 ]]; do
             STATUS=true
             shift
             ;;
+        --download)
+            DOWNLOAD=true
+            MODE="copy"  # Force copy mode for downloads
+            shift
+            ;;
         --help)
             cat << 'HELP'
 deploy-cursor.sh - Deploy Cursor configurations to user's system
 
 Usage:
   ./scripts/deploy-cursor.sh [OPTIONS]
+
+Remote Installation (no git clone required):
+  curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+  wget -qO- https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
 
 Options:
   --global          Deploy to ~/.cursor/ (default)
@@ -131,11 +156,20 @@ Options:
   --status          Show current deployment status
   --optimized       Deploy token-optimized versions (~60% smaller)
   --lazy            Deploy lazy-loading framework (~95% smaller always-on)
+  --download        Download files from GitHub (no git clone needed)
   --backup          Create backup before deploying
   --restore         Restore from latest backup
   --help            Show this help message
 
+Environment Variables:
+  CURSOR_DEV_REPO   Override the GitHub repo (default: ArangoGutierrez/promptsLibrary)
+  CURSOR_DEV_BRANCH Override the branch (default: main)
+
 Examples:
+  # Remote installation (one-liner, no clone needed)
+  curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+
+  # Local deployment (after git clone)
   ./scripts/deploy-cursor.sh                    # Deploy globally with symlinks
   ./scripts/deploy-cursor.sh --dry-run          # Preview what would be done
   ./scripts/deploy-cursor.sh --copy --force     # Copy files, overwrite existing
@@ -148,6 +182,10 @@ Examples:
   ./scripts/deploy-cursor.sh --lazy             # Deploy lazy-loading (minimal always-on)
   ./scripts/deploy-cursor.sh --backup --update  # Backup before updating
   ./scripts/deploy-cursor.sh --restore          # Restore from backup
+
+  # Remote with options
+  curl -fsSL .../deploy-cursor.sh | bash -s -- --download --optimized
+  curl -fsSL .../deploy-cursor.sh | bash -s -- --download --lazy
 HELP
             exit 0
             ;;
@@ -186,8 +224,225 @@ detect_os() {
     esac
 }
 
+# Cleanup function for download mode
+cleanup_download() {
+    if [ -n "$TEMP_DOWNLOAD_DIR" ] && [ -d "$TEMP_DOWNLOAD_DIR" ]; then
+        rm -rf "$TEMP_DOWNLOAD_DIR"
+    fi
+}
+
+# Download a single file from GitHub
+download_file() {
+    local path="$1"
+    local dest="$2"
+    local url="${GITHUB_RAW_BASE}/${path}"
+    
+    mkdir -p "$(dirname "$dest")"
+    
+    if command -v curl &> /dev/null; then
+        curl -fsSL "$url" -o "$dest" 2>/dev/null
+    elif command -v wget &> /dev/null; then
+        wget -q "$url" -O "$dest" 2>/dev/null
+    else
+        echo -e "${RED}Error: curl or wget required for download mode${NC}"
+        exit 1
+    fi
+}
+
+# Download files from GitHub for remote installation
+setup_download_mode() {
+    echo -e "${BLUE}=== Remote Installation Mode ===${NC}"
+    echo -e "${CYAN}Downloading from: ${GITHUB_REPO} (${GITHUB_BRANCH})${NC}"
+    echo ""
+    
+    # Create temp directory
+    TEMP_DOWNLOAD_DIR=$(mktemp -d)
+    trap cleanup_download EXIT
+    
+    # Create directory structure
+    mkdir -p "$TEMP_DOWNLOAD_DIR/cursor"/{commands,agents,rules,hooks,schemas}
+    mkdir -p "$TEMP_DOWNLOAD_DIR/cursor/skills"/{deep-analysis,go-audit,performance-optimization,pr-review,spec-first,testing-tdd}
+    mkdir -p "$TEMP_DOWNLOAD_DIR/cursor/_optimized"/{commands,agents,rules}
+    mkdir -p "$TEMP_DOWNLOAD_DIR/cursor/_optimized/skills"/{deep-analysis,go-audit,performance-optimization,pr-review,spec-first,testing-tdd}
+    mkdir -p "$TEMP_DOWNLOAD_DIR/cursor/_lazy"/{rules,modes}
+    
+    # Download main cursor files
+    echo -e "${BLUE}Downloading configuration files...${NC}"
+    
+    # Commands
+    local commands=(
+        "architect" "audit" "code" "context-reset" "debug" "docs"
+        "git-polish" "issue" "loop" "parallel" "push" "quality"
+        "refactor" "research" "review-pr" "self-review" "task" "test"
+    )
+    for cmd in "${commands[@]}"; do
+        echo -ne "  commands/${cmd}.md... "
+        if download_file "cursor/commands/${cmd}.md" "$TEMP_DOWNLOAD_DIR/cursor/commands/${cmd}.md"; then
+            echo -e "${GREEN}✓${NC}"
+        else
+            echo -e "${YELLOW}skipped${NC}"
+        fi
+    done
+    
+    # Agents
+    local agents=(
+        "api-reviewer" "arch-explorer" "auditor" "devil-advocate" "documenter"
+        "perf-critic" "prototyper" "researcher" "synthesizer" "task-analyzer"
+        "test-generator" "verifier"
+    )
+    for agent in "${agents[@]}"; do
+        echo -ne "  agents/${agent}.md... "
+        if download_file "cursor/agents/${agent}.md" "$TEMP_DOWNLOAD_DIR/cursor/agents/${agent}.md"; then
+            echo -e "${GREEN}✓${NC}"
+        else
+            echo -e "${YELLOW}skipped${NC}"
+        fi
+    done
+    
+    # Rules
+    local rules=("go-style" "project" "quality-gate" "security" "user-rules")
+    for rule in "${rules[@]}"; do
+        echo -ne "  rules/${rule}.md... "
+        if download_file "cursor/rules/${rule}.md" "$TEMP_DOWNLOAD_DIR/cursor/rules/${rule}.md"; then
+            echo -e "${GREEN}✓${NC}"
+        else
+            echo -e "${YELLOW}skipped${NC}"
+        fi
+    done
+    
+    # Skills
+    local skills=("deep-analysis" "go-audit" "performance-optimization" "pr-review" "spec-first" "testing-tdd")
+    for skill in "${skills[@]}"; do
+        echo -ne "  skills/${skill}/SKILL.md... "
+        if download_file "cursor/skills/${skill}/SKILL.md" "$TEMP_DOWNLOAD_DIR/cursor/skills/${skill}/SKILL.md"; then
+            echo -e "${GREEN}✓${NC}"
+        else
+            echo -e "${YELLOW}skipped${NC}"
+        fi
+    done
+    
+    # Hooks
+    local hooks=("context-monitor" "format" "preflight" "security-gate" "sign-commits" "task-loop")
+    for hook in "${hooks[@]}"; do
+        echo -ne "  hooks/${hook}.sh... "
+        if download_file "cursor/hooks/${hook}.sh" "$TEMP_DOWNLOAD_DIR/cursor/hooks/${hook}.sh"; then
+            echo -e "${GREEN}✓${NC}"
+        else
+            echo -e "${YELLOW}skipped${NC}"
+        fi
+    done
+    
+    # Schemas
+    local schemas=("hook-output.schema" "hooks.schema" "state-file.schema")
+    for schema in "${schemas[@]}"; do
+        echo -ne "  schemas/${schema}.json... "
+        if download_file "cursor/schemas/${schema}.json" "$TEMP_DOWNLOAD_DIR/cursor/schemas/${schema}.json"; then
+            echo -e "${GREEN}✓${NC}"
+        else
+            echo -e "${YELLOW}skipped${NC}"
+        fi
+    done
+    
+    # hooks.json
+    echo -ne "  hooks.json... "
+    if download_file "cursor/hooks.json" "$TEMP_DOWNLOAD_DIR/cursor/hooks.json"; then
+        echo -e "${GREEN}✓${NC}"
+    else
+        echo -e "${YELLOW}skipped${NC}"
+    fi
+    
+    # Download optimized versions if --optimized flag
+    if [ "$OPTIMIZED" = true ]; then
+        echo ""
+        echo -e "${CYAN}Downloading optimized versions...${NC}"
+        
+        for cmd in "${commands[@]}"; do
+            echo -ne "  _optimized/commands/${cmd}.md... "
+            if download_file "cursor/_optimized/commands/${cmd}.md" "$TEMP_DOWNLOAD_DIR/cursor/_optimized/commands/${cmd}.md"; then
+                echo -e "${GREEN}✓${NC}"
+            else
+                echo -e "${YELLOW}skipped${NC}"
+            fi
+        done
+        
+        for agent in "${agents[@]}"; do
+            echo -ne "  _optimized/agents/${agent}.md... "
+            if download_file "cursor/_optimized/agents/${agent}.md" "$TEMP_DOWNLOAD_DIR/cursor/_optimized/agents/${agent}.md"; then
+                echo -e "${GREEN}✓${NC}"
+            else
+                echo -e "${YELLOW}skipped${NC}"
+            fi
+        done
+        
+        for rule in "${rules[@]}"; do
+            echo -ne "  _optimized/rules/${rule}.md... "
+            if download_file "cursor/_optimized/rules/${rule}.md" "$TEMP_DOWNLOAD_DIR/cursor/_optimized/rules/${rule}.md"; then
+                echo -e "${GREEN}✓${NC}"
+            else
+                echo -e "${YELLOW}skipped${NC}"
+            fi
+        done
+        
+        for skill in "${skills[@]}"; do
+            echo -ne "  _optimized/skills/${skill}/SKILL.md... "
+            if download_file "cursor/_optimized/skills/${skill}/SKILL.md" "$TEMP_DOWNLOAD_DIR/cursor/_optimized/skills/${skill}/SKILL.md"; then
+                echo -e "${GREEN}✓${NC}"
+            else
+                echo -e "${YELLOW}skipped${NC}"
+            fi
+        done
+    fi
+    
+    # Download lazy versions if --lazy flag
+    if [ "$LAZY" = true ]; then
+        echo ""
+        echo -e "${MAGENTA}Downloading lazy-loading framework...${NC}"
+        
+        local lazy_rules=("core" "go" "k8s" "python" "security" "ts")
+        for rule in "${lazy_rules[@]}"; do
+            echo -ne "  _lazy/rules/${rule}.md... "
+            if download_file "cursor/_lazy/rules/${rule}.md" "$TEMP_DOWNLOAD_DIR/cursor/_lazy/rules/${rule}.md"; then
+                echo -e "${GREEN}✓${NC}"
+            else
+                echo -e "${YELLOW}skipped${NC}"
+            fi
+        done
+        
+        local lazy_modes=("deep" "perf" "security" "tdd")
+        for mode in "${lazy_modes[@]}"; do
+            echo -ne "  _lazy/modes/${mode}.md... "
+            if download_file "cursor/_lazy/modes/${mode}.md" "$TEMP_DOWNLOAD_DIR/cursor/_lazy/modes/${mode}.md"; then
+                echo -e "${GREEN}✓${NC}"
+            else
+                echo -e "${YELLOW}skipped${NC}"
+            fi
+        done
+    fi
+    
+    echo ""
+    
+    # Update paths to use temp directory
+    REPO_DIR="$TEMP_DOWNLOAD_DIR"
+    SOURCE_DIR="$TEMP_DOWNLOAD_DIR/cursor"
+    OPTIMIZED_DIR="$TEMP_DOWNLOAD_DIR/cursor/_optimized"
+    LAZY_DIR="$TEMP_DOWNLOAD_DIR/cursor/_lazy"
+    
+    # Re-select source based on mode
+    if [ "$LAZY" = true ] && [ -d "$LAZY_DIR" ]; then
+        SOURCE_DIR="$LAZY_DIR"
+    elif [ "$OPTIMIZED" = true ] && [ -d "$OPTIMIZED_DIR" ]; then
+        SOURCE_DIR="$OPTIMIZED_DIR"
+    fi
+}
+
 # Get current repo version (git commit hash + date)
 get_repo_version() {
+    if [ "$DOWNLOAD" = true ]; then
+        # For download mode, use current date and branch info
+        local date=$(date +%Y-%m-%d)
+        echo "download|$date|${GITHUB_BRANCH}"
+        return
+    fi
     cd "$REPO_DIR"
     local hash=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     local date=$(git log -1 --format=%ci 2>/dev/null | cut -d' ' -f1 || echo "unknown")
@@ -511,6 +766,12 @@ show_token_impact() {
 }
 
 OS=$(detect_os)
+
+# Handle download mode first (before checking source directory)
+if [ "$DOWNLOAD" = true ]; then
+    setup_download_mode
+fi
+
 echo -e "${BLUE}Detected OS: $OS${NC}"
 echo -e "${BLUE}Source: $SOURCE_DIR${NC}"
 echo -e "${BLUE}Target: $TARGET_DIR${NC}"
@@ -520,7 +781,12 @@ echo ""
 # Verify source exists
 if [ ! -d "$SOURCE_DIR" ]; then
     echo -e "${RED}Error: Source directory not found: $SOURCE_DIR${NC}"
-    echo "Make sure you're running from the repository root."
+    if [ "$DOWNLOAD" = false ]; then
+        echo "Make sure you're running from the repository root, or use --download for remote installation."
+        echo ""
+        echo "Remote installation:"
+        echo "  curl -fsSL https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/scripts/deploy-cursor.sh | bash -s -- --download"
+    fi
     exit 1
 fi
 

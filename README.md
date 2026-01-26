@@ -11,16 +11,36 @@ A curated collection of AI configurations for software engineering. Built for [C
 
 ## Quick Start
 
-### 1. Clone the Repository
+### Option A: One-Liner Install (Recommended)
+
+No git clone required — downloads and deploys directly:
+
+```bash
+# Using curl
+curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+
+# Using wget
+wget -qO- https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+```
+
+With options:
+
+```bash
+# Token-optimized version (~60% smaller)
+curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download --optimized
+
+# Lazy-loading framework (~95% smaller always-on)
+curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download --lazy
+```
+
+### Option B: Clone the Repository
+
+For auto-updates via symlinks:
 
 ```bash
 git clone https://github.com/ArangoGutierrez/promptsLibrary.git
 cd promptsLibrary
-```
 
-### 2. Deploy to Your System
-
-```bash
 # Deploy globally (to ~/.cursor/)
 ./scripts/deploy-cursor.sh
 
@@ -116,11 +136,20 @@ Project rules applied to every conversation:
 ## Deployment Options
 
 ```bash
+# Remote installation (no clone needed)
+curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
+
 # Default: symlink to ~/.cursor/ (updates auto-propagate)
 ./scripts/deploy-cursor.sh
 
 # Copy files instead (standalone, no auto-updates)
 ./scripts/deploy-cursor.sh --copy
+
+# Token-optimized version (~60% smaller context)
+./scripts/deploy-cursor.sh --optimized
+
+# Lazy-loading framework (~95% smaller always-on)
+./scripts/deploy-cursor.sh --lazy
 
 # Deploy to specific project
 ./scripts/deploy-cursor.sh --project /path/to/project
@@ -130,6 +159,9 @@ Project rules applied to every conversation:
 
 # Overwrite existing files
 ./scripts/deploy-cursor.sh --force
+
+# Smart update (pull latest, show changes, deploy)
+./scripts/deploy-cursor.sh --update
 
 # Remove deployed configurations
 ./scripts/deploy-cursor.sh --uninstall
