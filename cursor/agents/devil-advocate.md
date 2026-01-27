@@ -4,7 +4,7 @@ description: >
   Contrarian reviewer. Use PROACTIVELY before any major architectural decision,
   migration plan, or when a recommendation is made. Always use for: ADRs,
   technical RFCs, "we should" statements, migration proposals.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

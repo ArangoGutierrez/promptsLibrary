@@ -4,7 +4,7 @@ description: >
   Explores 3-5 genuinely different architectural approaches for a given problem.
   Use when facing design decisions with multiple valid solutions. Produces
   comparison matrix with trade-offs. Great for ADRs and technical RFCs.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

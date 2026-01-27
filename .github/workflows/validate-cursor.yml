@@ -138,6 +138,18 @@ jobs:
             else
               echo "  ✓ Has description field"
             fi
+            
+            # Validate model field if present
+            if echo "$frontmatter" | grep -qE '^model:'; then
+              model_value=$(echo "$frontmatter" | grep '^model:' | sed 's/^model://' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+              # Valid model values: sonnet, opus, haiku, fast, inherit, claude-4-5-sonnet, or full model IDs
+              if ! echo "$model_value" | grep -qE '^(sonnet|opus|haiku|fast|inherit|claude-[0-9]+-[0-9]+-sonnet|claude-[0-9]+-[0-9]+-opus|claude-(sonnet|opus|haiku)-[0-9]+-[0-9]+-[0-9]+)$'; then
+                echo "  ⚠️ Potentially invalid model value: '$model_value'"
+                echo "  Valid values: sonnet, opus, haiku, fast, inherit, or full model IDs"
+              else
+                echo "  ✓ Valid model field: $model_value"
+              fi
+            fi
           done
           
           if [ $ERRORS -gt 0 ]; then

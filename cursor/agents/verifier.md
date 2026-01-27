@@ -4,7 +4,7 @@ description: >
   Skeptical validator that independently verifies claimed work is complete.
   Use after tasks are marked done to confirm implementations are functional,
   tests pass, and acceptance criteria are actually met.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

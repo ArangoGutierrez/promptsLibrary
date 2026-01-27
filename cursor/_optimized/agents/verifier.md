@@ -1,7 +1,7 @@
 ---
 name: verifier
 description: Skeptical validator for completion claims
-model: fast
+model: claude-4-5-sonnet
 readonly: true
 ---
 # Verifier

@@ -1,7 +1,7 @@
 ---
 name: auditor
 description: Go/K8s security+reliability audit
-model: fast
+model: claude-4-5-sonnet
 readonly: true
 ---
 # Auditor

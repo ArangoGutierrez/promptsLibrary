@@ -4,7 +4,7 @@ description: >
   Go/K8s security and reliability auditor for checking code for production risks,
   race conditions, resource leaks, or K8s lifecycle issues. Use when reviewing
   code for production readiness or security compliance.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

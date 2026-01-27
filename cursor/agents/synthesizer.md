@@ -4,7 +4,7 @@ description: >
   Combines outputs from multiple parallel agents into a unified recommendation.
   Use after running multiple explorers, reviewers, or prototypers to get a
   consolidated view and final recommendation.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

@@ -216,14 +216,12 @@ claude/
 │   ├── auditor.md
 │   ├── auditor-opt.md
 │   └── ... (all agents in one place)
-├── skills/          # 15 flattened skills
+├── skills/          # 19 skills (includes converted commands)
 │   ├── architect.md
 │   ├── audit.md
-│   └── ... (all skills in one place)
-├── commands/        # 4 extracted commands
 │   ├── code-review.md
 │   ├── ralph-loop.md
-│   └── ... (all commands in one place)
+│   └── ... (all skills in one place)
 ├── hooks/           # 11 hooks (unchanged)
 ├── rules/           # 3 rules (unchanged)
 └── output-styles/   # 1 style (unchanged)
@@ -236,8 +234,10 @@ claude/
 | `agents/{name}.md` | `agents/{name}.md` | Unchanged |
 | `agents-optimized/{name}.md` | `agents/{name}-opt.md` | Suffix added |
 | `custom-skills/skills/{name}/SKILL.md` | `skills/{name}.md` | Flattened |
-| `code-review/commands/code-review.md` | `commands/code-review.md` | Extracted |
-| `ralph-loop/commands/{cmd}.md` | `commands/{cmd}.md` | Extracted |
+| `code-review/commands/code-review.md` | `skills/code-review.md` | Converted to skill |
+| `ralph-loop/commands/ralph-loop.md` | `skills/ralph-loop.md` | Converted to skill |
+| `ralph-loop/commands/help.md` | `skills/ralph-help.md` | Converted to skill |
+| `ralph-loop/commands/cancel-ralph.md` | `skills/cancel-ralph.md` | Converted to skill |
 | `code-simplifier/agents/code-simplifier.md` | `agents/code-simplifier.md` | Moved |
 | `hooks/`, `rules/`, `output-styles/` | (unchanged) | Same paths |
 
@@ -246,22 +246,25 @@ claude/
 **Easier Discovery:**
 - All agents in one directory instead of split across `agents/` and `agents-optimized/`
 - All skills in one place instead of buried in `custom-skills/skills/{name}/`
-- All commands in one place instead of scattered across plugin directories
+- Everything is either an agent or a skill - no separate "commands" concept
 
 **Consistent Naming:**
 - Regular agents: `{name}.md`
 - Optimized agents: `{name}-opt.md`
-- Clear suffix pattern instead of separate directory
+- All skills: `{name}.md`
+- Clear suffix pattern instead of separate directories
 
 **Simplified Deployment:**
 - No plugin metadata (`.claude-plugin/` directories)
 - Direct deployment of resource directories
 - Cleaner deployment script
+- No confusion about commands vs skills
 
 **Better Organization:**
-- Organized by resource type (agents, skills, commands)
+- Organized by resource type (agents, skills)
 - Easier to find and navigate
 - Less nesting and complexity
+- Claude Code's native model: agents for Task tool, skills for / invocation
 
 ### Backward Compatibility
 
@@ -287,8 +290,7 @@ claude/
 
 **Accessing resources:**
 - Agents: `~/.claude/agents/{name}.md` or `~/.claude/agents/{name}-opt.md`
-- Skills: `~/.claude/skills/{name}.md`
-- Commands: `~/.claude/commands/{name}.md`
+- Skills: `~/.claude/skills/{name}.md` (includes former commands)
 
 ### Example Usage After Migration
 
@@ -301,20 +303,21 @@ Use the Task tool with the auditor agent to review src/auth/
 Use the Task tool with the auditor-opt agent to review src/auth/
 ```
 
-**Using skills (no change):**
+**Using skills:**
 ```bash
+# Original skills
 /architect "add caching"
 /audit --fix
 /code
-```
 
-**Using commands (no change):**
-```bash
+# Converted from commands - now skills
 /code-review #123
 /ralph-loop "implement feature"
+/ralph-help status
+/cancel-ralph
 ```
 
-All usage patterns remain the same - only the underlying file organization changed.
+All usage patterns remain the same - former "commands" are now skills with `/` invocation.
 
 ## Future Enhancements
 

@@ -5,7 +5,7 @@ description: >
   and inline code comments. Use when creating documentation, writing docstrings,
   or generating API references. Focuses on accuracy and consistency with project
   documentation style.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

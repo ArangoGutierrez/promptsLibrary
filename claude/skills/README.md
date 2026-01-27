@@ -4,7 +4,7 @@ Workflow orchestration skills for Claude Code - comprehensive task execution fro
 
 ## Overview
 
-This directory contains 15 custom skills that orchestrate complex development workflows using Claude Code's agent system. Each skill coordinates multiple specialized agents, tools, and workflows to accomplish high-level tasks.
+This directory contains 19 custom skills that orchestrate complex development workflows using Claude Code's agent system. Each skill coordinates multiple specialized agents, tools, and workflows to accomplish high-level tasks.
 
 These skills follow the [Agent Skills](https://agentskills.io) open standard and support automatic invocation, tool grants, and string substitution.
 
@@ -41,7 +41,7 @@ Convert GitHub issue to implementation plan.
 - Initialize AGENTS.md
 - Create feature branch
 
-### Code Quality (5 skills)
+### Code Quality (6 skills)
 
 #### /audit (`audit.md`)
 Security and reliability auditing for Go/K8s codebases.
@@ -57,6 +57,13 @@ Multi-agent code review (auditor + perf-critic + api-reviewer + verifier).
 - Risk assessment
 - Verdict (Ready/Fix Required/Blocked)
 - Modes: `--fast`, `--api`, `--perf`
+
+#### /code-review (`code-review.md`)
+Comprehensive PR review with confidence-based scoring.
+- 8-step systematic process
+- Parallel agent reviews
+- Confidence scoring (0-100)
+- GitHub integration
 
 #### /self-review (`self-review.md`)
 Quick pre-push review.
@@ -80,7 +87,7 @@ Automatic test suite detection and execution.
 - Updates AGENTS.md
 - Troubleshooting guidance
 
-### Development Workflow (4 skills)
+### Development Workflow (7 skills)
 
 #### /code (`code.md`)
 Execute next TODO from AGENTS.md.
@@ -114,6 +121,27 @@ Rewrite messy commits into clean, atomic, signed commits.
 - GPG + DCO signatures
 - Verify each commit
 
+#### /ralph-loop (`ralph-loop.md`)
+Iterative development loop using the Ralph technique.
+- Self-referential feedback loops
+- Autonomous iteration
+- Completion promises
+- State persistence across iterations
+
+#### /ralph-help (`ralph-help.md`)
+Display Ralph loop help and status.
+- Show available commands
+- Display current loop state
+- List active tasks
+- Context information
+
+#### /cancel-ralph (`cancel-ralph.md`)
+Cancel current Ralph loop and cleanup state.
+- Stop running loop
+- Save checkpoint
+- Clear context
+- Cleanup temporary files
+
 ### Documentation & Utilities (2 skills)
 
 #### /docs (`docs.md`)
@@ -134,26 +162,30 @@ Reset or inspect context tracking state.
 
 ```
 skills/
-├── Research & Planning
+├── Research & Planning (4 skills)
 │   ├── research.md       # Issue investigation, brainstorming
 │   ├── architect.md      # Architecture exploration
 │   ├── task.md           # Structured task execution
 │   └── issue.md          # GitHub issue to plan
 │
-├── Code Quality
+├── Code Quality (6 skills)
 │   ├── audit.md          # Security & reliability audit
 │   ├── quality.md        # Multi-agent review
+│   ├── code-review.md    # PR review with scoring
 │   ├── self-review.md    # Quick pre-push review
 │   ├── refactor.md       # Systematic refactoring
 │   └── test.md           # Test suite execution
 │
-├── Development Workflow
+├── Development Workflow (7 skills)
 │   ├── code.md           # Execute next TODO
 │   ├── parallel.md       # Concurrent tasks
 │   ├── debug.md          # Systematic debugging
-│   └── git-polish.md     # Clean commit history
+│   ├── git-polish.md     # Clean commit history
+│   ├── ralph-loop.md     # Iterative development loop
+│   ├── ralph-help.md     # Ralph help/status
+│   └── cancel-ralph.md   # Cancel Ralph loop
 │
-└── Documentation & Utilities
+└── Documentation & Utilities (2 skills)
     ├── docs.md           # Documentation generation
     └── context-reset.md  # Context tracking
 ```
@@ -194,7 +226,16 @@ skills/
 ```bash
 /quality                 # Full review (all agents)
 /quality --fast          # Quick check (audit + verify)
+/code-review #123        # Review PR with scoring
 /audit --fix             # Security audit with auto-fix
+```
+
+### Iterative Development
+
+```bash
+/ralph-loop "implement feature X"  # Start Ralph loop
+/ralph-help status                 # Check loop status
+/cancel-ralph                      # Cancel loop
 ```
 
 ### Refactoring Session

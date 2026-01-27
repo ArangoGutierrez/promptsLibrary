@@ -236,13 +236,13 @@ setup_download_mode() {
 
     echo ""
 
-    # Download skills (flattened from custom-skills)
+    # Download skills (flattened from custom-skills + converted commands)
     echo -e "${BLUE}Downloading skills...${NC}"
 
     local skills=(
-        "architect" "audit" "code" "context-reset" "debug" "docs"
-        "git-polish" "issue" "parallel" "quality" "refactor"
-        "research" "self-review" "task" "test"
+        "architect" "audit" "cancel-ralph" "code" "code-review" "context-reset"
+        "debug" "docs" "git-polish" "issue" "parallel" "quality" "ralph-help"
+        "ralph-loop" "refactor" "research" "self-review" "task" "test"
     )
     for skill in "${skills[@]}"; do
         echo -ne "  skills/${skill}.md... "
@@ -255,28 +255,6 @@ setup_download_mode() {
 
     echo -ne "  skills/README.md... "
     if download_file "claude/skills/README.md" "$TEMP_DOWNLOAD_DIR/claude/skills/README.md"; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${YELLOW}skipped${NC}"
-    fi
-
-    echo ""
-
-    # Download commands (extracted from plugins)
-    echo -e "${BLUE}Downloading commands...${NC}"
-
-    local commands=("code-review" "ralph-loop" "help" "cancel-ralph")
-    for cmd in "${commands[@]}"; do
-        echo -ne "  commands/${cmd}.md... "
-        if download_file "claude/commands/${cmd}.md" "$TEMP_DOWNLOAD_DIR/claude/commands/${cmd}.md"; then
-            echo -e "${GREEN}✓${NC}"
-        else
-            echo -e "${YELLOW}skipped${NC}"
-        fi
-    done
-
-    echo -ne "  commands/README.md... "
-    if download_file "claude/commands/README.md" "$TEMP_DOWNLOAD_DIR/claude/commands/README.md"; then
         echo -e "${GREEN}✓${NC}"
     else
         echo -e "${YELLOW}skipped${NC}"
@@ -649,64 +627,6 @@ deploy_skills() {
     fi
 }
 
-# Deploy commands directory
-deploy_commands() {
-    local src_dir="$SOURCE_DIR/commands"
-    local dst_dir="$TARGET_DIR/commands"
-
-    if [ ! -d "$src_dir" ]; then
-        echo -e "${YELLOW}Commands directory not found in source${NC}"
-        return 0
-    fi
-
-    # Check if destination exists
-    if [ -e "$dst_dir" ] || [ -L "$dst_dir" ]; then
-        if [ "$FORCE" = true ]; then
-            if [ "$DRY_RUN" = true ]; then
-                echo -e "${YELLOW}[DRY-RUN] Would remove: $dst_dir${NC}"
-            else
-                # Move existing directory to backup
-                local backup_dir="$dst_dir.old-$(date +%Y%m%d-%H%M%S)"
-                mv "$dst_dir" "$backup_dir"
-                echo -e "${YELLOW}Moved old commands to: $backup_dir${NC}"
-            fi
-        else
-            if [ -L "$dst_dir" ] && [ "$(readlink "$dst_dir")" = "$src_dir" ]; then
-                echo -e "${BLUE}Already linked: $dst_dir${NC}"
-                return 0
-            fi
-            echo -e "${YELLOW}Skipping commands (exists). Use --force to overwrite${NC}"
-            return 0
-        fi
-    fi
-
-    # Create target directory
-    create_target_dir "$TARGET_DIR"
-
-    # Deploy the commands directory
-    if [ "$DRY_RUN" = true ]; then
-        if [ "$MODE" = "symlink" ]; then
-            echo -e "${YELLOW}[DRY-RUN] Would symlink commands: $dst_dir -> $src_dir${NC}"
-        else
-            echo -e "${YELLOW}[DRY-RUN] Would copy commands: $src_dir -> $dst_dir${NC}"
-        fi
-    else
-        if [ "$MODE" = "symlink" ]; then
-            ln -s "$src_dir" "$dst_dir"
-            echo -e "${GREEN}Linked commands directory${NC}"
-        else
-            cp -r "$src_dir" "$dst_dir"
-            echo -e "${GREEN}Copied commands directory${NC}"
-        fi
-    fi
-
-    # Count commands deployed
-    if [ -d "$src_dir" ]; then
-        local command_count=$(find "$src_dir" -name "*.md" -type f ! -name "README.md" | wc -l | tr -d ' ')
-        echo -e "${CYAN}  Deployed $command_count commands${NC}"
-    fi
-}
-
 # Deploy hooks directory
 deploy_hooks() {
     local src_dir="$SOURCE_DIR/hooks"
@@ -1009,11 +929,6 @@ deploy() {
     deploy_skills
     echo ""
 
-    # Deploy commands directory
-    echo -e "${BLUE}Deploying commands...${NC}"
-    deploy_commands
-    echo ""
-
     # Deploy hooks directory
     echo -e "${BLUE}Deploying hooks...${NC}"
     deploy_hooks
@@ -1050,8 +965,7 @@ deploy() {
     echo ""
     echo -e "${YELLOW}Installed Components:${NC}"
     echo "  • agents (24 files) - Specialized analysis agents (regular + optimized versions)"
-    echo "  • skills (15 skills) - Workflow orchestration (architect, audit, task, debug, etc.)"
-    echo "  • commands (4 commands) - Explicit commands (code-review, ralph-loop, etc.)"
+    echo "  • skills (19 skills) - Workflow orchestration and commands (architect, audit, code-review, etc.)"
     echo "  • hooks (11 files) - Lifecycle hooks (format, sign-commits, go-lint, etc.)"
     echo "  • rules (3 files) - Modular rules (security, go-style, quality-gate)"
     echo "  • output-styles (1 file) - Custom communication styles (engineering-style)"
@@ -1061,8 +975,7 @@ deploy() {
     echo -e "${YELLOW}Directory Structure:${NC}"
     echo "  ~/.claude/"
     echo "    ├── agents/          (13 regular + 11 optimized agents)"
-    echo "    ├── skills/          (15 workflow orchestration skills)"
-    echo "    ├── commands/        (4 explicit commands)"
+    echo "    ├── skills/          (19 workflow orchestration skills)"
     echo "    ├── hooks/           (11 lifecycle hooks)"
     echo "    ├── rules/           (3 modular rules)"
     echo "    ├── output-styles/   (1 custom style)"
@@ -1080,22 +993,22 @@ deploy() {
     echo "  /architect - Architecture exploration with prototypes"
     echo "  /audit - Security and reliability auditing"
     echo "  /code - Execute next TODO from AGENTS.md"
+    echo "  /code-review - Comprehensive PR/code review"
     echo "  /debug - Systematic debugging workflow"
     echo "  /quality - Multi-agent code review"
+    echo "  /ralph-loop - Iterative development loop"
     echo "  /task - Structured task execution (5-phase)"
     echo ""
     echo -e "${YELLOW}Next Steps:${NC}"
     echo "  1. Use agents via Task tool: 'Use the Task tool with auditor agent to review...'"
-    echo "  2. Run skills: '/architect \"add caching\"' or '/audit --fix'"
-    echo "  3. Execute commands: '/code-review #123' or '/ralph-loop'"
-    echo "  4. CLAUDE.md is loaded automatically in every session"
-    echo "  5. Hooks run automatically on file edits and shell commands"
-    echo "  6. Activate output style: /output-style → select 'Engineering Style'"
+    echo "  2. Run skills: '/architect \"add caching\"' or '/code-review #123'"
+    echo "  3. CLAUDE.md is loaded automatically in every session"
+    echo "  4. Hooks run automatically on file edits and shell commands"
+    echo "  5. Activate output style: /output-style → select 'Engineering Style'"
     echo ""
     echo -e "${CYAN}Documentation:${NC}"
     echo "  • Agents: $TARGET_DIR/agents/README.md"
     echo "  • Skills: $TARGET_DIR/skills/README.md"
-    echo "  • Commands: $TARGET_DIR/commands/README.md"
     echo "  • Hooks: $TARGET_DIR/hooks/README.md"
     echo ""
     if [ "$MODE" = "symlink" ]; then

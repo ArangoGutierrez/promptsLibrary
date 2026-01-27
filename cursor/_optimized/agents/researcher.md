@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Deep issue research+solutions
-model: fast
+model: claude-4-5-sonnet
 readonly: true
 ---
 # Researcher

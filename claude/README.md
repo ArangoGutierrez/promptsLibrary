@@ -6,8 +6,7 @@ Comprehensive Claude Code configuration with agents, skills, commands, hooks, an
 
 This directory provides a complete Claude Code setup with:
 - **24 agents** (13 regular + 11 optimized) for specialized analysis
-- **15 skills** for workflow orchestration
-- **4 commands** for explicit operations
+- **19 skills** for workflow orchestration
 - **11 hooks** for lifecycle automation
 - **3 rules** for modular guidelines
 - **1 output style** for custom communication
@@ -23,19 +22,14 @@ claude/
 │   ├── arch-explorer.md, arch-explorer-opt.md
 │   └── ... (13 regular + 11 optimized versions)
 │
-├── skills/           # Workflow orchestration skills (15 files)
+├── skills/           # Workflow orchestration skills (19 files)
 │   ├── architect.md      # Architecture exploration
 │   ├── audit.md          # Security auditing
-│   ├── task.md           # Structured task execution
+│   ├── code-review.md    # PR review with scoring
 │   ├── code.md           # Execute next TODO
 │   ├── debug.md          # Systematic debugging
-│   └── ... (10 more skills)
-│
-├── commands/         # Explicit commands (4 files)
-│   ├── code-review.md    # Comprehensive code review
-│   ├── ralph-loop.md     # Iterative development loop
-│   ├── help.md           # Ralph help/status
-│   └── cancel-ralph.md   # Cancel Ralph loop
+│   ├── ralph-loop.md     # Iterative development
+│   └── ... (13 more skills)
 │
 ├── hooks/            # Lifecycle hooks (11 files)
 │   ├── format.sh         # Auto-format code
@@ -97,45 +91,38 @@ Specialized sub-agents for focused analysis:
 
 See [agents/README.md](agents/README.md) for details.
 
-### Skills (15 files)
+### Skills (19 files)
 
-Workflow orchestration for complex tasks:
+Workflow orchestration skills for complex tasks:
 
-**Research & Planning:**
+**Research & Planning (4 skills):**
 - `/research` - Issue investigation and analysis
 - `/architect` - Architecture exploration with prototypes
 - `/task` - Structured 5-phase task execution
 - `/issue` - GitHub issue to implementation plan
 
-**Code Quality:**
+**Code Quality (6 skills):**
 - `/audit` - Security and reliability auditing
 - `/quality` - Multi-agent code review
+- `/code-review` - PR review with confidence scoring
 - `/self-review` - Quick pre-push review
 - `/refactor` - Systematic refactoring
 - `/test` - Automatic test execution
 
-**Development Workflow:**
+**Development Workflow (7 skills):**
 - `/code` - Execute next TODO from AGENTS.md
 - `/parallel` - Run independent tasks concurrently
 - `/debug` - Systematic debugging workflow
 - `/git-polish` - Clean commit history rewriting
+- `/ralph-loop` - Iterative development loop
+- `/ralph-help` - Ralph help and status
+- `/cancel-ralph` - Cancel Ralph loop
 
-**Documentation & Utilities:**
+**Documentation & Utilities (2 skills):**
 - `/docs` - Documentation generation
 - `/context-reset` - Context tracking management
 
 See [skills/README.md](skills/README.md) for details.
-
-### Commands (4 files)
-
-Explicit commands for specific operations:
-
-- `/code-review` - Comprehensive PR/code review
-- `/ralph-loop` - Start iterative development loop
-- `/help` - Display Ralph help/status
-- `/cancel-ralph` - Cancel Ralph loop
-
-See [commands/README.md](commands/README.md) for details.
 
 ### Hooks (11 files)
 
@@ -238,6 +225,9 @@ curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main
 # Execute next task
 /code
 
+# PR review with confidence scoring
+/code-review #123
+
 # Systematic debugging
 /debug "crash on login with null user"
 
@@ -246,18 +236,10 @@ curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main
 
 # Structured task execution
 /task "implement rate limiting" --tdd
-```
 
-### Using Commands
-
-```bash
-# Code review
-/code-review #123
-/code-review src/auth/
-
-# Ralph loop
+# Iterative development loop
 /ralph-loop "implement REST API with tests"
-/help status
+/ralph-help status
 /cancel-ralph
 ```
 
@@ -280,16 +262,16 @@ claude/
 ```
 claude/
 ├── agents/ (merged regular + optimized with -opt suffix)
-├── skills/ (flattened from custom-skills/skills/)
-├── commands/ (extracted from plugin directories)
+├── skills/ (flattened from custom-skills + converted commands)
 └── plugins-archive/ (historical metadata)
 ```
 
 **Benefits:**
-- Easier discovery (all agents in one place)
+- Easier discovery (all agents in one place, all skills in one place)
 - Consistent naming (`{name}.md` vs `{name}-opt.md`)
 - Simplified deployment (no plugin metadata)
 - Clearer organization by resource type
+- Everything is either an agent or a skill (no separate "commands" concept)
 
 See [MIGRATION-GUIDE.md](MIGRATION-GUIDE.md) for complete migration details.
 
@@ -340,7 +322,6 @@ Configuration version is tracked in `~/.claude/.deploy-version`
 - **Internal Docs**: [docs/README.md](docs/README.md)
 - **Agents Guide**: [agents/README.md](agents/README.md)
 - **Skills Guide**: [skills/README.md](skills/README.md)
-- **Commands Guide**: [commands/README.md](commands/README.md)
 - **Hooks Guide**: [hooks/README.md](hooks/README.md)
 - **Migration Guide**: [MIGRATION-GUIDE.md](MIGRATION-GUIDE.md)
 
