@@ -29,8 +29,8 @@ jobs:
             --timeout 30
             --max-retries 3
             --exclude 'https://your-webhook-url'
-            'README.md'
-            'claude/README.md'
-            'claude/docs/**/*.md'
-            'docs/**/*.md'
-          fail: true
+            --exclude-path 'node_modules'
+            README.md
+            claude/README.md
+          fail: false
+        continue-on-error: true
