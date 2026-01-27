@@ -9,13 +9,14 @@
 #   ./scripts/deploy-claude.sh [OPTIONS]
 #
 # Options:
-#   --global          Deploy to ~/.claude/ (default)
-#   --project <path>  Deploy to <path>/.claude/
-#   --symlink         Use symlinks instead of copying files
-#   --force           Overwrite existing files
-#   --dry-run         Show what would be done
-#   --uninstall       Remove deployed files
-#   --help            Show this help message
+#   --global             Deploy to ~/.claude/ (default)
+#   --project <path>     Deploy to <path>/.claude/
+#   --symlink            Use symlinks instead of copying files
+#   --force              Overwrite existing files
+#   --dry-run            Show what would be done
+#   --uninstall          Remove deployed files
+#   --agents-type <type> Deploy regular, optimized, or both agents (default: regular)
+#   --help               Show this help message
 #
 # Remote Installation (no git clone required):
 #   curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-claude.sh | bash -s -- --download
@@ -45,6 +46,7 @@ FORCE=false
 DRY_RUN=false
 UNINSTALL=false
 DOWNLOAD=false
+AGENTS_TYPE="regular"
 
 # GitHub repo settings
 GITHUB_REPO="${CLAUDE_DEV_REPO:-ArangoGutierrez/promptsLibrary}"
@@ -91,6 +93,15 @@ while [[ $# -gt 0 ]]; do
             DOWNLOAD=true
             shift
             ;;
+        --agents-type)
+            AGENTS_TYPE="$2"
+            if [[ ! "$AGENTS_TYPE" =~ ^(regular|optimized|both)$ ]]; then
+                echo -e "${RED}Invalid agents type: $AGENTS_TYPE${NC}"
+                echo -e "${YELLOW}Valid options: regular, optimized, both${NC}"
+                exit 1
+            fi
+            shift 2
+            ;;
         --help)
             cat << 'HELP'
 deploy-claude.sh - Deploy Claude plugins to user's system
@@ -106,14 +117,15 @@ Remote Installation (no git clone required):
   wget -qO- https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-claude.sh | bash -s -- --download
 
 Options:
-  --global          Deploy to ~/.claude/ (default)
-  --project <path>  Deploy to <path>/.claude/
-  --symlink         Use symlinks instead of copying files
-  --force           Overwrite existing files
-  --dry-run         Show what would be done
-  --uninstall       Remove deployed files
-  --download        Download files from GitHub (no git clone needed)
-  --help            Show this help message
+  --global             Deploy to ~/.claude/ (default)
+  --project <path>     Deploy to <path>/.claude/
+  --symlink            Use symlinks instead of copying files
+  --force              Overwrite existing files
+  --dry-run            Show what would be done
+  --uninstall          Remove deployed files
+  --download           Download files from GitHub (no git clone needed)
+  --agents-type <type> Deploy regular, optimized, or both agents (default: regular)
+  --help               Show this help message
 
 Environment Variables:
   CLAUDE_DEV_REPO   Override the GitHub repo (default: ArangoGutierrez/promptsLibrary)
@@ -124,12 +136,14 @@ Examples:
   curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-claude.sh | bash -s -- --download
 
   # Local deployment (after git clone)
-  ./scripts/deploy-claude.sh                      # Deploy globally (copies files)
-  ./scripts/deploy-claude.sh --dry-run            # Preview what would be done
-  ./scripts/deploy-claude.sh --symlink            # Use symlinks (auto-update)
-  ./scripts/deploy-claude.sh --force              # Overwrite existing files
-  ./scripts/deploy-claude.sh --project ./myapp    # Deploy to specific project
-  ./scripts/deploy-claude.sh --uninstall          # Remove deployed files
+  ./scripts/deploy-claude.sh                           # Deploy globally (regular agents only)
+  ./scripts/deploy-claude.sh --agents-type optimized   # Deploy optimized agents only
+  ./scripts/deploy-claude.sh --agents-type both        # Deploy both regular and optimized
+  ./scripts/deploy-claude.sh --dry-run                 # Preview what would be done
+  ./scripts/deploy-claude.sh --symlink                 # Use symlinks (auto-update)
+  ./scripts/deploy-claude.sh --force                   # Overwrite existing files
+  ./scripts/deploy-claude.sh --project ./myapp         # Deploy to specific project
+  ./scripts/deploy-claude.sh --uninstall               # Remove deployed files
 HELP
             exit 0
             ;;
@@ -201,23 +215,46 @@ setup_download_mode() {
     mkdir -p "$TEMP_DOWNLOAD_DIR/claude/output-styles"
 
     # Download agents (all .md files from flat structure)
-    echo -e "${BLUE}Downloading agents...${NC}"
+    echo -e "${BLUE}Downloading agents (type: ${AGENTS_TYPE})...${NC}"
 
-    local agents=(
-        "api-reviewer" "api-reviewer-opt"
-        "arch-explorer" "arch-explorer-opt"
-        "auditor" "auditor-opt"
-        "code-simplifier"
-        "devil-advocate" "devil-advocate-opt"
-        "documenter"
-        "perf-critic" "perf-critic-opt"
-        "prototyper" "prototyper-opt"
-        "researcher" "researcher-opt"
-        "synthesizer" "synthesizer-opt"
-        "task-analyzer" "task-analyzer-opt"
-        "test-generator"
-        "verifier" "verifier-opt"
-    )
+    # Build agent list based on AGENTS_TYPE
+    local agents=()
+    case "$AGENTS_TYPE" in
+        regular)
+            agents=(
+                "api-reviewer" "arch-explorer" "auditor" "code-simplifier"
+                "devil-advocate" "documenter" "perf-critic" "prototyper"
+                "researcher" "synthesizer" "task-analyzer" "test-generator"
+                "verifier"
+            )
+            ;;
+        optimized)
+            agents=(
+                "api-reviewer-opt" "arch-explorer-opt" "auditor-opt"
+                "devil-advocate-opt" "perf-critic-opt" "prototyper-opt"
+                "researcher-opt" "synthesizer-opt" "task-analyzer-opt"
+                "verifier-opt"
+            )
+            ;;
+        both)
+            agents=(
+                "api-reviewer" "api-reviewer-opt"
+                "arch-explorer" "arch-explorer-opt"
+                "auditor" "auditor-opt"
+                "code-simplifier"
+                "devil-advocate" "devil-advocate-opt"
+                "documenter"
+                "perf-critic" "perf-critic-opt"
+                "prototyper" "prototyper-opt"
+                "researcher" "researcher-opt"
+                "synthesizer" "synthesizer-opt"
+                "task-analyzer" "task-analyzer-opt"
+                "test-generator"
+                "verifier" "verifier-opt"
+            )
+            ;;
+    esac
+
     for agent in "${agents[@]}"; do
         echo -ne "  agents/${agent}.md... "
         if download_file "claude/agents/${agent}.md" "$TEMP_DOWNLOAD_DIR/claude/agents/${agent}.md"; then
@@ -963,8 +1000,23 @@ deploy() {
     echo -e "${BLUE}Deployed to: $TARGET_DIR${NC}"
     echo -e "${BLUE}Version: $(echo "$version" | cut -d'|' -f1) ($(echo "$version" | cut -d'|' -f2))${NC}"
     echo ""
+
+    # Count agents based on type
+    local agent_desc=""
+    case "$AGENTS_TYPE" in
+        regular)
+            agent_desc="agents (13 regular) - Specialized analysis agents"
+            ;;
+        optimized)
+            agent_desc="agents (11 optimized) - Specialized analysis agents (optimized versions)"
+            ;;
+        both)
+            agent_desc="agents (24 total: 13 regular + 11 optimized) - Specialized analysis agents"
+            ;;
+    esac
+
     echo -e "${YELLOW}Installed Components:${NC}"
-    echo "  • agents (24 files) - Specialized analysis agents (regular + optimized versions)"
+    echo "  • $agent_desc"
     echo "  • skills (19 skills) - Workflow orchestration and commands (architect, audit, code-review, etc.)"
     echo "  • hooks (11 files) - Lifecycle hooks (format, sign-commits, go-lint, etc.)"
     echo "  • rules (3 files) - Modular rules (security, go-style, quality-gate)"
@@ -972,9 +1024,23 @@ deploy() {
     echo "  • CLAUDE.md - Global project context and engineering standards"
     echo "  • settings.json - Secure bash permissions configuration"
     echo ""
+
+    local agent_dir_desc=""
+    case "$AGENTS_TYPE" in
+        regular)
+            agent_dir_desc="(13 regular agents)"
+            ;;
+        optimized)
+            agent_dir_desc="(11 optimized agents)"
+            ;;
+        both)
+            agent_dir_desc="(13 regular + 11 optimized agents)"
+            ;;
+    esac
+
     echo -e "${YELLOW}Directory Structure:${NC}"
     echo "  ~/.claude/"
-    echo "    ├── agents/          (13 regular + 11 optimized agents)"
+    echo "    ├── agents/          $agent_dir_desc"
     echo "    ├── skills/          (19 workflow orchestration skills)"
     echo "    ├── hooks/           (11 lifecycle hooks)"
     echo "    ├── rules/           (3 modular rules)"
