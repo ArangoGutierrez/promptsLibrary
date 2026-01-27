@@ -4,7 +4,7 @@ description: >
   Deep issue research specialist for investigating GitHub issues, analyzing
   codebase for root causes, and generating solution alternatives. Use when
   exploring unfamiliar code, investigating bugs, or planning implementations.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

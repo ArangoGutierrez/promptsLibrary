@@ -1,7 +1,7 @@
 ---
 name: api-reviewer
 description: API design specialist for REST/gRPC/GraphQL endpoints
-model: fast
+model: claude-4-5-sonnet
 readonly: true
 ---
 

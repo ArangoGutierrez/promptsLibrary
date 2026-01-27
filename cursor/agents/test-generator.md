@@ -5,7 +5,7 @@ description: >
   Use when creating unit tests, integration tests, or edge case tests. Focuses
   on behavior coverage rather than line coverage, creating tests that serve as
   documentation.
-model: inherit
+model: claude-4-5-sonnet
 readonly: false
 ---
 

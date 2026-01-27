@@ -3,7 +3,7 @@ name: task-analyzer
 description: >
   Analyzes task lists for parallelization opportunities and dependencies.
   Use when reviewing AGENTS.md with multiple [TODO] items or before multi-task work.
-model: inherit
+model: claude-4-5-sonnet
 readonly: true
 ---
 

@@ -6,6 +6,7 @@ Full architectural exploration pipeline with parallel prototyping.
 - `{problem}` — Explore approaches for a problem
 - `--quick` — Skip prototyping, just compare approaches
 - `--prototype N` — Prototype top N approaches (default: 2)
+- `--export` — Generate CLI execution file after synthesis
 
 ## What Happens
 
@@ -124,6 +125,24 @@ arch-explorer → devil-advocate → synthesizer
 ```
 
 Use for: Early-stage discussions, reversible decisions, time pressure
+
+## Export Mode (--export)
+
+After Phase 4 completes, automatically generate a CLI execution file:
+```bash
+.plans/plan-arch-YYYYMMDD-HHMMSS.md
+```
+
+This file contains:
+- All architectural decisions and trade-offs
+- Selected approach with rationale
+- Implementation steps extracted from "Next Steps"
+- Constraints and acceptance criteria
+- Links to prototypes
+
+**Execute with**: `claude code .plans/plan-arch-*.md`
+
+**Use for**: Handing off implementation to Claude CLI after architectural planning in Cursor.
 
 ## Constraints
 - **Full pipeline**: Don't skip phases without `--quick`

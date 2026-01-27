@@ -1,7 +1,7 @@
 ---
 name: perf-critic
 description: Performance specialist - finds real perf issues, not paranoia
-model: fast
+model: claude-4-5-sonnet
 readonly: true
 ---
 

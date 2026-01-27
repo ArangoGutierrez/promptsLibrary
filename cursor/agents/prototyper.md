@@ -4,7 +4,7 @@ description: >
   Creates working prototype implementations for architectural exploration.
   Use when you want to test an approach hands-on before committing. Run
   multiple prototyper agents in parallel to compare implementations.
-model: inherit
+model: claude-4-5-sonnet
 is_background: true
 ---
 

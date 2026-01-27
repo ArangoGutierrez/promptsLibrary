@@ -7,6 +7,7 @@ Create and execute a spec-first task with optional planning and TDD modes.
 - `#{number}` — GitHub issue
 - `--plan` — Plan first, await "GO" before implementing
 - `--tdd` — Test-first development
+- `--export` — Generate CLI execution file after planning
 
 ## Workflow
 
@@ -131,3 +132,36 @@ gh pr create --title "type(scope): desc" --body "Fixes #N"
 ```
 
 > 🛑 **No auto-merge** — Always await human approval
+
+## Export Mode (--export)
+
+When used with `--plan`, after Phase 3 completes and you say "GO":
+```bash
+.plans/plan-task-YYYYMMDD-HHMMSS.md
+```
+
+This file contains:
+- Full specification from Phase 2
+- Selected approach from Phase 3
+- Implementation steps with TDD workflow (if `--tdd` used)
+- Acceptance criteria and verification checklist
+- GitHub issue context (if `#{number}` used)
+
+**Execute with**: `claude code .plans/plan-task-*.md`
+
+**Use for**: Planning in Cursor (Opus), implementing in Terminal (Sonnet).
+
+**Example workflow**:
+```bash
+# In Cursor
+/task #123 --plan --export
+
+# [Discuss, refine spec, select approach]
+
+User: "GO"
+
+# [Generates .plans/plan-task-20260127-143022.md]
+
+# In Terminal
+claude code .plans/plan-task-20260127-143022.md
+```
