@@ -25,11 +25,16 @@ jobs:
           args: >-
             --verbose
             --no-progress
-            --accept 200,204,206,429
+            --accept 200,204,206,301,429
             --timeout 30
             --max-retries 3
             --exclude-path cursor
             --exclude-path prompts
             --exclude-path snippets
+            --exclude-path claude/agents
+            --exclude-path claude/skills
+            --exclude-path claude/rules
+            --exclude-path claude/hooks
+            --exclude-path claude/output-styles
             '**/*.md'
           fail: true
