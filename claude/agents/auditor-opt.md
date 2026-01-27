@@ -3,6 +3,7 @@ name: auditor
 description: Go/K8s security+reliability audit
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 # Auditor
 

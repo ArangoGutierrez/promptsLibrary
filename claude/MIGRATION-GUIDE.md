@@ -268,11 +268,6 @@ claude/
 
 ### Backward Compatibility
 
-**Plugin metadata archived:**
-- Historical plugin configurations moved to `claude/plugins-archive/`
-- Includes `.claude-plugin/` directories and plugin READMEs
-- Preserved for reference but not deployed
-
 **Functionality unchanged:**
 - All agents, skills, and commands work identically
 - No changes to file contents (only paths)
@@ -285,8 +280,7 @@ claude/
 
 **If you have existing deployments:**
 1. Redeploy with `./scripts/deploy-claude.sh --force`
-2. Old plugin directories in `~/.claude/plugins/` are backed up automatically
-3. New flat structure deployed to `~/.claude/agents/`, `~/.claude/skills/`, etc.
+2. New flat structure deployed to `~/.claude/agents/`, `~/.claude/skills/`, etc.
 
 **Accessing resources:**
 - Agents: `~/.claude/agents/{name}.md` or `~/.claude/agents/{name}-opt.md`

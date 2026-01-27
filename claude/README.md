@@ -45,12 +45,6 @@ claude/
 ├── output-styles/    # Custom communication styles (1 file)
 │   └── engineering-style.md
 │
-├── plugins-archive/  # Historical plugin metadata
-│   ├── custom-skills/
-│   ├── code-review/
-│   ├── ralph-loop/
-│   └── code-simplifier/
-│
 ├── docs/             # Documentation
 ├── CLAUDE.md         # Project context and engineering standards
 ├── settings.json     # Secure bash permissions
@@ -262,8 +256,7 @@ claude/
 ```
 claude/
 ├── agents/ (merged regular + optimized with -opt suffix)
-├── skills/ (flattened from custom-skills + converted commands)
-└── plugins-archive/ (historical metadata)
+└── skills/ (flattened from custom-skills + converted commands)
 ```
 
 **Benefits:**

@@ -6,6 +6,7 @@ description: >
   comparison matrix with trade-offs. Great for ADRs and technical RFCs.
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # Architecture Explorer Agent

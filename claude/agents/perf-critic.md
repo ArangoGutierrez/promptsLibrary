@@ -6,6 +6,7 @@ description: >
   use for: API endpoints, batch operations, data transformations.
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # Performance Critic Agent

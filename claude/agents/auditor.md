@@ -6,6 +6,7 @@ description: >
   code for production readiness or security compliance.
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # Auditor Agent

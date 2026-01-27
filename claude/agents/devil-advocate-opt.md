@@ -3,6 +3,7 @@ name: devil-advocate
 description: Contrarian reviewer - finds holes in proposals
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # Devil's Advocate

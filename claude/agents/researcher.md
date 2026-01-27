@@ -6,6 +6,7 @@ description: >
   exploring unfamiliar code, investigating bugs, or planning implementations.
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # Researcher Agent

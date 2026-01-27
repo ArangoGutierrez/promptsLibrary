@@ -6,6 +6,7 @@ description: >
   new routes, API changes, breaking changes.
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # API Reviewer Agent

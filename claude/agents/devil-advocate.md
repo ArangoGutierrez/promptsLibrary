@@ -6,6 +6,7 @@ description: >
   technical RFCs, "we should" statements, migration proposals.
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 
 # Devil's Advocate Agent

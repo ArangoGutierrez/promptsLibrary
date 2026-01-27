@@ -3,6 +3,7 @@ name: researcher
 description: Deep issue research+solutions
 model: claude-4-5-sonnet
 readonly: true
+is_background: true
 ---
 # Researcher
 
