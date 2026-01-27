@@ -27,7 +27,7 @@ The same prompt is fed to Claude repeatedly. The "self-referential" aspect comes
 5. Claude sees its previous work in the files
 6. Iteratively improves until completion
 
-The technique is described as "deterministically bad in an undeterministic world" - failures are predictable, enabling systematic improvement through prompt tuning.
+The technique is described as "deterministically bad in a nondeterministic world" - failures are predictable, enabling systematic improvement through prompt tuning.
 
 ## Available Commands
 

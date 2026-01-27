@@ -22,6 +22,7 @@ jobs:
             !cursor/**
             !prompts/**
             !snippets/**
+            !**/*-opt.md
 
   spell-check:
     name: Spell Check

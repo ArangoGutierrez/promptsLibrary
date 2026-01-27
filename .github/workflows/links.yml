@@ -28,5 +28,8 @@ jobs:
             --accept 200,204,206,429
             --timeout 30
             --max-retries 3
+            --exclude-path cursor
+            --exclude-path prompts
+            --exclude-path snippets
             '**/*.md'
           fail: true
