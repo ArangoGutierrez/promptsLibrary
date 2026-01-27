@@ -11,6 +11,7 @@ Run the automated validation script:
 ```
 
 This validates:
+
 - ✅ All agents have valid `model` fields
 - ✅ Model values use correct format (`sonnet`, `opus`, `haiku`, `fast`, `inherit`, or full model IDs)
 - ✅ Required frontmatter fields (`name`, `description`) are present
@@ -20,6 +21,7 @@ This validates:
 ### Method 1: Invoke an Agent Directly
 
 1. **Deploy agents** (if not already deployed):
+
    ```bash
    ./scripts/deploy-cursor.sh
    ```
@@ -41,6 +43,7 @@ This validates:
 Create a simple test to compare agents:
 
 1. **Use an agent with `model: sonnet`**:
+
    ```
    @api-reviewer review this endpoint: GET /users/{id}
    ```
@@ -59,11 +62,13 @@ Create a simple test to compare agents:
 ### CI/CD Integration
 
 The GitHub Actions workflow (`.github/workflows/validate-cursor.yml`) now validates:
+
 - Agent frontmatter structure
 - Model field format (if present)
 - Required fields
 
 Run locally:
+
 ```bash
 # Simulate the CI validation
 act -j validate-structure
@@ -105,11 +110,13 @@ Cursor accepts these model values:
 If an agent doesn't seem to be using the specified model:
 
 1. **Check deployment**:
+
    ```bash
    ls -la ~/.cursor/agents/
    ```
 
 2. **Verify frontmatter**:
+
    ```bash
    head -10 ~/.cursor/agents/api-reviewer.md
    ```
@@ -129,6 +136,7 @@ If you see errors about invalid model values:
    - ❌ Wrong: `model: "sonnet"` (quotes not needed)
 
 2. **Run validation**:
+
    ```bash
    ./scripts/test-agent-models.sh
    ```
