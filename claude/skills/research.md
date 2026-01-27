@@ -40,6 +40,7 @@ gh issue view 123 --comments
 ```
 
 Extract:
+
 - Title and body text
 - Labels and milestone
 - State (open/closed)
@@ -51,6 +52,7 @@ Extract:
 Analyze and classify the issue:
 
 **Type**:
+
 - `bug` - Broken functionality
 - `feat` - New feature request
 - `refactor` - Code improvement without behavior change
@@ -59,17 +61,20 @@ Analyze and classify the issue:
 - `sec` - Security vulnerability
 
 **Severity**:
+
 - `critical` - System down, data loss, security breach
 - `high` - Major feature broken, significant impact
 - `medium` - Feature partially broken, workaround exists
 - `low` - Minor issue, cosmetic problem
 
 **Scope**:
+
 - `local` - Single file or function
 - `cross` - Multiple files/modules
 - `arch` - Architectural change needed
 
 **Complexity**:
+
 - `trivial` - < 10 lines, obvious fix
 - `moderate` - 10-100 lines, straightforward
 - `complex` - > 100 lines or unclear solution
@@ -104,6 +109,7 @@ Output should include:
 ### Step 5: Verify Understanding
 
 Before proceeding, verify:
+
 - ✓ **C1**: Do all mentioned files exist?
 - ✓ **C2**: Can the behavior be reproduced or understood from code?
 - ✓ **C3**: Does our understanding match what the code actually does?
@@ -203,6 +209,7 @@ Create comparison matrix:
 When argument doesn't start with `#` or `brainstorm:`.
 
 Same workflow as Issue Research but:
+
 - Skip Step 2 (no GitHub issue to fetch)
 - Start at Step 3 with topic classification
 - Focus investigation on codebase patterns and architecture
@@ -215,6 +222,7 @@ When argument starts with `brainstorm:` (e.g., `brainstorm: add GraphQL API`).
 ### B1: Extract Core Idea
 
 From the idea statement, extract:
+
 - **Concept**: What is being proposed?
 - **Problem**: What problem does it solve?
 - **Audience**: Who benefits?
@@ -223,6 +231,7 @@ From the idea statement, extract:
 ### B2: Web Research
 
 Use WebSearch to gather external context:
+
 - Competitors offering similar solutions
 - Market research and demand signals
 - Technical feasibility and best practices
@@ -234,21 +243,25 @@ Use WebSearch to gather external context:
 Analyze through different perspectives:
 
 **User Lens**:
+
 - Benefit: What do users gain?
 - Pain: What friction or cost?
 - Barriers: What prevents adoption?
 
 **Technical Lens**:
+
 - Feasible: Can we build it with our stack?
 - Stack: What technologies needed?
 - Scale: How does it handle growth?
 
 **Business Lens**:
+
 - Revenue: Does it make/save money?
 - Fit: Does it align with product vision?
 - Moat: Does it create competitive advantage?
 
 **Risk Lens**:
+
 - Killers: What could make this fail completely?
 - Dependencies: What external factors matter?
 - Single points of failure: Where are we vulnerable?
@@ -263,6 +276,7 @@ Analyze through different perspectives:
 ### B5: Test Assumptions
 
 For each key assumption:
+
 - **Assumption**: [Statement]
 - **Valid?**: Is this actually true?
 - **Evidence**: What supports/contradicts it?
@@ -271,6 +285,7 @@ For each key assumption:
 ### B6: Explore Angles
 
 Generate variations:
+
 - **Pivots**: How could we adjust the idea?
 - **MVP**: What's the minimal version?
 - **Full vision**: What's the ultimate version?
@@ -382,6 +397,7 @@ Generate variations:
 ## When to Use
 
 **Use /research when**:
+
 - Investigating GitHub issues before coding
 - Understanding unfamiliar codebase areas
 - Analyzing bug reports
@@ -390,6 +406,7 @@ Generate variations:
 - Brainstorming product ideas
 
 **Don't use /research for**:
+
 - Simple code questions (use direct questions)
 - Already well-understood issues
 - Urgent hot fixes (start coding immediately)

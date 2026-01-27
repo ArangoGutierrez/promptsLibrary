@@ -32,6 +32,7 @@ git diff main..HEAD
 ```
 
 Extract:
+
 - Number of commits
 - Files changed
 - Lines added/removed
@@ -53,24 +54,28 @@ Present overview:
 For each changed file, check 4 aspects:
 
 #### A. Correctness
+
 - **Logic**: Is the logic sound?
 - **Edge cases**: Handled empty/nil/max values?
 - **Bugs**: Any obvious bugs?
 - **Compilation**: Will it compile/run?
 
 #### B. Style
+
 - **Patterns**: Follows project conventions?
 - **Naming**: Clear, consistent names?
 - **Debug code**: Left-over console.log, print statements?
 - **Comments**: Outdated or redundant comments?
 
 #### C. Security
+
 - **Secrets**: No hardcoded tokens/keys?
 - **Input validation**: User input validated?
 - **Error safety**: No sensitive data in errors?
 - **SQL injection**: Parameterized queries?
 
 #### D. Tests
+
 - **New code tested**: Changes have test coverage?
 - **Tests meaningful**: Tests verify behavior?
 - **Tests pass**: All tests passing?
@@ -82,11 +87,13 @@ Classify issues by severity:
 **✅ Good**: No issues, approved
 
 **⚠️ Consider** (Minor, optional fixes):
+
 - File: `path/to/file.go:42`
 - Issue: {description}
 - Suggestion: {optional improvement}
 
 **❌ Fix Required** (Must fix before merge):
+
 - File: `path/to/file.go:88`
 - Issue: {description}
 - Fix: {required change}
@@ -103,6 +110,7 @@ Assess overall readiness:
 | **Tests** | ✓ / ⚠️ / ✗ | Coverage adequate, tests pass |
 
 **Overall Verdict**:
+
 - ✅ **Ready**: Can push now
 - ⚠️ **Minor Fixes**: Optional improvements
 - ❌ **Needs Work**: Must fix issues before pushing
@@ -209,12 +217,14 @@ List: file:line + issue + fix
 ## When to Use
 
 **Use /self-review when**:
+
 - Before pushing to remote
 - Before creating PR
 - After completing task batch
 - Quick quality check
 
 **Use /quality instead when**:
+
 - Need comprehensive review
 - Before important merge
 - Reviewing someone else's code

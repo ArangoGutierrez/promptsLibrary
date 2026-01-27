@@ -20,12 +20,14 @@ This directory contains both **regular** and **token-optimized** versions of age
 ### When to Use Each Version
 
 **Use Regular Versions (`{name}.md`)**:
+
 - Learning and understanding agent capabilities
 - Documentation and reference
 - Onboarding team members
 - When token usage isn't a concern
 
 **Use Optimized Versions (`{name}-opt.md`)**:
+
 - Production and routine operations
 - Cost optimization
 - Long sessions approaching token limits
@@ -34,6 +36,7 @@ This directory contains both **regular** and **token-optimized** versions of age
 ### Available Optimized Agents
 
 10 agents have optimized versions (with `-opt` suffix):
+
 1. `api-reviewer-opt.md` - API consistency review
 2. `arch-explorer-opt.md` - Architecture exploration
 3. `auditor-opt.md` - Security/reliability audit
@@ -52,41 +55,49 @@ This directory contains both **regular** and **token-optimized** versions of age
 ### Phase 0: Research & Planning
 
 #### 1. Researcher (`researcher.md`)
+
 **Purpose**: Deep issue research and root cause analysis
 
 **Use cases**:
+
 - GitHub issue investigation
 - Bug root cause analysis
 - Solution alternatives generation
 - Unfamiliar codebase exploration
 
 **Specializes in**:
+
 - Issue context gathering (via MCP)
 - Stack trace analysis
 - Pattern identification
 - Dependency investigation
 
 **Example**:
+
 ```
 Use the Task tool with the researcher agent to investigate GitHub issue #456 and identify root causes.
 ```
 
 #### 2. Task Analyzer (`task-analyzer.md`)
+
 **Purpose**: Analyze task lists for parallelization opportunities
 
 **Use cases**:
+
 - Multi-task planning
 - Dependency analysis
 - Parallel execution planning
 - AGENTS.md task review
 
 **Specializes in**:
+
 - Dependency matrix construction
 - Independent task clustering
 - Sequential workflow identification
 - Parallelization recommendations
 
 **Example**:
+
 ```
 Use the Task tool with the task-analyzer agent to analyze AGENTS.md and identify which tasks can run in parallel.
 ```
@@ -94,61 +105,73 @@ Use the Task tool with the task-analyzer agent to analyze AGENTS.md and identify
 ### Phase 1: Critical Operations (Security & Performance)
 
 #### 3. Auditor (`auditor.md`)
+
 **Purpose**: Security and reliability auditing for Go/K8s codebases
 
 **Use cases**:
+
 - Pre-commit security checks
 - Production readiness reviews
 - Race condition detection
 - Resource leak identification
 
 **Specializes in**:
+
 - Race conditions and goroutine leaks
 - K8s lifecycle issues
 - Security vulnerabilities (SQL injection, auth bypass)
 - Defensive programming patterns
 
 **Example**:
+
 ```
 Use the Task tool with the auditor agent to review the authentication handlers for security issues.
 ```
 
 #### 4. Performance Critic (`perf-critic.md`)
+
 **Purpose**: Performance analysis and optimization recommendations
 
 **Use cases**:
+
 - API endpoint performance review
 - Database query optimization
 - Algorithmic complexity analysis
 - Memory leak detection
 
 **Specializes in**:
+
 - N+1 query patterns
 - Algorithmic complexity (O(n²) detection)
 - Memory allocation issues
 - I/O bottlenecks
 
 **Example**:
+
 ```
 Use the Task tool with the perf-critic agent to analyze the user listing endpoint for performance issues.
 ```
 
 #### 5. API Reviewer (`api-reviewer.md`)
+
 **Purpose**: API design consistency and best practices
 
 **Use cases**:
+
 - REST API design review
 - API consistency audits
 - Breaking change detection
 - Developer experience improvements
 
 **Specializes in**:
+
 - REST/HTTP best practices
 - Naming conventions
 - Error response formats
 - API versioning strategies
 
 **Example**:
+
 ```
 Use the Task tool with the api-reviewer agent to review all user-related endpoints for consistency.
 ```
@@ -156,55 +179,66 @@ Use the Task tool with the api-reviewer agent to review all user-related endpoin
 ### Phase 2: Design & Architecture
 
 #### 6. Architecture Explorer (`arch-explorer.md`)
+
 **Purpose**: Explore multiple architectural approaches for complex decisions
 
 **Use cases**:
+
 - ADR (Architecture Decision Record) creation
 - Technical RFC authoring
 - Solution comparison for new features
 - Technology evaluation
 
 **Specializes in**:
+
 - Generating 3-5 genuinely different approaches
 - Trade-off analysis
 - Comparison matrices
 - Decision frameworks
 
 **Example**:
+
 ```
 Use the Task tool with the arch-explorer agent to explore approaches for implementing user authentication.
 ```
 
 #### 7. Devil's Advocate (`devil-advocate.md`)
+
 **Purpose**: Critical review and challenge assumptions
 
 **Use cases**:
+
 - Pre-decision validation
 - Proposal stress-testing
 - Risk identification
 - Failure mode analysis
 
 **Specializes in**:
+
 - Assumption challenging
 - Edge case identification
 - Scale analysis
 - Hidden cost discovery
 
 **Example**:
+
 ```
 Use the Task tool with the devil-advocate agent to critique the microservices migration proposal.
 ```
 
 #### 8. Prototyper (`prototyper.md`)
+
 **Purpose**: Create working prototype implementations for architectural validation
 
 **Use cases**:
+
 - Proof-of-concept implementations
 - Hands-on approach testing
 - Parallel prototype comparison
 - Architecture validation
 
 **Specializes in**:
+
 - Rapid prototyping
 - Minimal viable implementations
 - Isolated workspace setup
@@ -215,46 +249,55 @@ Use the Task tool with the devil-advocate agent to critique the microservices mi
 **Note**: Can run in background for parallel prototype creation
 
 **Example**:
+
 ```
 Use the Task tool with the prototyper agent to create a working prototype of the event-driven approach in .prototypes/event-driven/.
 ```
 
 #### 9. Synthesizer (`synthesizer.md`)
+
 **Purpose**: Combine outputs from multiple agents into unified recommendations
 
 **Use cases**:
+
 - Multi-agent analysis consolidation
 - Architecture decision finalization
 - Conflict resolution
 - Consensus building
 
 **Specializes in**:
+
 - Pattern identification across inputs
 - Consensus finding
 - Conflict surfacing
 - Final recommendation generation
 
 **Example**:
+
 ```
 Use the Task tool with the synthesizer agent to combine outputs from arch-explorer, devil-advocate, and both prototypers.
 ```
 
 #### 10. Verifier (`verifier.md`)
+
 **Purpose**: Independent verification that claimed work is complete
 
 **Use cases**:
+
 - PR verification
 - Acceptance criteria validation
 - Test coverage checks
 - Implementation gap detection
 
 **Specializes in**:
+
 - Running tests and checks
 - Verifying claims independently
 - Finding missing implementations
 - Gap analysis
 
 **Example**:
+
 ```
 Use the Task tool with the verifier agent to verify that PR #123 meets all acceptance criteria.
 ```
@@ -262,15 +305,18 @@ Use the Task tool with the verifier agent to verify that PR #123 meets all accep
 ### Phase 3: Code Generation
 
 #### 11. Test Generator (`test-generator.md`)
+
 **Purpose**: Generate comprehensive test suites
 
 **Use cases**:
+
 - Creating unit tests
 - Generating integration tests
 - Edge case test coverage
 - Test documentation
 
 **Specializes in**:
+
 - Behavior-focused testing
 - Test case identification
 - Test code generation (Go, JS, Python)
@@ -279,20 +325,24 @@ Use the Task tool with the verifier agent to verify that PR #123 meets all accep
 **Requires**: Write tool access
 
 **Example**:
+
 ```
 Use the Task tool with the test-generator agent to create tests for the authentication module.
 ```
 
 #### 12. Documenter (`documenter.md`)
+
 **Purpose**: Generate and maintain code documentation
 
 **Use cases**:
+
 - API documentation
 - README generation
 - Inline documentation
 - OpenAPI spec generation
 
 **Specializes in**:
+
 - GoDoc, JSDoc, Python docstrings
 - README structure
 - API reference generation
@@ -301,6 +351,7 @@ Use the Task tool with the test-generator agent to create tests for the authenti
 **Requires**: Write tool access
 
 **Example**:
+
 ```
 Use the Task tool with the documenter agent to generate documentation for the API handlers.
 ```
@@ -380,12 +431,14 @@ For bug investigation:
 ### When to Use Agents
 
 **Use agents for**:
+
 - Focused, specialized analysis
 - Time-consuming analysis tasks
 - Independent verification
 - When you need expert perspective
 
 **Don't use agents for**:
+
 - Simple file reads (use Read tool directly)
 - Quick questions (ask directly)
 - Needle searches (use Grep/Glob directly)
@@ -394,15 +447,18 @@ For bug investigation:
 ### Agent Selection
 
 **For research & planning**:
+
 - Issue investigation → researcher
 - Task parallelization → task-analyzer
 
 **For code review**:
+
 - Security → auditor
 - Performance → perf-critic
 - API design → api-reviewer
 
 **For architecture & design**:
+
 - Multiple options → arch-explorer
 - Stress-test idea → devil-advocate
 - Working prototypes → prototyper
@@ -410,6 +466,7 @@ For bug investigation:
 - Validate decision → verifier
 
 **For automation**:
+
 - Tests → test-generator
 - Docs → documenter
 

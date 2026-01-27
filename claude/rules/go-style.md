@@ -7,9 +7,11 @@ globs:
 # Go Style Rules
 
 ## Toolchain
+
 Run in order: `gofmt` → `go vet` → `golangci-lint` → `go test`
 
 ## Documentation
+
 - Doc comments ≤80 characters per line
 - Package comments required for non-internal packages
 
@@ -22,6 +24,7 @@ package auth
 ## Patterns
 
 ### Accept Interfaces, Return Structs
+
 ```go
 // ✗ Bad: accepts concrete type
 func ProcessUser(u *User) error { ... }
@@ -36,6 +39,7 @@ func ProcessUser(u UserGetter) (*Result, error) { ... }
 ```
 
 ### Error Wrapping
+
 ```go
 // ✗ Bad: loses context
 if err != nil {
@@ -49,6 +53,7 @@ if err != nil {
 ```
 
 ### Context First for I/O
+
 ```go
 // ✗ Bad: context not first
 func FetchUser(id string, ctx context.Context) (*User, error)
@@ -58,6 +63,7 @@ func FetchUser(ctx context.Context, id string) (*User, error)
 ```
 
 ### Defer Close
+
 ```go
 // ✓ Good: defer close with error check
 resp, err := http.Get(url)
@@ -79,6 +85,7 @@ defer func() {
 ```
 
 ## Naming
+
 | Type | Convention | Example |
 |------|------------|---------|
 | Exported | PascalCase | `UserService`, `HTTPClient` |
@@ -109,6 +116,7 @@ var ErrNotFound = errors.New("resource not found")
 ## Concurrency
 
 ### Protect Shared State
+
 ```go
 // ✓ Good: mutex for shared state
 type SafeCounter struct {
@@ -124,6 +132,7 @@ func (c *SafeCounter) Inc() {
 ```
 
 ### Goroutine Exit Strategy
+
 ```go
 // ✓ Good: goroutine with context cancellation
 func worker(ctx context.Context, jobs <-chan Job) {
@@ -139,6 +148,7 @@ func worker(ctx context.Context, jobs <-chan Job) {
 ```
 
 ### Channel Patterns
+
 ```go
 // ✓ Good: buffered channel to prevent blocking
 results := make(chan Result, 10)
@@ -155,6 +165,7 @@ go func() {
 ## Testing
 
 ### Table-Driven Tests
+
 ```go
 func TestAdd(t *testing.T) {
     tests := []struct {
@@ -181,6 +192,7 @@ func TestAdd(t *testing.T) {
 ```
 
 ### Test Helpers
+
 ```go
 // t.Helper() marks function as test helper
 func assertNoError(t *testing.T, err error) {

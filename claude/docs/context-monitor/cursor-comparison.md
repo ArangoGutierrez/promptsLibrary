@@ -18,9 +18,11 @@
 ### 1. Task Status Detection
 
 #### Cursor
+
 **Method**: Parses `AGENTS.md` file for task markers
 
 **Task Markers**:
+
 ```markdown
 - [TODO] Task not started
 - [WIP] Task in progress
@@ -29,6 +31,7 @@
 ```
 
 **Task Status Detection**:
+
 ```bash
 # Count markers
 todo_count=$(grep -c '\[TODO\]' AGENTS.md)
@@ -45,20 +48,24 @@ fi
 ```
 
 **Pros**:
+
 - Explicit task status
 - Clear completion detection
 - Human-readable task list
 - Can distinguish between pending/in-progress/complete/blocked
 
 **Cons**:
+
 - Requires maintaining AGENTS.md file
 - User must update markers manually
 - Can become stale if not updated
 
 #### Claude Code
+
 **Method**: Heuristic inference from observable patterns
 
 **Signals Used**:
+
 - Iteration count (indicates activity)
 - Files edited (indicates progress)
 - Session duration (indicates effort)
@@ -67,12 +74,14 @@ fi
 **No Explicit Task Status**: Cannot determine if work is "complete" vs "in progress"
 
 **Pros**:
+
 - Zero maintenance (automatic)
 - Always accurate (based on actual behavior)
 - No user action required
 - Doesn't depend on external files
 
 **Cons**:
+
 - Cannot distinguish task completion states
 - Less granular information
 - Can't detect "blocked" state explicitly
@@ -81,15 +90,18 @@ fi
 ### 2. Summarization Support
 
 #### Cursor
+
 **Command**: `/summarize`
 
 **What it does**:
+
 - User explicitly runs `/summarize`
 - Cursor compresses conversation history
 - Frees up context window
 - Allows continuing current session
 
 **Detection**:
+
 ```bash
 # Cursor detects summarization by comparing loop_count to tracked iterations
 if [ "$loop_count" -lt "$((prev_iterations - 2))" ]; then
@@ -99,17 +111,21 @@ fi
 ```
 
 **Recommendations Include**:
+
 - "Consider `/summarize` if you need more runway"
 - "Run `/summarize` now, then wrap up current work"
 
 **Health Score Impact**:
+
 - Each summarize: **-25 points** (significant recovery)
 - Allows extending session without starting fresh
 
 #### Claude Code
+
 **Command**: None (automatic internal summarization)
 
 **What happens**:
+
 - Claude auto-summarizes transparently
 - User has no control over timing
 - No explicit summarization command
@@ -118,28 +134,33 @@ fi
 **Detection**: Not applicable (no user-facing summarization)
 
 **Recommendations**:
+
 - Never mention `/summarize` (doesn't exist)
 - Focus on "start new session" instead
 - Emphasize "fresh context" benefits
 
 **Philosophy Difference**:
+
 - Cursor: User controls summarization timing
 - Claude: System manages context automatically, fresh sessions preferred
 
 ### 3. Health Score Calculation
 
 #### Cursor Formula
+
 ```
 score = (iterations × 8) + (files_touched × 2) + (tasks_completed × 15) - (summarize_count × 25)
 ```
 
 **Weights**:
+
 - **Iteration**: 8 points each
 - **File**: 2 points each
 - **Task**: 15 points each (biggest contributor)
 - **Summarize**: -25 points (recovery)
 
 **Example** (20 iterations, 10 files, 3 tasks, 0 summarize):
+
 ```
 score = (20 × 8) + (10 × 2) + (3 × 15) - (0 × 25)
       = 160 + 20 + 45 - 0
@@ -147,22 +168,26 @@ score = (20 × 8) + (10 × 2) + (3 × 15) - (0 × 25)
 ```
 
 **Characteristics**:
+
 - Task-centric (tasks are heaviest weight)
 - Summarize provides large recovery
 - Faster degradation (lower iteration weight)
 
 #### Claude Code Formula
+
 ```
 score = (iterations × 10) + (files_touched × 3) + (duration_minutes × 0.5)
 ```
 
 **Weights**:
+
 - **Iteration**: 10 points each (higher than Cursor)
 - **File**: 3 points each (higher than Cursor)
 - **Duration**: 0.5 points per minute (new metric)
 - **No task/summarize** (not applicable)
 
 **Example** (20 iterations, 10 files, 30 minutes):
+
 ```
 score = (20 × 10) + (10 × 3) + (30 × 0.5)
       = 200 + 30 + 15
@@ -170,6 +195,7 @@ score = (20 × 10) + (10 × 3) + (30 × 0.5)
 ```
 
 **Characteristics**:
+
 - Iteration-centric (iterations are heaviest)
 - Time-aware (duration matters)
 - No recovery mechanism (no summarize)
@@ -178,6 +204,7 @@ score = (20 × 10) + (10 × 3) + (30 × 0.5)
 ### 4. Health Thresholds
 
 #### Cursor Thresholds
+
 ```json
 {
   "healthy_max": 50,
@@ -196,6 +223,7 @@ score = (20 × 10) + (10 × 3) + (30 × 0.5)
 **Conservative**: Warns at 50%
 
 #### Claude Code Thresholds
+
 ```json
 {
   "healthy_max": 60,
@@ -214,6 +242,7 @@ score = (20 × 10) + (10 × 3) + (30 × 0.5)
 **More Permissive**: Warns at 60%
 
 **Rationale for Higher Thresholds**:
+
 - No summarize option (can't recover mid-session)
 - Want to reduce false positives
 - Automatic summarization happens internally
@@ -222,9 +251,11 @@ score = (20 × 10) + (10 × 3) + (30 × 0.5)
 ### 5. Stuck Detection
 
 #### Cursor
+
 **Threshold**: 3 iterations without progress
 
 **Progress Signals**:
+
 - Tasks completed (DONE count increased)
 - Tasks started (TODO count decreased)
 
@@ -250,9 +281,11 @@ fi
 **Message**: "💡 Appears stuck. New session with fresh context often helps."
 
 #### Claude Code
+
 **Threshold**: 5 iterations without progress
 
 **Progress Signals**:
+
 - Files edited (files_touched count increased)
 
 ```bash
@@ -274,6 +307,7 @@ fi
 **Message**: "💡 No recent file edits. If you're stuck, a fresh session may help."
 
 **Differences**:
+
 - **Cursor**: 3 iterations, task-based
 - **Claude**: 5 iterations, file-based
 - **Claude is more lenient**: Reading/researching phases don't trigger false positives
@@ -295,6 +329,7 @@ fi
 | Degraded | Any | 🛑 Context exhausted, start new session |
 
 **Key Features**:
+
 - Task-aware (knows when work is complete)
 - Offers `/summarize` as alternative to new session
 - Distinguishes blocked state
@@ -312,6 +347,7 @@ fi
 | Any | ≥40 min session | ⏱️ Long session (40+ min). Fresh session recommended. |
 
 **Key Features**:
+
 - Heuristic-based (no explicit task status)
 - Never mentions `/summarize` (doesn't exist)
 - Focuses on observable patterns (files, time)
@@ -320,6 +356,7 @@ fi
 ### 7. State File Format
 
 #### Cursor
+
 ```json
 {
   "conversation_id": "abc123",
@@ -338,12 +375,14 @@ fi
 ```
 
 **Fields**:
+
 - `tasks_completed`: From AGENTS.md [DONE] count
 - `summarize_count`: Times `/summarize` was run
 - `last_summarize_at`: Timestamp of last summarize
 - `last_done_count`, `last_todo_count`: For stuck detection
 
 #### Claude Code
+
 ```json
 {
   "conversation_id": "abc123",
@@ -358,6 +397,7 @@ fi
 ```
 
 **Fields**:
+
 - `last_files_count`: For stuck detection (file-based)
 - **No task fields**: Can't track explicit task completion
 - **No summarize fields**: Not applicable
@@ -367,6 +407,7 @@ fi
 ### 8. Hook Architecture
 
 #### Cursor
+
 **Single Hook**: `context-monitor.sh` (stop hook only)
 
 **File Tracking**: Estimated/manual
@@ -381,7 +422,9 @@ files_touched=$(safe_read '.files_touched | length' '0')
 **Disadvantage**: Less accurate file tracking
 
 #### Claude Code
+
 **Two Hooks**:
+
 1. `context-monitor.sh` (stop hook)
 2. `context-monitor-file-tracker.sh` (afterFileEdit hook)
 
@@ -400,6 +443,7 @@ echo '{"file_path":"test.go"}' | jq '.files_touched += [$file] | unique'
 ### 9. Configuration
 
 #### Cursor
+
 **File**: `~/.cursor/context-config.json`
 
 ```json
@@ -420,11 +464,13 @@ echo '{"file_path":"test.go"}' | jq '.files_touched += [$file] | unique'
 ```
 
 **Task-Related Config**:
+
 - `task` weight
 - `summarize_recovery` weight
 - `tasks_before_new_session` threshold
 
 #### Claude Code
+
 **File**: `~/.claude/context-config.json`
 
 ```json
@@ -445,6 +491,7 @@ echo '{"file_path":"test.go"}' | jq '.files_touched += [$file] | unique'
 ```
 
 **Time-Related Config**:
+
 - `duration_minutes` weight (new)
 - `long_session_minutes` threshold (new)
 - Higher `stuck_threshold` (5 vs 3)
@@ -471,6 +518,7 @@ echo '{"file_path":"test.go"}' | jq '.files_touched += [$file] | unique'
 ### Scenario 1: Bug Fix (5 iterations, 2 files, 10 minutes)
 
 #### Cursor
+
 ```
 Score = (5 × 8) + (2 × 2) + (0 × 15) - (0 × 25)
       = 40 + 4 + 0 - 0
@@ -480,6 +528,7 @@ Result: No warning
 ```
 
 #### Claude Code
+
 ```
 Score = (5 × 10) + (2 × 3) + (10 × 0.5)
       = 50 + 6 + 5
@@ -494,6 +543,7 @@ Result: Might get warning if ≥10 files or ≥20 min
 ### Scenario 2: Feature Development (25 iterations, 12 files, 35 minutes)
 
 #### Cursor
+
 ```
 Score = (25 × 8) + (12 × 2) + (0 × 15) - (0 × 25)
       = 200 + 24 + 0 - 0
@@ -508,6 +558,7 @@ Recommendation: "🛑 Context exhausted (~100%). Start new session to continue e
 ```
 
 #### Claude Code
+
 ```
 Score = (25 × 10) + (12 × 3) + (35 × 0.5)
       = 250 + 36 + 17.5
@@ -521,6 +572,7 @@ Recommendation: "🛑 Context ~100% (high usage). Start new session for best res
 ### Scenario 3: Research Phase (10 iterations, 0 files, 15 minutes)
 
 #### Cursor
+
 ```
 Score = (10 × 8) + (0 × 2) + (0 × 15) - (0 × 25)
       = 80 + 0 + 0 - 0
@@ -533,6 +585,7 @@ Recommendation: "💡 Appears stuck. New session with fresh context often helps.
 ```
 
 #### Claude Code
+
 ```
 Score = (10 × 10) + (0 × 3) + (15 × 0.5)
       = 100 + 0 + 7.5
@@ -549,6 +602,7 @@ Recommendation: "💡 No recent file edits. If you're stuck, a fresh session may
 ### Scenario 4: After `/summarize` (Cursor only)
 
 #### Cursor
+
 ```
 Before summarize:
 Score = (20 × 8) + (8 × 2) + (2 × 15) - (0 × 25)
@@ -569,6 +623,7 @@ Score = 206 - (3 × 25) = 131 → Still DEGRADED
 ```
 
 #### Claude Code
+
 N/A - No summarize feature
 
 **Conclusion**: Cursor's summarize provides some relief but not a complete reset
@@ -580,6 +635,7 @@ N/A - No summarize feature
 **What to Change**:
 
 1. **State file location**:
+
    ```bash
    # No automatic migration needed (different systems)
    # Just start fresh with Claude
@@ -595,6 +651,7 @@ N/A - No summarize feature
    - More lenient thresholds
 
 4. **Configuration**:
+
    ```bash
    # Copy and adjust
    cp ~/.cursor/context-config.json ~/.claude/context-config.json
@@ -603,6 +660,7 @@ N/A - No summarize feature
    ```
 
 **What Stays the Same**:
+
 - Hook architecture (JSON I/O)
 - Cross-platform locking
 - Security validations
@@ -613,6 +671,7 @@ N/A - No summarize feature
 **What to Add**:
 
 1. **Create AGENTS.md**:
+
    ```markdown
    # Task List
 
@@ -622,6 +681,7 @@ N/A - No summarize feature
    ```
 
 2. **Adjust thresholds** (more aggressive):
+
    ```json
    {
      "thresholds": {
@@ -639,6 +699,7 @@ N/A - No summarize feature
 ## Philosophical Differences
 
 ### Cursor Philosophy
+
 **"Give users control over context management"**
 
 - Explicit task tracking (AGENTS.md)
@@ -648,6 +709,7 @@ N/A - No summarize feature
 - Assumes user wants to extend session via summarization
 
 ### Claude Code Philosophy
+
 **"Simplify through automation"**
 
 - Automatic context management
@@ -659,6 +721,7 @@ N/A - No summarize feature
 ## Best Practices by System
 
 ### Cursor Best Practices
+
 1. **Maintain AGENTS.md**: Keep task markers up to date
 2. **Use `/summarize`**: When context fills, summarize before continuing
 3. **Update task status**: Move tasks from [TODO] → [WIP] → [DONE]
@@ -666,6 +729,7 @@ N/A - No summarize feature
 5. **Start fresh after task completion**: Don't carry over bloat
 
 ### Claude Code Best Practices
+
 1. **No maintenance needed**: System tracks automatically
 2. **Watch for 60% warnings**: Start wrapping up
 3. **Natural stopping points**: Commit after warnings
@@ -686,12 +750,14 @@ Both systems serve the same goal (context health awareness) but with different a
 | **False Positives** | More (aggressive 50%) | Fewer (conservative 60%) |
 
 **Choose Cursor if**:
+
 - You want explicit task tracking
 - You prefer control over summarization
 - You maintain task lists anyway
 - You want task completion detection
 
 **Choose Claude Code if**:
+
 - You prefer zero-maintenance automation
 - You're okay with heuristic recommendations
 - You prefer fresh sessions over patching

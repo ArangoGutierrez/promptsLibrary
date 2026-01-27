@@ -19,6 +19,7 @@ This document explains how your Cursor rules have been migrated to Claude Code f
 ### 1. CLAUDE.md (Always Loaded)
 
 The `CLAUDE.md` file is automatically loaded in every Claude Code session. It contains:
+
 - Core engineering standards (DEPTH, VERIFY, ATOMIC RIGOR)
 - Security rules summary
 - Token optimization guidelines
@@ -37,6 +38,7 @@ The engineering communication style needs to be explicitly selected:
 ```
 
 Or configure it in `.claude/settings.json`:
+
 ```json
 {
   "outputStyle": "engineering-style"
@@ -46,6 +48,7 @@ Or configure it in `.claude/settings.json`:
 ### 3. Modular Rules (Path-Specific)
 
 Rules in `claude/rules/` are loaded based on context:
+
 - `security.md` - Security-specific guidelines
 - `go-style.md` - Go language conventions
 - `quality-gate.md` - Quality thresholds
@@ -72,11 +75,13 @@ These are automatically referenced by Claude Code when working with relevant fil
 ### Output Styles vs. Rules
 
 **Output Styles** change HOW Claude responds:
+
 - Communication tone (direct vs. friendly)
 - Formatting preferences (tables vs. prose)
 - Depth of explanations (senior engineer vs. beginner)
 
 **CLAUDE.md** changes WHAT Claude knows:
+
 - Project architecture
 - Engineering standards
 - Security requirements
@@ -85,7 +90,9 @@ These are automatically referenced by Claude Code when working with relevant fil
 ## Testing Your Migration
 
 ### 1. Verify CLAUDE.md is loaded
+
 Start a new Claude Code session and ask:
+
 ```
 What are the core engineering principles you should follow?
 ```
@@ -93,7 +100,9 @@ What are the core engineering principles you should follow?
 Expected response should mention: DEPTH, VERIFY, ATOMIC RIGOR
 
 ### 2. Verify output style
+
 Activate the engineering style and ask:
+
 ```
 What communication style should you use with me?
 ```
@@ -101,7 +110,9 @@ What communication style should you use with me?
 Expected response should mention: direct, no hedging, senior engineer audience
 
 ### 3. Verify modular rules
+
 Ask about security:
+
 ```
 What are the security rules for handling secrets?
 ```
@@ -111,6 +122,7 @@ Expected response should reference the security.md guidelines
 ## Next Steps
 
 ### Option 1: Activate Everything (Recommended)
+
 ```bash
 # 1. Deploy to ~/.claude (if not already done)
 ./scripts/deploy-claude.sh
@@ -124,7 +136,9 @@ Expected response should reference the security.md guidelines
 ```
 
 ### Option 2: Selective Activation
+
 If you prefer not to use the output style globally:
+
 ```bash
 # Just deploy the CLAUDE.md and rules
 ./scripts/deploy-claude.sh
@@ -134,7 +148,9 @@ claude --append-system-prompt "Use direct, technical communication"
 ```
 
 ### Option 3: Per-Project Setup
+
 Keep configuration in this project only:
+
 ```bash
 # Add to .claude/settings.json
 {
@@ -145,18 +161,21 @@ Keep configuration in this project only:
 ## Comparison with Cursor
 
 ### What Works the Same
+
 ✅ Project-wide rules automatically applied
 ✅ Security guidelines always enforced
 ✅ Language-specific conventions available
 ✅ Modular rule organization
 
 ### What's Different
+
 ⚠️ Personal style requires explicit activation (output style)
 ⚠️ CLAUDE.md is a single file, not multiple rule files
 ⚠️ Rules are context-aware rather than always-applied
 ⚠️ No YAML frontmatter (`alwaysApply: true`)
 
 ### What's Better in Claude Code
+
 ✨ Stronger separation between project context (CLAUDE.md) and behavior (output styles)
 ✨ Path-specific rules can be organized by directory
 ✨ Output styles are shareable and reusable across projects
@@ -165,6 +184,7 @@ Keep configuration in this project only:
 ## Rollback Plan
 
 If you need to revert:
+
 ```bash
 # Uninstall Claude Code configuration
 ./scripts/deploy-claude.sh --uninstall
@@ -244,23 +264,27 @@ claude/
 ### Migration Benefits
 
 **Easier Discovery:**
+
 - All agents in one directory instead of split across `agents/` and `agents-optimized/`
 - All skills in one place instead of buried in `custom-skills/skills/{name}/`
 - Everything is either an agent or a skill - no separate "commands" concept
 
 **Consistent Naming:**
+
 - Regular agents: `{name}.md`
 - Optimized agents: `{name}-opt.md`
 - All skills: `{name}.md`
 - Clear suffix pattern instead of separate directories
 
 **Simplified Deployment:**
+
 - No plugin metadata (`.claude-plugin/` directories)
 - Direct deployment of resource directories
 - Cleaner deployment script
 - No confusion about commands vs skills
 
 **Better Organization:**
+
 - Organized by resource type (agents, skills)
 - Easier to find and navigate
 - Less nesting and complexity
@@ -269,6 +293,7 @@ claude/
 ### Backward Compatibility
 
 **Functionality unchanged:**
+
 - All agents, skills, and commands work identically
 - No changes to file contents (only paths)
 - Deploy script updated to handle flat structure
@@ -276,19 +301,23 @@ claude/
 ### What You Need to Do
 
 **If you haven't deployed yet:**
+
 - Nothing! The new structure is automatically deployed
 
 **If you have existing deployments:**
+
 1. Redeploy with `./scripts/deploy-claude.sh --force`
 2. New flat structure deployed to `~/.claude/agents/`, `~/.claude/skills/`, etc.
 
 **Accessing resources:**
+
 - Agents: `~/.claude/agents/{name}.md` or `~/.claude/agents/{name}-opt.md`
 - Skills: `~/.claude/skills/{name}.md` (includes former commands)
 
 ### Example Usage After Migration
 
 **Using agents (no change):**
+
 ```bash
 # Regular version
 Use the Task tool with the auditor agent to review src/auth/
@@ -298,6 +327,7 @@ Use the Task tool with the auditor-opt agent to review src/auth/
 ```
 
 **Using skills:**
+
 ```bash
 # Original skills
 /architect "add caching"
@@ -316,6 +346,7 @@ All usage patterns remain the same - former "commands" are now skills with `/` i
 ## Future Enhancements
 
 Consider adding:
+
 1. Project-specific `.claude/CLAUDE.local.md` for personal overrides
 2. Directory-specific rules (e.g., `backend/CLAUDE.md`, `frontend/CLAUDE.md`)
 3. Additional output styles for different contexts (debugging, documentation, etc.)

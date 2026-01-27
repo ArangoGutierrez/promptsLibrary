@@ -61,6 +61,7 @@ Review all files that will be reorganized.
 Organize changes into logical, atomic commits:
 
 **Grouping rules**:
+
 - `chore(config)`: Configuration changes (`.json`, `.yaml`, `.toml`, `.env.example`)
 - `refactor(rename)`: Renames without logic changes
 - `feat(scope)`: New features by domain
@@ -71,6 +72,7 @@ Organize changes into logical, atomic commits:
 - `style`: Formatting/style changes
 
 **By domain**: Group related functional changes together
+
 - auth: Authentication/authorization
 - api: API endpoints
 - db: Database/storage
@@ -82,12 +84,14 @@ Organize changes into logical, atomic commits:
 Before creating each commit, verify:
 
 **Questions to ask**:
+
 - ✓ **Single type**: Does this commit contain ONLY the stated type (no mixing feat + refactor)?
 - ✓ **No cross-cutting**: Does it touch only related files?
 - ✓ **Compiles**: Will the codebase compile after this commit?
 - ✓ **Message accurate**: Does the message precisely describe changes?
 
 **Validation**:
+
 - ✓ Valid: Create commit
 - ✗ Split: Too large or mixed, split into multiple commits
 - ? Review: Unclear, ask user
@@ -109,11 +113,13 @@ Breaking change notes if applicable."
 ```
 
 **Flags**:
+
 - `-S`: GPG sign the commit
 - `-s`: Add DCO Signed-off-by trailer
 - `-m`: Inline message (no editor)
 
 **Conventional Commit format**:
+
 ```
 type(scope): short description
 
@@ -123,6 +129,7 @@ type(scope): short description
 ```
 
 **Types**:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `refactor`: Code change without behavior change
@@ -142,6 +149,7 @@ git log --show-signature -n {COUNT}
 ```
 
 **Check**:
+
 - ✓ **Signed**: GPG signature present
 - ✓ **DCO**: "Signed-off-by" trailer present
 - ✓ **Conventional**: Format follows "type(scope): desc"
@@ -154,19 +162,23 @@ git log --show-signature -n {COUNT}
 
 ### Before
 ```
+
 abc1234 WIP
 def5678 fix stuff
 ghi9012 more changes
 jkl3456 actually works now
+
 ```
 
 ### After
 ```
+
 aaa1111 feat(auth): add JWT authentication
 bbb2222 refactor(api): extract validation logic
 ccc3333 test(auth): add login handler tests
 ddd4444 docs: update API documentation
 eee5555 chore(deps): update go.mod dependencies
+
 ```
 
 ### Verification
@@ -195,12 +207,14 @@ eee5555 chore(deps): update go.mod dependencies
 ## When to Use
 
 **Use /git-polish when**:
+
 - Before pushing to shared branch
 - Local history is messy
 - Want clean, reviewable history
 - Preparing PR for review
 
 **Don't use /git-polish for**:
+
 - Already pushed commits (use with caution)
 - Shared branch history
 - Single clean commit (unnecessary)

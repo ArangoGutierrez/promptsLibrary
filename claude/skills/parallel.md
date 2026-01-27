@@ -35,17 +35,20 @@ Tasks: ["add logging", "update docs", "run tests"]
 Check for dependencies between tasks:
 
 **Dependency signals** (tasks CANNOT run in parallel):
+
 - **Same file**: Both tasks modify same file
 - **Explicit dependency**: "after X", "needs X", "depends on X"
 - **Test dependency**: "test X" requires "implement X" to complete first
 - **Data flow**: Task B uses output from Task A
 
 **Independence signals** (tasks CAN run in parallel):
+
 - **Different directories**: No file overlap
 - **Different concerns**: Separate functional areas (docs vs code vs tests)
 - **No explicit deps**: No "after" or "needs" language
 
 **Dependency matrix**:
+
 | Task | Depends On | Blocks |
 |------|------------|--------|
 | Task 1 | - | Task 2 |
@@ -57,14 +60,17 @@ Check for dependencies between tasks:
 Organize into parallel and sequential groups:
 
 **Parallel group**: Independent tasks that can run simultaneously
+
 - Max 4 tasks in parallel (to avoid overwhelming)
 - Use fast model (haiku) for efficiency
 
 **Sequential group**: Dependent tasks that must run in order
+
 - Execute one after another
 - Wait for each to complete before starting next
 
 **Example**:
+
 ```
 Input: "impl auth | test auth | add docs | update readme"
 
@@ -115,12 +121,14 @@ TaskOutput(task_id="task_1", block=false)
 ### Step 6: Merge Results
 
 After all tasks complete:
+
 1. Collect results from each task
 2. Identify files changed
 3. Check for conflicts
 4. Update AGENTS.md with results
 
 **Conflict detection**:
+
 - Same file modified by multiple tasks: ⚠️ Manual merge needed
 - No file overlap: ✓ Clean merge
 
@@ -179,6 +187,7 @@ Check AGENTS.md for tasks that can run in parallel:
 5. Report opportunities
 
 **Output**:
+
 ```markdown
 ## Parallelization Analysis
 
@@ -204,6 +213,7 @@ Run tasks 1, 2, 3 in parallel using:
 ```
 
 Then run task 4 after completion.
+
 ```
 
 ## Mode: --from-agents (Auto-run from AGENTS.md)

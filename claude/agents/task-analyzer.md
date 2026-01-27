@@ -53,10 +53,12 @@ Depends on Cluster 1:  [Task C, Task E]
 
 ### Dependency Graph
 ```
+
 A ──┐
     ├──→ C ──→ E
 B ──┘
 D (independent)
+
 ```
 
 ### Parallel Groups
@@ -78,6 +80,7 @@ Then sequential: C → E
 ## Dependency Signals
 
 ### Likely Dependent
+
 - "Add tests for X" → depends on X implementation
 - "Update docs for X" → depends on X being done
 - "Refactor X to use Y" → depends on Y existing
@@ -85,6 +88,7 @@ Then sequential: C → E
 - "after", "once", "when X is done"
 
 ### Likely Independent
+
 - Different directories/packages
 - Different concerns (auth vs logging)
 - "Add X" and "Add Y" (new features)
@@ -100,6 +104,7 @@ Then sequential: C → E
 ## Integration
 
 Works with:
+
 - `/parallel` command (provides analysis)
 - `/loop` (suggests parallel batches)
 - `/code` (recommends next parallelizable set)

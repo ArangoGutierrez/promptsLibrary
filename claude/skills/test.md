@@ -44,6 +44,7 @@ go test ./... -v
 ```
 
 **Output variables**:
+
 - Status: PASS | FAIL
 - Tests passed: N
 - Tests total: M
@@ -65,6 +66,7 @@ git diff --name-only HEAD~1
 ```
 
 **Benefits**:
+
 - Faster feedback loop
 - Relevant test results
 - Useful for TDD workflow
@@ -136,11 +138,13 @@ cargo test --package {package-name}
 After test run, update AGENTS.md:
 
 **If tests pass**:
+
 ```markdown
 - [ ] Run tests → [DONE]
 ```
 
 **If tests fail**:
+
 ```markdown
 - [ ] Run tests → [BLOCKED: tests failing]
 - [ ] Fix test failures → [TODO]
@@ -161,16 +165,20 @@ Preserve all existing AGENTS.md content.
 ### Detailed Troubleshooting
 
 #### No test framework found
+
 **Problem**: Can't detect how to run tests
 **Actions**:
+
 1. Look for test files manually
 2. Check project documentation
 3. Run test command manually and report
 4. Ask user for test command
 
 #### Tests pass locally, fail here
+
 **Problem**: Environment-specific failure
 **Check**:
+
 1. Environment variables set correctly?
 2. Database/services running?
 3. Port conflicts (another process using port)?
@@ -179,8 +187,10 @@ Preserve all existing AGENTS.md content.
 **Fix**: Document environment differences, ask user to clarify
 
 #### Flaky tests
+
 **Problem**: Tests sometimes pass, sometimes fail
 **Actions**:
+
 1. Run multiple times: `go test -count=10 ./...`
 2. Check for race conditions: `go test -race ./...`
 3. Look for time dependencies (sleep, timeout)
@@ -188,21 +198,26 @@ Preserve all existing AGENTS.md content.
 5. Report pattern to user
 
 #### Tests hanging
+
 **Problem**: Test suite doesn't complete
 **Check**:
+
 1. Infinite loops in test setup/teardown
 2. Waiting for I/O that never completes
 3. Missing context timeouts
 4. Blocking on channels
 
 **Fix**:
+
 1. Add timeouts to test execution
 2. Run with verbose mode to see where it stops
 3. Check for missing mocks on network calls
 
 #### Compilation errors before tests
+
 **Problem**: Code doesn't compile
 **Actions**:
+
 1. Fix compilation errors first
 2. Check imports are correct
 3. Verify type errors resolved
@@ -212,6 +227,7 @@ Preserve all existing AGENTS.md content.
 ## When to Use
 
 **Use /test when**:
+
 - After implementing code changes
 - Before committing
 - During TDD workflow (test → code → test)
@@ -219,11 +235,13 @@ Preserve all existing AGENTS.md content.
 - After fixing bugs
 
 **Use /test --quick when**:
+
 - In TDD red-green-refactor loop
 - Want fast feedback
 - Only changed specific area
 
 **Use /test --file when**:
+
 - Debugging specific test
 - Working on isolated feature
 - Want fastest possible feedback
@@ -231,6 +249,7 @@ Preserve all existing AGENTS.md content.
 ## Automatic Invocation
 
 Claude may automatically invoke `/test`:
+
 - After code changes in TDD mode
 - When verifying acceptance criteria
 - Before marking task complete

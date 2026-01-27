@@ -9,12 +9,14 @@ This project provides a **context self-awareness system** for Claude Code sessio
 ### 1. Core Hooks
 
 **`context-monitor.sh`** (stop hook)
+
 - Main monitoring logic
 - Calculates context health score
 - Generates recommendations based on usage
 - Runs after each agent iteration
 
 **`context-monitor-file-tracker.sh`** (afterFileEdit hook)
+
 - Tracks unique files edited
 - Updates session state atomically
 - Runs after every file edit
@@ -22,6 +24,7 @@ This project provides a **context self-awareness system** for Claude Code sessio
 ### 2. Documentation
 
 **`CONTEXT_MONITOR.md`** - Comprehensive user guide covering:
+
 - How the system works
 - Installation instructions
 - Usage examples
@@ -31,6 +34,7 @@ This project provides a **context self-awareness system** for Claude Code sessio
 - FAQ
 
 **`context-monitor-research.md`** - Deep research analysis:
+
 - Cursor implementation breakdown
 - Claude Code architecture analysis
 - Design decisions and adaptations
@@ -40,12 +44,14 @@ This project provides a **context self-awareness system** for Claude Code sessio
 ### 3. Installation & Testing
 
 **`install-context-monitor.sh`** - Automated installer:
+
 - Copies hooks to `~/.claude/hooks/`
 - Updates `~/.claude/hooks.json` configuration
 - Optional config file installation
 - Uninstall capability
 
 **`test-context-monitor.sh`** - Comprehensive test suite:
+
 - 13 test cases covering core functionality
 - File tracker tests
 - Context monitor tests
@@ -53,6 +59,7 @@ This project provides a **context self-awareness system** for Claude Code sessio
 - Configuration tests
 
 **`context-config-example.json`** - Example configuration:
+
 - Customizable thresholds
 - Weight adjustments
 - Timeout settings
@@ -68,6 +75,7 @@ score = (iterations × 10) + (files_touched × 3) + (duration_minutes × 0.5)
 ```
 
 **Health States**:
+
 - **Healthy** (0-59%): Continue working
 - **Filling** (60-79%): Be aware, consider wrapping up
 - **Critical** (80-94%): Finish current work, new session soon
@@ -89,6 +97,7 @@ Context-aware messages guide users:
 ### Stuck Detection
 
 Automatically detects when progress stalls:
+
 - Tracks file edit count across iterations
 - Alerts after 5+ iterations without file changes
 - Suggests fresh session to break out of stuck state
@@ -96,6 +105,7 @@ Automatically detects when progress stalls:
 ### Session Isolation
 
 Each session is tracked independently:
+
 - State stored in `.claude/context-state.json`
 - Automatic reset on new conversation_id
 - No cross-contamination between sessions
@@ -103,6 +113,7 @@ Each session is tracked independently:
 ### Cross-Platform Compatibility
 
 Robust implementation:
+
 - Works on macOS and Linux
 - Uses `mkdir` for atomic locking (POSIX-compliant)
 - Automatic stale lock cleanup (>60 seconds)
@@ -111,6 +122,7 @@ Robust implementation:
 ### Security
 
 Built-in protections:
+
 - Path traversal blocking (`..` in file paths)
 - Symlink validation
 - Lock timeout to prevent deadlock
@@ -238,6 +250,7 @@ chmod +x test-context-monitor.sh
 ```
 
 Expected output:
+
 ```
 ═══════════════════════════════════════════════════
   Context Monitor Test Suite
@@ -462,16 +475,19 @@ MIT License - Same as Claude Code hooks collection
 ## Getting Help
 
 **Documentation**:
+
 - User guide: `claude/hooks/CONTEXT_MONITOR.md`
 - Research: `claude/docs/context-monitor-research.md`
 - This summary: `claude/hooks/CONTEXT_MONITOR_SUMMARY.md`
 
 **Issues**:
+
 - File bugs in the repository
 - Include `.claude/context-state.json` contents
 - Specify your OS and jq version
 
 **Questions**:
+
 - Check FAQ in CONTEXT_MONITOR.md
 - Review troubleshooting section
 - Examine test cases for usage examples

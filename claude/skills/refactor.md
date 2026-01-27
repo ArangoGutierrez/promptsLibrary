@@ -27,6 +27,7 @@ Behavior-preserving code improvements with test-driven safety.
 Identify code smells, complexity metrics, and duplication patterns.
 
 **Actions**:
+
 1. Read target code and related files
 2. Identify code smells:
    - Long methods (> 50 lines)
@@ -48,6 +49,7 @@ Identify code smells, complexity metrics, and duplication patterns.
 Create a refactoring plan with specific transformations and rationale.
 
 **Transformation catalog**:
+
 - Extract method/function
 - Rename variable/function
 - Inline temporary
@@ -58,6 +60,7 @@ Create a refactoring plan with specific transformations and rationale.
 - Simplify conditional
 
 **For each transformation**:
+
 - **Name**: e.g., "Extract validation logic to ValidateUser()"
 - **Rationale**: Why this improves code
 - **Risk**: Low (safe) / Medium (needs care) / High (risky)
@@ -66,6 +69,7 @@ Create a refactoring plan with specific transformations and rationale.
 - **Impact**: Files affected
 
 **Ordering rules**:
+
 1. Safe transformations first (rename, extract constant)
 2. Then structural changes (extract method)
 3. Finally risky changes (move between modules)
@@ -78,21 +82,25 @@ Create a refactoring plan with specific transformations and rationale.
 Ensure adequate test coverage exists before making changes.
 
 **Actions**:
+
 1. Run existing test suite: `/test`
 2. Check if target code has tests
 3. Measure coverage (if tool available)
 4. Identify test gaps
 
 **Coverage assessment**:
+
 - ✅ **Good**: > 80% coverage, tests pass
 - ⚠️ **Partial**: 50-80% coverage or some areas untested
 - ❌ **Insufficient**: < 50% coverage or no tests
 
 **If `--safe` flag**:
+
 - Require ✅ Good coverage before proceeding
 - Stop if coverage insufficient
 
 **Otherwise**:
+
 - Proceed with caution
 - Document risk
 - Add tests if transformations are risky
@@ -111,6 +119,7 @@ Make changes incrementally, testing after each transformation.
    - Keep changes minimal
 
 2. **Compile check**:
+
    ```bash
    go build ./...          # Go
    npm run build           # Node.js
@@ -119,6 +128,7 @@ Make changes incrementally, testing after each transformation.
    ```
 
 3. **Run tests**:
+
    ```bash
    /test
    ```
@@ -129,6 +139,7 @@ Make changes incrementally, testing after each transformation.
    - Functionality unchanged?
 
 5. **Commit**:
+
    ```bash
    git add {files}
    git commit -s -S -m "refactor({scope}): {transformation name}
@@ -139,9 +150,11 @@ Make changes incrementally, testing after each transformation.
    ```
 
 6. **If tests fail**:
+
    ```bash
    git revert HEAD
    ```
+
    - Document why transformation failed
    - Adjust approach
    - Try again with modified transformation
@@ -155,6 +168,7 @@ Make changes incrementally, testing after each transformation.
 Run full test suite and compare behavior.
 
 **Actions**:
+
 1. Run full test suite: `/test`
 2. Compare test results before/after refactoring
 3. Check for performance regressions (if applicable)
@@ -162,6 +176,7 @@ Run full test suite and compare behavior.
 5. Confirm behavior preservation
 
 **Validation checklist**:
+
 - [x] All tests pass
 - [x] No new warnings or errors
 - [x] Performance not degraded
@@ -238,17 +253,20 @@ Run full test suite and compare behavior.
 ## Flags Behavior
 
 ### --safe (Extra Validation)
+
 - Require good test coverage (> 80%)
 - Smaller transformation steps
 - More frequent test runs
 - Stop on any test failure
 
 ### --aggressive (Larger Changes)
+
 - Allow larger scope transformations
 - Can modify multiple files at once
 - Still require tests to pass
 
 ### --breaking (Functional Changes)
+
 - Allow changes that modify behavior
 - Use for intentional API changes
 - Still requires tests, but tests may change too
@@ -266,6 +284,7 @@ Run full test suite and compare behavior.
 ## When to Use
 
 **Use /refactor when**:
+
 - Code smells identified
 - Preparing for new features
 - Improving maintainability
@@ -273,6 +292,7 @@ Run full test suite and compare behavior.
 - Code review suggests improvements
 
 **Don't refactor when**:
+
 - No tests exist (write tests first)
 - Under time pressure (defer to later)
 - For style only (use formatter)

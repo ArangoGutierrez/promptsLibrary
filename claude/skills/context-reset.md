@@ -21,6 +21,7 @@ Reset or inspect context monitoring state.
 ## What It Does
 
 The `context-monitor.sh` hook estimates token usage based on:
+
 - **Iterations**: +8% per iteration
 - **Files read**: +2% per file
 - **Tasks created**: +15% per task
@@ -45,6 +46,7 @@ cat .cursor/context-state.json
 ```
 
 Extract:
+
 - Current score percentage
 - Health state
 - Task count
@@ -52,6 +54,7 @@ Extract:
 - Last recommendation
 
 **Output**:
+
 ```markdown
 ## Context Health
 
@@ -85,12 +88,14 @@ echo "✓ Context tracking reset"
 ```
 
 **When reset**:
+
 - Clears all counters
 - Next hook run will start fresh
 - Use after `/summarize` to recalibrate
 - Use if false "stuck" warnings
 
 **Output**:
+
 ```markdown
 ## Context Reset
 
@@ -137,6 +142,7 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 ```
 
 **Adjustable values**:
+
 - `healthy_max`: When to show "Filling" state
 - `filling_max`: When to show "Critical" state
 - `critical_max`: When to show "Degraded" state
@@ -152,6 +158,7 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 **Problem**: Context monitor says "stuck" but working fine
 
 **Solution**:
+
 ```bash
 /context-reset
 ```
@@ -161,6 +168,7 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 **Problem**: Health score doesn't match actual context usage
 
 **Actions**:
+
 1. Check config weights in `~/.cursor/context-config.json`
 2. Reset to recalibrate: `/context-reset`
 3. Adjust weights if consistently inaccurate
@@ -170,6 +178,7 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 **Problem**: Monitor not providing recommendations
 
 **Check**:
+
 1. Verify hook in `.cursor/hooks.json` → `stop` array
 2. Check hook has execute permissions
 3. Verify `.cursor/` directory exists
@@ -192,12 +201,14 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 ## When to Use
 
 **Use /context-reset when**:
+
 - After using `/summarize`
 - Getting false warnings
 - Want fresh context state
 - Context tracking misbehaving
 
 **Use /context-reset --status when**:
+
 - Check if `/summarize` needed
 - Monitor context health
 - Debug context issues

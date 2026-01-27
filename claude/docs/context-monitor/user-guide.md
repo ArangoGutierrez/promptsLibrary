@@ -7,6 +7,7 @@ The Context Monitor is a pair of hooks that provides context self-awareness for 
 **Adapted from**: Cursor's `context-monitor.sh`
 
 **Key Benefits**:
+
 - Prevents context degradation from reducing Claude's effectiveness
 - Recommends natural stopping points before context becomes critical
 - Helps maintain high-quality coding assistance throughout long tasks
@@ -37,16 +38,20 @@ Based on a calculated score (0-100), the monitor categorizes context health:
 The monitor provides contextual recommendations:
 
 **Filling State** (60-79%):
+
 - Many files edited (≥10): "Context ~70% (15 files edited). Consider finishing current work."
 - Long session (≥20 min): "Context ~70%. Good stopping point approaching."
 
 **Critical State** (80-94%):
+
 - "Context ~85%. Finish current work and start fresh session soon."
 
 **Degraded State** (95-100%):
+
 - "Context ~95% (high usage). Start new session for best results."
 
 **Special Conditions**:
+
 - **Stuck** (5+ iterations, no file edits): "No recent file edits. If you're stuck, a fresh session may help."
 - **Very Long** (40+ minutes): "Long session (40+ min). Fresh session recommended for optimal performance."
 
@@ -148,11 +153,13 @@ When you receive a recommendation:
 **What it means**: Your session has accumulated significant context (70% of estimated capacity based on files and iterations).
 
 **What to do**:
+
 - Finish your current task or subtask
 - Commit your changes
 - Start a new Claude Code session for the next task
 
 **Why it matters**: Claude Code auto-summarizes internally, but fresh sessions start with clean context, leading to:
+
 - Better code quality
 - Faster responses
 - More focused assistance
@@ -214,6 +221,7 @@ This heuristic approach is simpler and doesn't require maintaining a separate AG
 ### Hook Not Running
 
 **Check hook registration**:
+
 ```bash
 cat ~/.claude/hooks.json
 ```
@@ -221,6 +229,7 @@ cat ~/.claude/hooks.json
 Verify the hooks are listed under `stop` and `afterFileEdit`.
 
 **Check hook permissions**:
+
 ```bash
 ls -l ~/.claude/hooks/context-monitor*.sh
 ```
@@ -228,6 +237,7 @@ ls -l ~/.claude/hooks/context-monitor*.sh
 Should show `-rwxr-xr-x` (executable).
 
 **Fix permissions**:
+
 ```bash
 chmod +x ~/.claude/hooks/context-monitor.sh
 chmod +x ~/.claude/hooks/context-monitor-file-tracker.sh
@@ -236,6 +246,7 @@ chmod +x ~/.claude/hooks/context-monitor-file-tracker.sh
 ### jq Not Found
 
 **Install jq**:
+
 ```bash
 # macOS
 brew install jq
@@ -257,6 +268,7 @@ If you see "Failed to acquire lock" errors:
 Edit `~/.claude/context-config.json`:
 
 **Too frequent** (recommendations at healthy state):
+
 ```json
 {
   "thresholds": {
@@ -268,6 +280,7 @@ Edit `~/.claude/context-config.json`:
 ```
 
 **Too infrequent** (no warnings until very late):
+
 ```json
 {
   "thresholds": {
@@ -279,6 +292,7 @@ Edit `~/.claude/context-config.json`:
 ```
 
 **Adjust sensitivity**:
+
 ```json
 {
   "weights": {
@@ -337,12 +351,14 @@ fi
 ### When to Start New Session
 
 **Good times**:
+
 - After completing a discrete task or feature
 - When you see "filling" or "critical" warnings
 - After 30-40 minutes of continuous work
 - When you switch to a different task or codebase area
 
 **Not necessary**:
+
 - For small bug fixes (2-3 files)
 - After every single edit
 - In the middle of a complex refactor
@@ -350,13 +366,16 @@ fi
 ### Session Planning
 
 **Small task** (1-2 files, <10 iterations):
+
 - Single session, no warnings expected
 
 **Medium task** (5-10 files, 20-30 iterations):
+
 - May get "filling" warning toward end
 - Good to break into 2 sessions if possible
 
 **Large task** (15+ files, 50+ iterations):
+
 - Plan for 2-3 sessions
 - Break at natural boundaries (e.g., after tests pass)
 
@@ -365,6 +384,7 @@ fi
 If you see "No recent file edits" warning:
 
 **Possible causes**:
+
 1. Genuinely stuck on problem → Fresh session helps
 2. Reading/researching phase → Ignore warning, continue
 3. Testing/debugging → Ignore warning, you'll edit soon
@@ -416,6 +436,7 @@ score = (iterations × 10) + (files_touched × 3) + (duration_minutes × 0.5)
 **Clamped**: 0-100 range
 
 **Example calculation**:
+
 - 20 iterations → 200 points
 - 8 files touched → 24 points
 - 30 minutes → 15 points
@@ -426,6 +447,7 @@ This formula is intentionally conservative to avoid false negatives.
 ### Hook I/O Contract
 
 **Input** (stdin JSON):
+
 ```json
 {
   "status": "completed",
@@ -435,6 +457,7 @@ This formula is intentionally conservative to avoid false negatives.
 ```
 
 **Output** (stdout JSON):
+
 ```json
 {
   "followup_message": "📊 Context ~70%. Consider finishing current work."
@@ -442,6 +465,7 @@ This formula is intentionally conservative to avoid false negatives.
 ```
 
 Empty response (no recommendation):
+
 ```json
 {}
 ```

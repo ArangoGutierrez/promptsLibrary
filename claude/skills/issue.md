@@ -33,6 +33,7 @@ gh issue view $ARGUMENTS --json title,body,labels,state,comments,milestone
 ```
 
 Extract:
+
 - Title and body
 - Labels
 - State (open/closed)
@@ -45,6 +46,7 @@ Extract:
 Analyze and categorize:
 
 **Type**:
+
 - `bug` - Broken functionality
 - `feat` - New feature
 - `refactor` - Code improvement
@@ -53,11 +55,13 @@ Analyze and categorize:
 - `sec` - Security
 
 **Scope**:
+
 - `local` - Single file/function
 - `cross` - Multiple files/modules
 - `arch` - Architectural change
 
 **Complexity**:
+
 - `trivial` - < 1 hour, obvious
 - `simple` - 1-4 hours, straightforward
 - `moderate` - 4-8 hours, some unknowns
@@ -88,16 +92,19 @@ Generate 2-3 implementation approaches:
 ### Step 5: Break Into Atomic Tasks
 
 Create task list where:
+
 - **1 task = 1 change = 1 test = 1 commit**
 - Each task is independently verifiable
 - Tasks ordered by dependency
 
 **Good task examples**:
+
 - ✓ "Add User.Validate() method with tests"
 - ✓ "Update handler to call User.Validate()"
 - ✓ "Add integration test for validation"
 
 **Bad task examples**:
+
 - ✗ "Fix authentication" (too vague)
 - ✗ "Update multiple files" (not atomic)
 - ✗ "Add feature" (too large)
@@ -105,6 +112,7 @@ Create task list where:
 ### Step 6: Verify Prerequisites
 
 Check before proceeding:
+
 - ✓ **Files exist**: Mentioned files are present?
 - ✓ **Behavior understood**: Can read and understand the code?
 - ✓ **Current**: Issue reflects latest codebase state?
@@ -123,6 +131,7 @@ git checkout -b {type}/issue-{N}-{slug}
 ```
 
 **Branch naming**:
+
 - `feat/issue-123-add-user-auth`
 - `fix/issue-456-null-pointer`
 - `refactor/issue-789-extract-validation`
@@ -191,6 +200,7 @@ git checkout -b {type}/issue-{N}-{slug}
 ```
 
 ### Task Breakdown
+
 {N} atomic tasks created in AGENTS.md
 
 | # | Task | Estimated |
@@ -203,12 +213,15 @@ git checkout -b {type}/issue-{N}-{slug}
 **Total estimated effort**: ~1 hour
 
 ### Next Steps
+
 1. Review AGENTS.md task list
 2. Run `/code` to implement first task
 3. Continue with `/code` for subsequent tasks
 
 ### Files
+
 AGENTS.md initialized with full plan
+
 ```
 
 ## Constraints

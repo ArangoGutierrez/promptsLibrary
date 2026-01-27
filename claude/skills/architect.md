@@ -34,6 +34,7 @@ arch-explorer → devil-advocate → [prototyper×N] → synthesizer
 Use the Task tool with a general-purpose subagent loaded with the arch-explorer agent prompt to generate 3-5 genuinely different architectural approaches.
 
 **Prompt for Task tool**:
+
 ```
 Use the arch-explorer agent from ~/.claude/agents/arch-explorer.md to explore architectural approaches for: $ARGUMENTS
 
@@ -47,6 +48,7 @@ Output should include the comparison matrix and detailed analysis of each approa
 ```
 
 **What arch-explorer produces**:
+
 - 3-5 genuinely different approaches (not trivial variations)
 - Comparison matrix with effort/risk/maintainability/scalability
 - Trade-off analysis for each approach
@@ -57,6 +59,7 @@ Output should include the comparison matrix and detailed analysis of each approa
 Use the Task tool with a general-purpose subagent loaded with the devil-advocate agent prompt to critically review the top recommendation from arch-explorer.
 
 **Prompt for Task tool**:
+
 ```
 Use the devil-advocate agent from ~/.claude/agents/devil-advocate.md to critique the top architectural approach from the previous analysis.
 
@@ -73,6 +76,7 @@ Output should include severity-ranked concerns (Blocker, Major, Minor, Question)
 ```
 
 **What devil-advocate produces**:
+
 - Severity-ranked concerns (Blocker, Major, Minor, Question)
 - Challenged assumptions
 - Identified failure modes
@@ -89,6 +93,7 @@ Output should include severity-ranked concerns (Blocker, Major, Minor, Question)
 Launch N prototyper agents in parallel using the Task tool with `run_in_background: true`.
 
 **Prompt for each prototyper** (run in parallel):
+
 ```
 Use the prototyper agent from ~/.claude/agents/prototyper.md to create a working prototype for approach: [approach name]
 
@@ -108,6 +113,7 @@ Output should include prototype location, setup instructions, and key findings.
 **Monitor background tasks** using TaskOutput to check progress.
 
 **What prototyper produces** (per approach):
+
 - Working code in `.prototypes/{approach-slug}/`
 - README with setup and run instructions
 - Key findings about feasibility
@@ -118,6 +124,7 @@ Output should include prototype location, setup instructions, and key findings.
 Use the Task tool with a general-purpose subagent loaded with the synthesizer agent prompt to combine all outputs into a final recommendation.
 
 **Prompt for Task tool**:
+
 ```
 Use the synthesizer agent from ~/.claude/agents/synthesizer.md to create a final architecture recommendation.
 
@@ -137,6 +144,7 @@ Output should be a definitive recommendation with supporting evidence.
 ```
 
 **What synthesizer produces**:
+
 - Final recommendation with confidence level
 - Evidence from all phases
 - Consensus patterns identified
@@ -195,26 +203,33 @@ After all phases complete, present:
 ## Examples
 
 ### Example 1: Quick exploration (no prototypes)
+
 ```
 /architect "Add real-time notifications" --quick
 ```
+
 Result: arch-explorer → devil-advocate → synthesizer (fast, ~5 min)
 
 ### Example 2: Full pipeline (2 prototypes)
+
 ```
 /architect "Add real-time notifications"
 ```
+
 Result: arch-explorer → devil-advocate → 2× prototyper (parallel) → synthesizer (~15-20 min)
 
 ### Example 3: Extensive prototyping
+
 ```
 /architect "Choose database for new service" --proto 3
 ```
+
 Result: Prototypes 3 different database options in parallel
 
 ## When to Use This Skill
 
 **Use /architect when**:
+
 - Adding major new features
 - Choosing between technologies
 - Making irreversible architectural decisions
@@ -222,6 +237,7 @@ Result: Prototypes 3 different database options in parallel
 - Unfamiliar problem domains
 
 **Don't use /architect for**:
+
 - Minor feature additions
 - Well-understood patterns
 - Time-sensitive hot fixes

@@ -7,7 +7,9 @@ This document analyzes Cursor's `context-monitor.sh` hook and provides a design 
 ## Cursor Context Monitor Analysis
 
 ### Purpose
+
 Monitor context usage heuristics and recommend:
+
 - Session summarization when context is filling but task is in-progress
 - New session when task is complete or context is degraded
 
@@ -16,11 +18,13 @@ Monitor context usage heuristics and recommend:
 **Hook Type**: `stop` (runs after each agent iteration completes)
 
 **State Management**:
+
 - Global config: `~/.cursor/context-config.json`
 - Session state: `.cursor/context-state.json`
 - Task tracking: `AGENTS.md` file with task status markers
 
 **Key Metrics**:
+
 1. **Iterations**: Number of agent turns in the session
 2. **Files touched**: Count of edited files
 3. **Tasks completed**: Count of [DONE] markers in AGENTS.md
@@ -35,6 +39,7 @@ score = (iterations × 8) + (files_touched × 2) + (tasks_completed × 15) - (su
 Clamped to 0-100 range.
 
 **Health States**:
+
 - **Healthy**: < 50% - Continue working
 - **Filling**: 50-75% - Consider summarizing if task in progress
 - **Critical**: 75-90% - Summarize now, wrap up
@@ -43,6 +48,7 @@ Clamped to 0-100 range.
 ### Task Status Detection
 
 Parses `AGENTS.md` for markers:
+
 - `[TODO]` - Pending tasks
 - `[WIP]` - Work in progress
 - `[DONE]` - Completed tasks
@@ -50,6 +56,7 @@ Parses `AGENTS.md` for markers:
 - Status header: `## Status: (DONE|COMPLETE|FINISHED)`
 
 **Task States**:
+
 - `complete` - All tasks done
 - `in_progress` - Has [WIP] tasks
 - `pending` - Has [TODO] tasks
@@ -59,6 +66,7 @@ Parses `AGENTS.md` for markers:
 ### Stuck Detection
 
 Monitors progress by tracking task completion changes:
+
 - Compares [DONE] and [TODO] counts between invocations
 - If no progress for 3+ iterations → "stuck" state
 - Recommends new session to break out of stuck state
@@ -82,6 +90,7 @@ Monitors progress by tracking task completion changes:
 ### Technical Implementation
 
 **JSON Input** (from Cursor, passed via stdin):
+
 ```json
 {
   "status": "completed",
@@ -91,6 +100,7 @@ Monitors progress by tracking task completion changes:
 ```
 
 **JSON Output** (to Cursor, via stdout):
+
 ```json
 {
   "followup_message": "📊 Context ~65%. Consider `/summarize` if you need more runway."
@@ -98,6 +108,7 @@ Monitors progress by tracking task completion changes:
 ```
 
 **State File Format**:
+
 ```json
 {
   "conversation_id": "abc123",
@@ -116,12 +127,14 @@ Monitors progress by tracking task completion changes:
 ```
 
 **Cross-Platform Locking**:
+
 - Uses `mkdir` for atomic lock acquisition (POSIX-compliant)
 - 5-second timeout with 0.1s polling
 - Automatic stale lock cleanup (>60 seconds old)
 - Trap-based cleanup on exit
 
 **Configuration** (`~/.cursor/context-config.json`):
+
 ```json
 {
   "thresholds": {
@@ -144,12 +157,14 @@ Monitors progress by tracking task completion changes:
 ### Task System
 
 **Built-in Task Management**: Claude Code has native task tools:
+
 - `TaskCreate` - Create tasks with subject, description, activeForm
 - `TaskUpdate` - Update status (pending → in_progress → completed)
 - `TaskList` - List all tasks with status and dependencies
 - `TaskGet` - Get full task details
 
 **Task Status Values**:
+
 - `pending` - Not started
 - `in_progress` - Currently working
 - `completed` - Finished
@@ -162,6 +177,7 @@ Monitors progress by tracking task completion changes:
 **Compatible with Cursor**: Same architecture, JSON I/O format, hook types.
 
 **Hook Types**:
+
 - `afterFileEdit` - Triggered after file modifications
 - `beforeShellExecution` - Triggered before bash commands
 - `stop` - Triggered when session is about to exit
@@ -169,6 +185,7 @@ Monitors progress by tracking task completion changes:
 **Configuration Location**: `~/.claude/hooks.json`
 
 **Existing Hooks** (in `/claude/hooks/`):
+
 - `format.sh` - Auto-format code
 - `sign-commits.sh` - Enforce git signatures
 - `go-lint.sh` - Run golangci-lint
@@ -180,6 +197,7 @@ Monitors progress by tracking task completion changes:
 **No built-in summarization command**: Claude Code uses automatic context summarization internally, but there's no explicit `/summarize` command like Cursor.
 
 **Context Strategy**:
+
 - Conversation has unlimited context through automatic summarization (per system prompt)
 - Best practice: Start new sessions for fresh context
 - No user-facing summarization control
@@ -229,6 +247,7 @@ score = (iterations × 10) + (files_touched × 3) + (duration_minutes / 2)
 ```
 
 **Simplified Thresholds**:
+
 - **Healthy**: < 60% - Continue working
 - **Filling**: 60-80% - Be aware, consider wrapping up
 - **Critical**: 80-95% - Finish current work, new session soon
@@ -249,6 +268,7 @@ score = (iterations × 10) + (files_touched × 3) + (duration_minutes / 2)
 | Any | Very long (>40 min) | ⏱️ Long session (40+ min). Fresh session recommended. |
 
 **Key Messages**:
+
 - Emphasize "fresh context" rather than "/summarize"
 - Explain that new sessions reset context for better results
 - Note that Claude auto-manages context internally
@@ -257,12 +277,15 @@ score = (iterations × 10) + (files_touched × 3) + (duration_minutes / 2)
 ### Implementation Plan
 
 **Files to Create**:
+
 1. `claude/hooks/context-monitor.sh` - Main hook script
 2. `~/.claude/context-config.json` - User configuration (optional)
 3. `.claude/context-state.json` - Session state (auto-created)
 
 **Hook Integration**:
+
 1. Register in `~/.claude/hooks.json`:
+
 ```json
 {
   "version": 1,
@@ -281,17 +304,19 @@ score = (iterations × 10) + (files_touched × 3) + (duration_minutes / 2)
 }
 ```
 
-2. **Two-hook approach**:
+1. **Two-hook approach**:
    - `context-monitor.sh` (stop hook) - Main logic, recommendations
    - `context-monitor-file-tracker.sh` (afterFileEdit hook) - Track file edits
 
 **State Tracking**:
+
 - Update iteration count on each stop hook invocation
 - Track files via afterFileEdit hook (append to state)
 - Calculate session duration from started_at timestamp
 - Detect stuck state via iteration count without file changes
 
 **Configuration** (`~/.claude/context-config.json`):
+
 ```json
 {
   "thresholds": {
@@ -371,6 +396,7 @@ For users switching from Cursor:
 ## Conclusion
 
 A Claude Code context monitor is feasible and valuable, with necessary adaptations:
+
 - Remove AGENTS.md dependency
 - Remove /summarize references
 - Add afterFileEdit hook for precise tracking

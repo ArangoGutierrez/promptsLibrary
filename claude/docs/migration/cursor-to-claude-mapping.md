@@ -83,6 +83,7 @@ These official plugins have no Cursor counterpart - consider referencing them:
 | Aspects | All-in-one | All-in-one | Selective (comments, tests, errors, types, code, simplify) |
 
 **Verdict**: Official plugins are more comprehensive. Evaluate based on needs:
+
 - Simple workflow → Keep Cursor version
 - Comprehensive review → Use `code-review`
 - Specialized aspects → Use `pr-review-toolkit`
@@ -116,6 +117,7 @@ These official plugins have no Cursor counterpart - consider referencing them:
 | Output location | `.prototypes/{approach}/` | N/A |
 
 **Verdict**: Different tools for different purposes:
+
 - Pure architecture exploration → Cursor `architect.md`
 - Full feature workflow → Claude `feature-dev`
 - Keep both, document when to use each
@@ -123,7 +125,9 @@ These official plugins have no Cursor counterpart - consider referencing them:
 ## Migration Strategy
 
 ### Phase 1: Reference Official Plugins
+
 Create symlinks or references to official plugins:
+
 ```bash
 claude/
 ├── plugins/
@@ -136,7 +140,9 @@ claude/
 ```
 
 ### Phase 2: Port Unique Commands
+
 Convert Cursor-only commands to Claude Code skills:
+
 - task.md → skill
 - audit.md → skill
 - code.md → skill
@@ -145,13 +151,17 @@ Convert Cursor-only commands to Claude Code skills:
 - [etc.]
 
 ### Phase 3: Create Hybrid/Companion Skills
+
 For partial matches, create skills that:
+
 - Document when to use official plugin vs Cursor version
 - Add missing features (e.g., AGENTS.md integration for ralph)
 - Combine best of both
 
 ### Phase 4: Adaptation Guides
+
 Document patterns for users migrating from Cursor:
+
 ```markdown
 ## Cursor → Claude Code Quick Reference
 
@@ -165,11 +175,13 @@ Document patterns for users migrating from Cursor:
 ## Summary
 
 **Use Official Plugins (Don't Port):**
+
 - ✅ ralph-wiggum (instead of loop.md)
 - ⚠️ commit-commands (hybrid with push.md)
 - ⚠️ code-review or pr-review-toolkit (evaluate vs review-pr.md)
 
 **Port from Cursor (Unique Value):**
+
 - ✅ task.md, audit.md, code.md, issue.md
 - ✅ research.md, self-review.md, test.md
 - ✅ git-polish.md, parallel.md, context-reset.md
@@ -178,6 +190,7 @@ Document patterns for users migrating from Cursor:
 - ⚠️ quality.md (evaluate overlap with code-review)
 
 **Total Count:**
+
 - Official plugins to reference: 3-4
 - Unique Cursor commands to port: ~14
 - Hybrid/companion skills needed: ~3

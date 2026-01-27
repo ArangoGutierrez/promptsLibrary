@@ -3,6 +3,7 @@
 ## Executive Summary
 
 Successfully migrated **all recommended** Cursor components to Claude Code:
+
 - ✅ **12 Agents** (specialized sub-agents)
 - ✅ **15 Commands** (workflow orchestrators)
 - ✅ **Hooks** (context-monitor already completed)
@@ -17,26 +18,31 @@ Successfully migrated **all recommended** Cursor components to Claude Code:
 ### Migrated Agents
 
 #### Phase 0: Research & Planning (2)
+
 1. ✅ **researcher.md** (2.4KB) - Issue investigation, root cause analysis
 2. ✅ **task-analyzer.md** (2.4KB) - Task parallelization, dependency analysis
 
 #### Phase 1: Critical Operations (3)
+
 3. ✅ **auditor.md** (2.1KB) - Security/reliability audit (Go/K8s)
-4. ✅ **perf-critic.md** (3.0KB) - Performance analysis
-5. ✅ **api-reviewer.md** (4.2KB) - API consistency review
+2. ✅ **perf-critic.md** (3.0KB) - Performance analysis
+3. ✅ **api-reviewer.md** (4.2KB) - API consistency review
 
 #### Phase 2: Design & Architecture (5)
+
 6. ✅ **arch-explorer.md** (4.0KB) - Multi-approach exploration
-7. ✅ **devil-advocate.md** (3.7KB) - Critical analysis
-8. ✅ **prototyper.md** (3.8KB) - Working prototype creation
-9. ✅ **synthesizer.md** (3.6KB) - Multi-agent consolidation
-10. ✅ **verifier.md** (1.8KB) - Independent verification
+2. ✅ **devil-advocate.md** (3.7KB) - Critical analysis
+3. ✅ **prototyper.md** (3.8KB) - Working prototype creation
+4. ✅ **synthesizer.md** (3.6KB) - Multi-agent consolidation
+5. ✅ **verifier.md** (1.8KB) - Independent verification
 
 #### Phase 3: Code Generation (2)
+
 11. ✅ **test-generator.md** (3.9KB) - Test suite generation
-12. ✅ **documenter.md** (4.0KB) - Documentation generation
+2. ✅ **documenter.md** (4.0KB) - Documentation generation
 
 ### Agent Location
+
 ```
 claude/agents/
 ├── researcher.md
@@ -61,37 +67,46 @@ claude/agents/
 ### Migrated Commands
 
 #### Planning & Execution (2)
+
 1. ✅ **task.md** (1.0KB) - Spec-first task execution (5 phases)
 2. ✅ **parallel.md** (844B) - Concurrent task execution
 
 #### Code Quality (3)
+
 3. ✅ **audit.md** (918B) - Deep security/reliability audit
-4. ✅ **quality.md** (1.2KB) - Multi-agent quality review
-5. ✅ **self-review.md** (570B) - File-by-file self-review
+2. ✅ **quality.md** (1.2KB) - Multi-agent quality review
+3. ✅ **self-review.md** (570B) - File-by-file self-review
 
 #### Testing (1)
+
 6. ✅ **test.md** (798B) - Test execution and verification
 
 #### Architecture & Design (2)
+
 7. ✅ **architect.md** (1.2KB) - Full architecture pipeline with prototypes
-8. ✅ **research.md** (1.4KB) - Deep issue research
+2. ✅ **research.md** (1.4KB) - Deep issue research
 
 #### Debugging & Improvement (3)
+
 9. ✅ **debug.md** (5.7KB) - Systematic 6-phase debugging workflow
-10. ✅ **docs.md** (5.3KB) - Documentation generation (5 phases)
-11. ✅ **refactor.md** (4.6KB) - Behavior-preserving refactoring (5 phases)
+2. ✅ **docs.md** (5.3KB) - Documentation generation (5 phases)
+3. ✅ **refactor.md** (4.6KB) - Behavior-preserving refactoring (5 phases)
 
 #### Git Workflows (2)
+
 12. ✅ **git-polish.md** (604B) - Atomic commit cleanup
-13. ✅ **code.md** (932B) - AGENTS.md task executor
+2. ✅ **code.md** (932B) - AGENTS.md task executor
 
 #### Development Workflows (1)
+
 14. ✅ **issue.md** (961B) - GitHub issue → task breakdown
 
 #### Context Management (1)
+
 15. ✅ **context-reset.md** (1.3KB) - Context state management
 
 ### Command Location
+
 ```
 claude/commands/
 ├── task.md
@@ -119,12 +134,15 @@ claude/commands/
 ### Replaced by Official Claude Code Plugins
 
 #### 1. loop.md → ralph-wiggum plugin ✅
+
 **Cursor**:
+
 ```bash
 /loop "Build API" --done "DONE" --max 10
 ```
 
 **Claude Code** (use official):
+
 ```bash
 /ralph-loop "Build API" --completion-promise "DONE" --max-iterations 10
 ```
@@ -134,12 +152,15 @@ claude/commands/
 ---
 
 #### 2. push.md → commit-commands plugin ⚠️
+
 **Cursor**:
+
 ```bash
 /push  # Single command for commit + push + PR
 ```
 
 **Claude Code** (use official):
+
 ```bash
 /commit           # Commit only
 /commit-push-pr   # Commit + push + PR
@@ -151,12 +172,15 @@ claude/commands/
 ---
 
 #### 3. review-pr.md → code-review / pr-review-toolkit plugins ⚠️
+
 **Cursor**:
+
 ```bash
 /review-pr  # Simple 3-pass review (Security, Bugs, Architecture)
 ```
 
 **Claude Code** (use official):
+
 ```bash
 /code-review              # Comprehensive 4-agent review
 # OR
@@ -164,6 +188,7 @@ claude/commands/
 ```
 
 **Comparison**:
+
 | Feature | Cursor | code-review | pr-review-toolkit |
 |---------|--------|-------------|-------------------|
 | Agents | 3 passes | 4 parallel | 6 selective |
@@ -179,6 +204,7 @@ claude/commands/
 ## Architecture Comparison
 
 ### Cursor System
+
 ```
 Commands (workflow orchestrators)
     ↓
@@ -188,6 +214,7 @@ Hooks (lifecycle automation)
 ```
 
 ### Claude Code System (Migrated)
+
 ```
 Commands (workflow orchestrators)  ← claude/commands/
     ↓
@@ -217,6 +244,7 @@ Official Plugins (when available)  ← ralph-wiggum, code-review, etc.
 ### Workflow Examples
 
 #### Example 1: Architecture Decision
+
 ```bash
 User: /architect "Implement caching strategy"
 
@@ -230,6 +258,7 @@ Output: ADR with recommendation
 ```
 
 #### Example 2: Feature Development
+
 ```bash
 User: /issue #123
 
@@ -242,6 +271,7 @@ User: /issue #123
 ```
 
 #### Example 3: Bug Investigation
+
 ```bash
 User: /research #456
 
@@ -413,6 +443,7 @@ Use the Task tool with the auditor agent to review claude/hooks/
 ### Daily Workflows
 
 #### Morning: Start New Task
+
 ```bash
 1. /issue #123              # Break down issue
 2. /task --plan             # Plan approach
@@ -420,12 +451,14 @@ Use the Task tool with the auditor agent to review claude/hooks/
 ```
 
 #### During Development
+
 ```bash
 # Context monitor runs automatically
 # When warned: "Context ~70%", wrap up and start fresh
 ```
 
 #### Pre-Commit
+
 ```bash
 1. /self-review            # Quick self-check
 2. /quality                # Multi-agent review
@@ -434,6 +467,7 @@ Use the Task tool with the auditor agent to review claude/hooks/
 ```
 
 #### Architecture Decision
+
 ```bash
 1. /research "Context"     # If unfamiliar
 2. /architect "Problem"    # Full pipeline
@@ -445,6 +479,7 @@ Use the Task tool with the auditor agent to review claude/hooks/
 ### Advanced Workflows
 
 #### Parallel Development
+
 ```bash
 # AGENTS.md has multiple [TODO] tasks
 /parallel --analyze AGENTS.md
@@ -453,6 +488,7 @@ Use the Task tool with the auditor agent to review claude/hooks/
 ```
 
 #### Background Prototyping
+
 ```bash
 /architect "API gateway" --proto 3
 # → 3 prototypers run in background
@@ -461,6 +497,7 @@ Use the Task tool with the auditor agent to review claude/hooks/
 ```
 
 #### Issue Investigation
+
 ```bash
 1. /research #456
 2. /audit src/affected-area/
@@ -530,11 +567,13 @@ Future improvements to consider:
 ### Agent Invocation
 
 **Cursor**:
+
 ```
 Direct: @agent-name do something
 ```
 
 **Claude Code**:
+
 ```
 Use the Task tool with the {agent-name} agent to do something
 ```
@@ -542,11 +581,13 @@ Use the Task tool with the {agent-name} agent to do something
 ### Command Execution
 
 **Cursor**:
+
 ```bash
 /command arg1 arg2
 ```
 
 **Claude Code** (after skill conversion):
+
 ```bash
 /command arg1 arg2
 # OR use command file directly as prompt
@@ -559,18 +600,21 @@ Use the Task tool with the {agent-name} agent to do something
 ### When to Use What
 
 **Use Agents for**:
+
 - Focused, specialized analysis
 - Parallel execution
 - Independent verification
 - Expert perspective
 
 **Use Commands for**:
+
 - Structured workflows
 - Multi-phase processes
 - Repeatable patterns
 - Team consistency
 
 **Use Official Plugins for**:
+
 - Ralph Loop (task automation)
 - Code review (PR analysis)
 - Commit commands (git workflows)
@@ -578,12 +622,14 @@ Use the Task tool with the {agent-name} agent to do something
 ### Workflow Composition
 
 **Good**:
+
 ```bash
 Command → Agent → Agent → Synthesize
 /architect → arch-explorer + prototyper + synthesizer
 ```
 
 **Avoid**:
+
 ```bash
 Agent → Command (agents should be independent)
 Command → Command (use single workflow instead)
@@ -592,6 +638,7 @@ Command → Command (use single workflow instead)
 ### Performance
 
 **Parallel when possible**:
+
 ```bash
 # Good: Independent analyses
 /quality  → auditor + perf-critic + api-reviewer (parallel)
@@ -601,6 +648,7 @@ Command → Command (use single workflow instead)
 ```
 
 **Sequential when dependent**:
+
 ```bash
 # Required: Pipeline dependencies
 /architect → explorer → advocate → prototype → synthesize
@@ -684,11 +732,13 @@ cd claude/hooks
 ### Immediate (Production Ready)
 
 1. ✅ Deploy to user directory
+
    ```bash
    ./scripts/deploy-claude.sh --symlink
    ```
 
 2. ✅ Test workflows
+
    ```bash
    /architect "Test problem"
    /quality src/
@@ -722,6 +772,7 @@ cd claude/hooks
 ✅ **Maintainable**: Clear structure, separation of concerns
 
 The complete system provides:
+
 - **12 specialized agents** for focused analysis
 - **15 workflow commands** for structured processes
 - **Context monitoring** for session health

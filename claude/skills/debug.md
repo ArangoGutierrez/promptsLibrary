@@ -27,6 +27,7 @@ Evidence-based debugging from symptom to verified fix.
 Define exact reproduction steps and conditions.
 
 **Actions**:
+
 1. Understand the reported symptom
 2. Identify exact steps to reproduce
 3. Determine environment conditions (OS, runtime version, config)
@@ -40,6 +41,7 @@ Define exact reproduction steps and conditions.
 Narrow down scope to specific file, function, or line.
 
 **Techniques**:
+
 - Binary search: Comment out half the code, test, repeat
 - Add logging at key points to trace execution
 - Eliminate unrelated code paths
@@ -47,6 +49,7 @@ Narrow down scope to specific file, function, or line.
 - Check which tests fail
 
 **Actions**:
+
 1. Use binary search to narrow scope
 2. Add logging/print statements to trace execution
 3. Eliminate unrelated code paths
@@ -60,12 +63,14 @@ Narrow down scope to specific file, function, or line.
 Form 2-3 theories about root cause.
 
 **For each hypothesis**:
+
 - **Theory**: What do you think is wrong?
 - **Likelihood**: High / Medium / Low
 - **Test plan**: How to verify this theory?
 - **Expected evidence**: What would confirm it?
 
 **Actions**:
+
 1. Analyze code in isolated scope
 2. Review recent changes (`git log --oneline -n 10 {file}`)
 3. Form 2-3 specific hypotheses
@@ -79,6 +84,7 @@ Form 2-3 theories about root cause.
 Design and run experiments to test each theory.
 
 **Experiment types**:
+
 - Add assertions to verify assumptions
 - Create unit test for suspected behavior
 - Add logging to capture state
@@ -86,6 +92,7 @@ Design and run experiments to test each theory.
 - Use debugger to inspect runtime state
 
 **Actions**:
+
 1. Create test cases for each hypothesis
 2. Run experiments (unit tests, manual tests, logging)
 3. Collect evidence (logs, stack traces, state dumps)
@@ -99,12 +106,14 @@ Design and run experiments to test each theory.
 Implement minimal fix that addresses root cause.
 
 **Principles**:
+
 - **Minimal**: Smallest change that solves the issue
 - **Targeted**: Fix only the identified problem
 - **No extras**: Don't fix unrelated issues
 - **Tested**: Add regression test if missing
 
 **Actions**:
+
 1. Design minimal fix (smallest change that solves issue)
 2. Implement fix
 3. Ensure fix doesn't break existing functionality
@@ -118,6 +127,7 @@ Implement minimal fix that addresses root cause.
 Confirm fix resolves issue without side effects.
 
 **Actions**:
+
 1. Run reproduction case - should now pass
 2. Run full test suite - ensure no regressions
 3. Test edge cases related to fix
@@ -125,6 +135,7 @@ Confirm fix resolves issue without side effects.
 5. Document findings for future reference
 
 **Verification checklist**:
+
 - [x] Reproduction case passes
 - [x] Full test suite passes
 - [x] Edge cases verified
@@ -182,9 +193,11 @@ Confirm fix resolves issue without side effects.
 ```go
 log.Printf("Request body: %v", r.Body)
 ```
+
 Output shows: `Request body: <nil>`
 
 ### Hypothesis 2: JSON parser doesn't handle malformed input
+
 **Likelihood**: Medium
 **Test Plan**: Test json.Unmarshal with various invalid inputs
 **Expected Evidence**: Unmarshal returns error but doesn't panic
@@ -193,6 +206,7 @@ Output shows: `Request body: <nil>`
 **Evidence**: json.Unmarshal handles invalid JSON gracefully, returns error
 
 ### Hypothesis 3: Missing error handling
+
 **Likelihood**: Medium
 **Test Plan**: Check if error from parsing is handled
 **Expected Evidence**: Error is ignored or unchecked
@@ -209,6 +223,7 @@ Output shows: `Request body: <nil>`
 **Why**: Code reads `r.Body` directly before checking if request parsing succeeded. When JSON is invalid, body might be nil, causing panic on access.
 
 **Code**:
+
 ```go
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
     var req LoginRequest
@@ -221,6 +236,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 ## Fix
 
 ### Implementation
+
 ```go
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
     if r.Body == nil {
@@ -238,12 +254,14 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 ```
 
 ### Rationale
+
 - Check `r.Body != nil` before accessing it
 - Return 400 Bad Request instead of panicking
 - Add proper error handling for JSON decoding
 - Minimal change - only adds necessary checks
 
 ### Regression Test
+
 ```go
 func TestHandleLogin_InvalidJSON(t *testing.T) {
     req := httptest.NewRequest("POST", "/api/login", nil)
@@ -260,6 +278,7 @@ func TestHandleLogin_InvalidJSON(t *testing.T) {
 ## Verification
 
 ### Testing
+
 - [x] Reproduction case passes - server returns 400 instead of panicking
 - [x] Full test suite passes - all 42 tests pass
 - [x] Edge cases verified:
@@ -270,16 +289,19 @@ func TestHandleLogin_InvalidJSON(t *testing.T) {
 - [x] No regressions introduced
 
 ### Key Learnings
+
 - Always check for nil before dereferencing
 - Handle errors immediately after operations
 - Add nil checks at API boundaries
 
 ### Prevention
+
 - Add linter rule for nil dereference
 - Review all API handlers for similar pattern
 - Add integration tests for malformed requests
 
 ## Commit
+
 ```bash
 git add api/handler.go api/handler_test.go
 git commit -s -S -m "fix(api): handle nil request body in login handler
@@ -292,6 +314,7 @@ causing panic when JSON parsing failed.
 
 Refs: #debug-session-2024-01-27"
 ```
+
 ```
 
 ## Special Modes
@@ -325,6 +348,7 @@ git bisect good/bad
 ### --verbose (Detailed Output)
 
 Include detailed diagnostic information:
+
 - Full stack traces
 - Complete log output
 - Environment details
@@ -342,6 +366,7 @@ Include detailed diagnostic information:
 ## When to Use
 
 **Use /debug when**:
+
 - Systematic issue investigation needed
 - Bug is difficult to reproduce
 - Root cause is unclear
@@ -349,6 +374,7 @@ Include detailed diagnostic information:
 - Need to document debugging process
 
 **Don't use /debug for**:
+
 - Obvious bugs (fix directly)
 - Compilation errors (use compiler output)
 - Known issues with clear fixes

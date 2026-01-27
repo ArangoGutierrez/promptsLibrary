@@ -7,11 +7,13 @@ Hooks that run at specific lifecycle events to automate and secure your Go devel
 ### General Hooks
 
 #### 1. format.sh (afterFileEdit)
+
 **Purpose**: Automatically format code files after editing
 
 **Triggers**: After any file edit operation
 
 **Formats**:
+
 - **Go**: `gofmt` (built-in)
 - **JavaScript/TypeScript**: `prettier` (if installed)
 - **Python**: `ruff format` or `black` (if installed)
@@ -21,6 +23,7 @@ Hooks that run at specific lifecycle events to automate and secure your Go devel
 **Security**: Includes path traversal protection and symlink validation
 
 **Example**:
+
 ```bash
 # When you edit a Python file, it's automatically formatted
 echo "def hello( ):" > test.py
@@ -30,15 +33,18 @@ echo "def hello( ):" > test.py
 ---
 
 #### 2. sign-commits.sh (beforeShellExecution)
+
 **Purpose**: Enforce signed commits with DCO signoff and GPG signatures
 
 **Triggers**: Before any `git commit` command
 
 **Enforces**:
+
 - `-s`: DCO Signoff (Developer Certificate of Origin)
 - `-S`: GPG/SSH cryptographic signature
 
 **Example**:
+
 ```bash
 # You type:
 git commit -m "Fix bug"
@@ -48,6 +54,7 @@ git commit -s -S -m "Fix bug"
 ```
 
 **Configuration**:
+
 ```bash
 # Set up GPG signing
 gpg --full-generate-key
@@ -60,13 +67,16 @@ git config --global commit.gpgsign true
 ### Context Management Hooks 🧠
 
 #### 3. context-monitor.sh + context-monitor-file-tracker.sh (stop + afterFileEdit) 🌟
+
 **Purpose**: Track context usage and recommend when to start fresh sessions
 
 **Triggers**:
+
 - `context-monitor.sh`: After each agent iteration completes (stop hook)
 - `context-monitor-file-tracker.sh`: After any file edit (afterFileEdit hook)
 
 **What it does**:
+
 - Tracks iterations, files edited, and session duration
 - Calculates context health score (0-100%)
 - Detects stuck states (no progress for 5+ iterations)
@@ -74,12 +84,14 @@ git config --global commit.gpgsign true
 - Helps maintain high-quality Claude assistance
 
 **Health States**:
+
 - **Healthy** (<60%): Continue working
 - **Filling** (60-79%): Be aware, consider wrapping up
 - **Critical** (80-94%): Finish current work, new session soon
 - **Degraded** (≥95%): Start new session immediately
 
 **Example Recommendations**:
+
 ```
 📊 Context ~72% (8 files edited). Consider finishing current work.
 ⚠️ Context ~85%. Finish current work and start fresh session soon.
@@ -88,6 +100,7 @@ git config --global commit.gpgsign true
 ```
 
 **Installation**:
+
 ```bash
 # Quick install
 cd claude/hooks
@@ -114,6 +127,7 @@ chmod +x ~/.claude/hooks/context-monitor*.sh
 ```
 
 **Configuration** (optional `~/.claude/context-config.json`):
+
 ```json
 {
   "thresholds": {
@@ -132,16 +146,19 @@ chmod +x ~/.claude/hooks/context-monitor*.sh
 ```
 
 **State Management**:
+
 - Session state: `.claude/context-state.json` (per-project, auto-created)
 - Automatic reset on new conversation
 - Cross-platform atomic locking
 
 **Documentation**:
+
 - User guide: `claude/hooks/CONTEXT_MONITOR.md` (comprehensive)
 - Research: `claude/docs/context-monitor-research.md` (deep analysis)
 - Summary: `claude/hooks/CONTEXT_MONITOR_SUMMARY.md` (overview)
 
 **Testing**:
+
 ```bash
 cd claude/hooks
 chmod +x test-context-monitor.sh
@@ -155,17 +172,20 @@ chmod +x test-context-monitor.sh
 ### Go-Specific Hooks 🐹
 
 #### 4. go-lint.sh (afterFileEdit) ⭐
+
 **Purpose**: Run golangci-lint on edited Go files for instant feedback
 
 **Triggers**: After editing any `.go` file
 
 **What it does**:
+
 - Runs 50+ linters in parallel (staticcheck, errcheck, go vet, etc.)
 - Catches bugs, performance issues, style violations
 - Shows only issues in your changes (`--new-from-rev=HEAD`)
 - Silent if no issues found
 
 **Installation**:
+
 ```bash
 # Install golangci-lint
 brew install golangci-lint
@@ -175,6 +195,7 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
 **Example**:
+
 ```bash
 # Edit a Go file with issues
 vim handler.go
@@ -185,6 +206,7 @@ vim handler.go
 ```
 
 **Configuration** (optional `.golangci.yml`):
+
 ```yaml
 run:
   timeout: 5m
@@ -202,17 +224,20 @@ linters:
 ---
 
 #### 5. go-test-package.sh (beforeShellExecution) 🧪
+
 **Purpose**: Run tests for affected packages before committing
 
 **Triggers**: Before `git commit` commands
 
 **What it does**:
+
 - Detects modified Go files in staging area
 - Runs `go test` on affected packages only
 - Shows test results
 - Asks for confirmation if tests fail (doesn't block)
 
 **Example**:
+
 ```bash
 # Stage changes
 git add handler.go handler_test.go
@@ -228,12 +253,14 @@ git commit -m "Add feature"
 ```
 
 **If tests fail**:
+
 ```
 ⚠️ Tests failed in: ./handlers
 Review the output and decide if you want to commit anyway.
 ```
 
 **Tips**:
+
 - Write tests in same package as code
 - Use `-short` flag for quick tests: `go test -short`
 - Hook uses 30s timeout (configurable in script)
@@ -241,22 +268,26 @@ Review the output and decide if you want to commit anyway.
 ---
 
 #### 6. go-vuln-check.sh (beforeShellExecution) 🔒
+
 **Purpose**: Scan for known vulnerabilities before pushing to remote
 
 **Triggers**: Before `git push origin` commands
 
 **What it does**:
+
 - Runs `govulncheck` to scan for CVEs
 - Checks entire dependency tree
 - Shows vulnerability details
 - Asks for confirmation if vulnerabilities found
 
 **Installation**:
+
 ```bash
 go install golang.org/x/vuln/cmd/govulncheck@latest
 ```
 
 **Example**:
+
 ```bash
 # Attempt push
 git push origin main
@@ -267,6 +298,7 @@ git push origin main
 ```
 
 **If vulnerabilities found**:
+
 ```
 🚨 Found 2 known vulnerabilities
 
@@ -280,6 +312,7 @@ Push anyway?
 ```
 
 **Remediation**:
+
 ```bash
 # Update dependencies
 go get -u ./...
@@ -327,6 +360,7 @@ After deployment, hooks are at: `~/.claude/hooks/`
 Here's how the hooks work together for Go projects:
 
 ### 1. Write Code
+
 ```bash
 vim handler.go
 # → format.sh runs: formats with gofmt
@@ -334,11 +368,13 @@ vim handler.go
 ```
 
 ### 2. Run Tests Locally
+
 ```bash
 go test ./...
 ```
 
 ### 3. Commit Changes
+
 ```bash
 git add handler.go handler_test.go
 git commit -m "Add feature"
@@ -347,6 +383,7 @@ git commit -m "Add feature"
 ```
 
 ### 4. Push to Remote
+
 ```bash
 git push origin main
 # → go-vuln-check.sh runs: scans for CVEs
@@ -387,6 +424,7 @@ linters-settings:
 ### Customize Test Timeout
 
 Edit `go-test-package.sh` and change:
+
 ```bash
 go test -timeout=30s "./$pkg"
 # to
@@ -402,6 +440,7 @@ go test -timeout=60s "./$pkg"
 Claude Code uses **two layers** of security:
 
 #### Layer 1: settings.json Permissions (Primary)
+
 Your `claude/settings.json` already blocks dangerous commands:
 
 ```json
@@ -418,7 +457,9 @@ Your `claude/settings.json` already blocks dangerous commands:
 ```
 
 #### Layer 2: Hooks (Secondary)
+
 Hooks provide:
+
 - Command transformation (sign-commits.sh adds flags)
 - Context-aware validation (go-test-package.sh runs tests)
 - Custom logic (go-vuln-check.sh scans for CVEs)
@@ -459,11 +500,13 @@ govulncheck -version
 ### Tests taking too long
 
 Edit `go-test-package.sh` and add `-short` flag:
+
 ```bash
 go test -short -timeout=30s "./$pkg"
 ```
 
 Or skip slow tests with build tags:
+
 ```go
 //go:build !short
 
@@ -475,6 +518,7 @@ func TestSlowFeature(t *testing.T) {
 ### False positives in go-lint
 
 Configure `.golangci.yml` to disable specific linters:
+
 ```yaml
 linters:
   disable:
@@ -482,6 +526,7 @@ linters:
 ```
 
 Or ignore specific issues:
+
 ```go
 //nolint:linter-name // Reason why this is okay
 func problematicFunction() {
@@ -509,6 +554,7 @@ func problematicFunction() {
 ### For Go Projects
 
 1. **Install all tools**:
+
    ```bash
    brew install golangci-lint
    go install golang.org/x/vuln/cmd/govulncheck@latest

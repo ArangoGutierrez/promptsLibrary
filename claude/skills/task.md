@@ -32,11 +32,13 @@ git rev-parse --show-toplevel
 ### Fetch Issue Data (if GitHub issue)
 
 If task starts with `#`:
+
 ```bash
 gh issue view 123 --json title,body,labels,state,comments,milestone
 ```
 
 Extract:
+
 - Title and body
 - Labels
 - Comments and discussion
@@ -46,6 +48,7 @@ Extract:
 ### Clarify Requirements
 
 Ask ≤ 2 clarifying questions using AskUserQuestion if:
+
 - Requirements are ambiguous
 - Multiple valid interpretations exist
 - Scope is unclear
@@ -69,16 +72,20 @@ Define the contract for this task:
 Categorize requirements:
 
 **MUST** (≤ 7 critical requirements):
+
 - {Critical requirement 1}
 - {Critical requirement 2}
 
 **SHOULD** (nice to have):
+
 - {Enhancement 1}
 
 **MUST NOT**:
+
 - {Forbidden action 1}
 
 **Security** (always check):
+
 - No secrets in code or logs
 - Input validation for user data
 - Safe error messages (no stack traces to users)
@@ -101,6 +108,7 @@ Generate 2-3 implementation approaches:
 ### Stop for Approval
 
 If `--plan` flag is present:
+
 - Output the plan
 - Show selected approach
 - Display: **⚠️ AWAITING USER APPROVAL - Please type "GO" to proceed**
@@ -169,6 +177,7 @@ Maintain `AGENTS.md` in project root:
 Run comprehensive verification:
 
 ### ✓ Compilation
+
 ```bash
 # Go
 go build ./...
@@ -181,6 +190,7 @@ python -m py_compile **/*.py
 ```
 
 ### ✓ Tests
+
 ```bash
 # Run full test suite
 go test ./...        # Go
@@ -191,11 +201,13 @@ pytest               # Python
 ### ✓ Acceptance Criteria
 
 For each criterion in spec:
+
 - [ ] {Criterion}: ✓ Met / ✗ Not met / ⚠️ Partially
 
 ### ✓ Edge Cases
 
 Test boundary conditions:
+
 - Empty input
 - Nil/null values
 - Maximum values
@@ -291,6 +303,7 @@ If exceeding budget: Stop and ask user if should continue or break into subtasks
 ## When to Use
 
 **Use /task when**:
+
 - Implementing well-defined features
 - Fixing bugs with known scope
 - Working on GitHub issues
@@ -298,6 +311,7 @@ If exceeding budget: Stop and ask user if should continue or break into subtasks
 - Want progress tracking
 
 **Don't use /task for**:
+
 - Exploratory work (use `/research`)
 - Architecture decisions (use `/architect`)
 - Code review (use `/quality` or `/self-review`)

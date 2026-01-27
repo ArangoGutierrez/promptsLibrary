@@ -6,6 +6,7 @@ alwaysApply: true
 # Security Rules
 
 ## Secrets
+
 - [ ] No hardcoded tokens, credentials, or API keys
 - [ ] Secrets via environment variables or secret managers
 - [ ] No secrets in comments or documentation
@@ -30,6 +31,7 @@ if apiKey == "" {
 ```
 
 ## Input Validation
+
 - [ ] Validate all external input at public interfaces
 - [ ] Sanitize user input before use
 - [ ] Boundary checks on numeric inputs
@@ -58,6 +60,7 @@ func SetPageSize(size int) error {
 ```
 
 ## Injection Prevention
+
 - [ ] Parameterized queries for SQL (no string concatenation)
 - [ ] Shell command arguments escaped/validated
 - [ ] Path traversal prevention (no `../` in user paths)
@@ -103,6 +106,7 @@ func SafePath(baseDir, userInput string) (string, error) {
 ```
 
 ## Error Handling
+
 - [ ] No sensitive data in error messages
 - [ ] No stack traces exposed to users
 - [ ] Log sensitive operations without exposing data
@@ -126,6 +130,7 @@ http.Error(w, "internal server error", 500)
 ```
 
 ## Authentication & Authorization
+
 - [ ] Auth checks on all protected endpoints
 - [ ] Session/token validation
 - [ ] Principle of least privilege
@@ -158,6 +163,7 @@ func HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
 ```
 
 ## Dependencies
+
 - [ ] No known vulnerable packages
 - [ ] Dependencies from trusted sources
 - [ ] Lock files committed (go.sum, package-lock.json)
@@ -173,6 +179,7 @@ git ls-files | grep -E "(go\.sum|package-lock\.json|yarn\.lock|Pipfile\.lock)"
 ```
 
 ## Security Checklist for Code Review
+
 | Check | Command/Action |
 |-------|----------------|
 | Secrets scan | `git secrets --scan` or `trufflehog` |

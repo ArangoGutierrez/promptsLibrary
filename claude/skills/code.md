@@ -29,6 +29,7 @@ cat AGENTS.md
 ```
 
 Extract:
+
 - Current issue number
 - Task list with statuses
 - Acceptance criteria
@@ -37,10 +38,12 @@ Extract:
 ### Step 2: Find Next Task
 
 **Mode: Automatic (no argument)**:
+
 - Find first task with status `[TODO]`
 - If no `[TODO]` found, check for `[BLOCKED]` and report
 
 **Mode: Specific (#N)**:
+
 - Find task with number N
 - Verify it's not blocked by prerequisites
 
@@ -69,6 +72,7 @@ Execute the task with these constraints:
 **No over-engineering**: Don't add features not in task description
 
 Implementation approach:
+
 1. Read affected files
 2. Make necessary changes
 3. Add/update tests if specified
@@ -99,6 +103,7 @@ cargo check
 #### ✓ Task Acceptance
 
 Check against task-specific acceptance criteria:
+
 - Does implementation match task description?
 - Are requirements met?
 - No unrelated changes?
@@ -106,6 +111,7 @@ Check against task-specific acceptance criteria:
 #### ✓ No Unrelated Changes
 
 Verify only task-related files modified:
+
 ```bash
 git status --short
 ```
@@ -128,6 +134,7 @@ Task: {N}/{total}"
 ```
 
 **Commit message parts**:
+
 - **Type**: feat, fix, refactor, docs, test, chore
 - **Scope**: Functional area (auth, api, db, etc.)
 - **Description**: Concise summary
@@ -135,6 +142,7 @@ Task: {N}/{total}"
 - **Task**: Task number out of total
 
 **Example**:
+
 ```bash
 git commit -s -S -m "feat(auth): add user validation method
 
@@ -228,12 +236,14 @@ Before marking task complete, verify:
 ## When to Use
 
 **Use /code when**:
+
 - Executing tasks from AGENTS.md
 - Need automatic progress tracking
 - Want atomic commit workflow
 - Working on planned issue
 
 **Use /task instead when**:
+
 - No AGENTS.md exists
 - Ad-hoc task without planning
 - Need full workflow (understand → specify → plan → implement)

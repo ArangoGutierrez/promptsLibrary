@@ -5,6 +5,7 @@ Comprehensive Claude Code configuration with agents, skills, commands, hooks, an
 ## Overview
 
 This directory provides a complete Claude Code setup with:
+
 - **24 agents** (13 regular + 11 optimized) for specialized analysis
 - **19 skills** for workflow orchestration
 - **11 hooks** for lifecycle automation
@@ -59,27 +60,32 @@ claude/
 Specialized sub-agents for focused analysis:
 
 **Research & Planning:**
+
 - `researcher.md` / `researcher-opt.md` - Deep issue investigation
 - `task-analyzer.md` / `task-analyzer-opt.md` - Dependency analysis
 
 **Security & Performance:**
+
 - `auditor.md` / `auditor-opt.md` - Security/reliability audit
 - `perf-critic.md` / `perf-critic-opt.md` - Performance review
 - `api-reviewer.md` / `api-reviewer-opt.md` - API consistency
 
 **Architecture & Design:**
+
 - `arch-explorer.md` / `arch-explorer-opt.md` - Architecture exploration
 - `devil-advocate.md` / `devil-advocate-opt.md` - Critical review
 - `prototyper.md` / `prototyper-opt.md` - Prototype creation
 - `synthesizer.md` / `synthesizer-opt.md` - Multi-agent synthesis
 
 **Implementation & Validation:**
+
 - `test-generator.md` - Test generation
 - `documenter.md` - Documentation generation
 - `code-simplifier.md` - Code simplification
 - `verifier.md` / `verifier-opt.md` - Independent verification
 
 **Naming Convention:**
+
 - `{name}.md` - Regular version (full documentation)
 - `{name}-opt.md` - Optimized version (~50% smaller, production use)
 
@@ -90,12 +96,14 @@ See [agents/README.md](agents/README.md) for details.
 Workflow orchestration skills for complex tasks:
 
 **Research & Planning (4 skills):**
+
 - `/research` - Issue investigation and analysis
 - `/architect` - Architecture exploration with prototypes
 - `/task` - Structured 5-phase task execution
 - `/issue` - GitHub issue to implementation plan
 
 **Code Quality (6 skills):**
+
 - `/audit` - Security and reliability auditing
 - `/quality` - Multi-agent code review
 - `/code-review` - PR review with confidence scoring
@@ -104,6 +112,7 @@ Workflow orchestration skills for complex tasks:
 - `/test` - Automatic test execution
 
 **Development Workflow (7 skills):**
+
 - `/code` - Execute next TODO from AGENTS.md
 - `/parallel` - Run independent tasks concurrently
 - `/debug` - Systematic debugging workflow
@@ -113,6 +122,7 @@ Workflow orchestration skills for complex tasks:
 - `/cancel-ralph` - Cancel Ralph loop
 
 **Documentation & Utilities (2 skills):**
+
 - `/docs` - Documentation generation
 - `/context-reset` - Context tracking management
 
@@ -123,10 +133,12 @@ See [skills/README.md](skills/README.md) for details.
 Lifecycle automation:
 
 **After File Edit:**
+
 - `format.sh` - Auto-format Go, JS/TS, Python, Rust
 - `go-lint.sh` - Run golangci-lint on Go files
 
 **Before Shell Execution:**
+
 - `sign-commits.sh` - Enforce DCO + GPG signatures
 - `go-test-package.sh` - Run tests before commit
 - `go-vuln-check.sh` - Scan vulnerabilities before push
@@ -148,6 +160,7 @@ Modular guidelines:
 **CLAUDE.md** - Project context and engineering standards loaded in every session
 
 **settings.json** - Secure bash permissions:
+
 - ✅ **Allows**: Safe commands (ls, cat, grep, git status, npm run)
 - ⚠️ **Asks**: Potentially risky (npm install, git reset)
 - 🚫 **Blocks**: Dangerous (rm, git push, docker, sudo)
@@ -242,6 +255,7 @@ curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main
 This structure replaces the previous plugin-based organization:
 
 ### Old Structure (Plugin-Based)
+
 ```
 claude/
 ├── agents/
@@ -253,6 +267,7 @@ claude/
 ```
 
 ### New Structure (Flat)
+
 ```
 claude/
 ├── agents/ (merged regular + optimized with -opt suffix)
@@ -260,6 +275,7 @@ claude/
 ```
 
 **Benefits:**
+
 - Easier discovery (all agents in one place, all skills in one place)
 - Consistent naming (`{name}.md` vs `{name}-opt.md`)
 - Simplified deployment (no plugin metadata)
@@ -285,6 +301,7 @@ Edit `settings.json` to customize allowed/blocked commands:
 ```
 
 **Wildcard Patterns:**
+
 - `:*` - Prefix matching with word boundary
 - `*` - Glob matching anywhere
 - No wildcard - Exact match only
@@ -292,16 +309,19 @@ Edit `settings.json` to customize allowed/blocked commands:
 ### Adding Custom Components
 
 **New Agent:**
+
 1. Create `claude/agents/{name}.md`
 2. Follow existing agent template
 3. Add to `agents/README.md`
 
 **New Skill:**
+
 1. Create `claude/skills/{name}.md`
 2. Use Agent Skills frontmatter format
 3. Add to `skills/README.md`
 
 **New Hook:**
+
 1. Create `claude/hooks/{name}.sh`
 2. Make executable: `chmod +x`
 3. Add to `hooks/README.md`

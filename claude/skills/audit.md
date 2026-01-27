@@ -24,17 +24,20 @@ Systematic code audit using the auditor agent for Go/Kubernetes codebases.
 **Default (P0)**: `git diff --name-only HEAD` (staged and unstaged changes)
 
 **Always included (P1)**: High-risk files regardless of changes
+
 - Handlers: `**/handlers/**/*.go`, `**/api/**/*.go`
 - Database: `**/db/**/*.go`, `**/database/**/*.go`, `**/repo/**/*.go`
 - Auth: `**/auth/**/*.go`, `**/authz/**/*.go`
 
 **Full scan (P2)**: With `--full` flag
+
 - All Go files in codebase
 - Longer analysis time
 
 ## Categories
 
 ### A. EffectiveGo
+
 - **Race conditions**: Unprotected shared state, missing mutex
 - **Channel misuse**: Unbuffered blocking, closed channel writes
 - **Goroutine leaks**: Missing context cancellation, infinite loops
@@ -43,18 +46,21 @@ Systematic code audit using the auditor agent for Go/Kubernetes codebases.
 - **Error wrapping**: Missing context (`fmt.Errorf` vs `errors.Wrap`)
 
 ### B. Defensive Programming
+
 - **Input validation**: Public functions lacking validation
 - **Nil safety**: Missing nil checks on pointers, interfaces
 - **Timeouts + context**: Missing deadlines on I/O, network calls
 - **Defer close**: Resource leaks (files, connections not closed)
 
 ### C. Kubernetes Ready
+
 - **Graceful shutdown**: Missing signal handling, abrupt termination
 - **JSON logging**: Using `fmt.Print` instead of structured logging
 - **Health probes**: Missing `/health` and `/ready` endpoints
 - **Secrets in code**: Hardcoded credentials, tokens, API keys
 
 ### D. Security
+
 - **No tokens in logs**: Credentials leaked in error messages
 - **Injection prevention**: SQL injection, command injection risks
 - **Input sanitization**: User input not validated/escaped
@@ -138,10 +144,12 @@ Agent outputs `AUDIT_REPORT.md`:
 ## [Major] {category}
 
 ### Issue 2
+
 - **File**: `path/to/handler.go:128`
 - **Issue**: Missing input validation on user-provided ID
 - **Impact**: Potential injection or crash
 - **Fix**:
+
   ```go
   if id <= 0 {
       return fmt.Errorf("invalid id: %d", id)
@@ -151,10 +159,12 @@ Agent outputs `AUDIT_REPORT.md`:
 ## [Minor] {category}
 
 ### Issue 3
+
 - **File**: `path/to/util.go:88`
 - **Issue**: Error not wrapped with context
 - **Impact**: Harder debugging
 - **Fix**:
+
   ```go
   return fmt.Errorf("failed to open file: %w", err)
   ```
@@ -168,9 +178,11 @@ Agent outputs `AUDIT_REPORT.md`:
 - **Minor**: 3
 
 ## Verification Process
+
 - ✓ All findings independently verified by re-reading files
 - ✓ Exact file:line references provided
 - ✓ Code fixes tested for syntax
+
 ```
 
 ### Step 5: Apply Fixes (if --fix flag)
@@ -196,6 +208,7 @@ Refs: AUDIT_REPORT.md"
 ```
 
 **Stop conditions**:
+
 - If fix causes compile errors: Revert and document in report
 - If fix introduces new audit issues: Revert and document
 - If tests fail: Revert and mark as needs manual review
@@ -230,6 +243,7 @@ Full details: `AUDIT_REPORT.md`
 ## When to Use
 
 **Use /audit when**:
+
 - Before committing sensitive changes
 - Pre-production readiness review
 - After adding concurrency (goroutines, channels)
@@ -238,6 +252,7 @@ Full details: `AUDIT_REPORT.md`
 - Opening network connections or files
 
 **Don't audit**:
+
 - Test files (unless testing auth/security)
 - Generated code (protobuf, mocks)
 - Vendor dependencies
@@ -246,21 +261,27 @@ Full details: `AUDIT_REPORT.md`
 ## Examples
 
 ### Example 1: Audit staged changes
+
 ```
 /audit
 ```
+
 Audits only files in `git diff --name-only HEAD`
 
 ### Example 2: Full codebase scan
+
 ```
 /audit --full
 ```
+
 Audits all .go files including P1 high-risk areas
 
 ### Example 3: Audit and auto-fix
+
 ```
 /audit --fix
 ```
+
 Finds issues and automatically applies fixes for Critical/Major items
 
 ## Constraints
@@ -276,18 +297,22 @@ Finds issues and automatically applies fixes for Critical/Major items
 ## Troubleshooting
 
 ### Too Many False Positives
+
 **Problem**: Agent flags issues that don't exist
 **Solution**: Verification step should catch these - agent must re-read file independently before confirming
 
 ### Audit Takes Too Long
+
 **Problem**: Full scan on large codebase is slow
 **Solution**: Use default scope (git diff) for rapid feedback, save --full for pre-release
 
 ### Fixes Break Compilation
+
 **Problem**: Auto-applied fixes introduce syntax errors
 **Solution**: Each fix should be tested for compilation before commit; revert on failure
 
 ### Missing Real Issues
+
 **Problem**: Audit missed a known security issue
 **Solution**: Verify P1 high-risk directories are included (handlers, db, auth); consider expanding P1 patterns
 

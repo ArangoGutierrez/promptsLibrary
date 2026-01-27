@@ -11,6 +11,7 @@ This document outlines a systematic 8-step process for reviewing pull requests u
 **Step 3: Change Summary** - A Haiku agent reviews the PR and provides a summary of modifications.
 
 **Step 4: Parallel Code Review** - Five independent Sonnet agents conduct specialized reviews:
+
 - Agent 1 audits CLAUDE.md compliance
 - Agent 2 scans for obvious bugs in changed code
 - Agent 3 examines git history for contextual issues

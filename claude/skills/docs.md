@@ -30,6 +30,7 @@ Identify undocumented public interfaces and documentation gaps.
 **Input**: Target code path or module identifier
 
 **Actions**:
+
 1. Read target code and identify public APIs (exported functions, classes, methods)
 2. Check existing documentation (README, inline comments, docstrings)
 3. Identify undocumented exports, functions, types
@@ -43,6 +44,7 @@ Identify undocumented public interfaces and documentation gaps.
 Pull function signatures, types, and patterns from code.
 
 **Actions**:
+
 1. Parse function/method signatures
 2. Extract type definitions and interfaces
 3. Identify parameters, return types, errors/exceptions
@@ -76,20 +78,22 @@ Output should include generated documentation and verification report.
 **Language-specific formats**:
 
 **Go (GoDoc)**:
+
 ```go
 // FunctionName does X and returns Y.
 // It returns an error if condition Z.
 //
 // Example:
 //
-//	result, err := FunctionName(input)
-//	if err != nil {
-//		return err
-//	}
+// result, err := FunctionName(input)
+// if err != nil {
+//  return err
+// }
 func FunctionName(param Type) (ReturnType, error) {
 ```
 
 **JavaScript/TypeScript (JSDoc)**:
+
 ```typescript
 /**
  * Brief description of function.
@@ -104,6 +108,7 @@ func FunctionName(param Type) (ReturnType, error) {
 ```
 
 **Python (docstrings)**:
+
 ```python
 def function_name(param: Type) -> ReturnType:
     """Brief description of function.
@@ -127,6 +132,7 @@ def function_name(param: Type) -> ReturnType:
 Check documentation accuracy against implementation.
 
 **Actions**:
+
 1. Compare documentation with actual code signatures
 2. Verify parameter names and types match
 3. Check return types and error conditions
@@ -134,6 +140,7 @@ Check documentation accuracy against implementation.
 5. Ensure no hallucinated details
 
 **Verification checklist**:
+
 - [x] Signatures match implementation
 - [x] Parameter names correct
 - [x] Return types accurate
@@ -145,6 +152,7 @@ Check documentation accuracy against implementation.
 Apply consistent formatting and style.
 
 **Actions**:
+
 1. Apply project markdown formatting rules
 2. Ensure consistent code block formatting
 3. Check link references are valid
@@ -184,28 +192,31 @@ Apply consistent formatting and style.
 //
 // Example:
 //
-//	user, err := GetUser(ctx, 123)
-//	if errors.Is(err, ErrNotFound) {
-//		// Handle user not found
-//	}
+// user, err := GetUser(ctx, 123)
+// if errors.Is(err, ErrNotFound) {
+//  // Handle user not found
+// }
 func GetUser(ctx context.Context, id int64) (*User, error)
 ```
 
 **Signature**: `func GetUser(ctx context.Context, id int64) (*User, error)`
 
 **Parameters**:
+
 - `ctx`: Request context for cancellation and timeouts
 - `id`: Unique identifier for the user
 
 **Returns**: Pointer to User struct, or nil if not found
 
 **Errors**:
+
 - `ErrNotFound` if user doesn't exist
 - `ErrDatabase` if query fails
 
 ## Verification
 
 ### Accuracy Check
+
 - [x] Signatures match implementation
 - [x] Parameter names correct
 - [x] Return types accurate
@@ -213,9 +224,11 @@ func GetUser(ctx context.Context, id int64) (*User, error)
 - [x] Examples work as written
 
 ### Style Compliance
+
 - [x] Follows GoDoc conventions
 - [x] Formatting consistent
 - [x] No typos or grammar issues
+
 ```
 
 ## Flags Behavior
