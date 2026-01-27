@@ -48,7 +48,7 @@ Depends on Cluster 1:  [Task C, Task E]
 
 ### 4. Output Recommendation
 
-```markdown
+````markdown
 ## Task Parallelization Analysis
 
 ### Dependency Graph
@@ -75,7 +75,7 @@ Then sequential: C → E
 ### Time Estimate
 - Sequential: ~5 units
 - With parallel: ~3 units (40% faster)
-```
+````
 
 ## Dependency Signals
 

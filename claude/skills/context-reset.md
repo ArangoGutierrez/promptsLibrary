@@ -42,7 +42,7 @@ Read context state and display health:
 
 ```bash
 # Read state file
-cat .cursor/context-state.json
+cat .claude/context-state.json
 ```
 
 Extract:
@@ -81,8 +81,8 @@ Reset context tracking to recalibrate:
 
 ```bash
 # Remove state files
-rm -f .cursor/context-state.json
-rm -f .cursor/context-state.lock
+rm -f .claude/context-state.json
+rm -f .claude/context-state.lock
 
 echo "✓ Context tracking reset"
 ```
@@ -122,7 +122,7 @@ Context monitoring will restart fresh on next operation.
 
 ## Configuration
 
-Context monitor is configured in `~/.cursor/context-config.json`:
+Context monitor is configured in `~/.claude/context-config.json`:
 
 ```json
 {
@@ -169,7 +169,7 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 
 **Actions**:
 
-1. Check config weights in `~/.cursor/context-config.json`
+1. Check config weights in `~/.claude/context-config.json`
 2. Reset to recalibrate: `/context-reset`
 3. Adjust weights if consistently inaccurate
 
@@ -179,13 +179,13 @@ Context monitor is configured in `~/.cursor/context-config.json`:
 
 **Check**:
 
-1. Verify hook in `.cursor/hooks.json` → `stop` array
+1. Verify hook in `.claude/hooks.json` → `stop` array
 2. Check hook has execute permissions
-3. Verify `.cursor/` directory exists
+3. Verify `.claude/` directory exists
 
 ### State File Missing
 
-**Problem**: `.cursor/context-state.json` doesn't exist
+**Problem**: `.claude/context-state.json` doesn't exist
 
 **Cause**: Hook hasn't run yet or was deleted
 

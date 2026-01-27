@@ -105,7 +105,7 @@ In `TRADE_OFFS.md`:
 
 ### 6. README Structure
 
-```markdown
+````markdown
 # Prototype: {Approach Name}
 
 ## Problem Being Solved
@@ -134,7 +134,7 @@ In `TRADE_OFFS.md`:
 
 {After implementation: would you recommend this approach?}
 
-```
+````
 
 ## Output Format
 

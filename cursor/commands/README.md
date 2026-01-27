@@ -268,5 +268,5 @@ How it works with other commands
 ## Further Reading
 
 - **Hybrid Workflow**: [`workflows/cursor-to-cli.md`](../workflows/cursor-to-cli.md)
-- **Agent Models**: [`docs/guides/testing-agent-models.md`](../docs/guides/testing-agent-models.md)
-- **Migration Guide**: [`docs/migration/complete-guide.md`](../docs/migration/complete-guide.md)
+- **Agent Models**: [`claude/docs/guides/testing-agent-models.md`](../../claude/docs/guides/testing-agent-models.md)
+- **Migration Guide**: [`claude/docs/migration/complete-guide.md`](../../claude/docs/migration/complete-guide.md)

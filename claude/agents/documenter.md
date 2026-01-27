@@ -68,7 +68,7 @@ Analyze existing documentation:
 
 #### Markdown (READMEs)
 
-```markdown
+````markdown
 ## ComponentName
 
 Brief description of what this component does.
@@ -91,7 +91,7 @@ Description of return value
 
 {Real usage example}
 
-```
+````
 
 #### JSDoc (JavaScript/TypeScript)
 ```typescript

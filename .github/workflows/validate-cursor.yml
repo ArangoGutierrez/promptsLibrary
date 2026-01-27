@@ -122,8 +122,8 @@ jobs:
               continue
             fi
             
-            # Extract frontmatter and check required fields
-            frontmatter=$(sed -n '1,/^---$/p' "$file" | tail -n +2 | head -n -1)
+            # Extract frontmatter between first and second '---' delimiters
+            frontmatter=$(awk '/^---$/{if(++count==2)exit;next}count==1' "$file")
             
             if ! echo "$frontmatter" | grep -qE '^name:'; then
               echo "  ❌ Missing required field: name"

@@ -17,7 +17,12 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}=== Testing Agent Model Configurations ===${NC}\n"
 
 # Valid model values (based on Cursor documentation)
-VALID_MODELS=("sonnet" "opus" "haiku" "fast" "inherit" "claude-4-5-sonnet" "claude-4-5-opus" "claude-sonnet-4-5-20250929" "claude-opus-4-5-20250929")
+# Short names
+VALID_SHORT_MODELS=("sonnet" "opus" "haiku" "fast" "inherit")
+# Regex for full model IDs: claude-{variant}-{major}-{minor}-{date}
+FULL_MODEL_REGEX='^claude-(sonnet|opus|haiku)-[0-9]+-[0-9]+-[0-9]+$'
+# Legacy format: claude-{major}-{minor}-{variant}
+LEGACY_MODEL_REGEX='^claude-[0-9]+-[0-9]+-(sonnet|opus|haiku)$'
 
 ERRORS=0
 WARNINGS=0
@@ -25,11 +30,24 @@ WARNINGS=0
 # Function to check if model value is valid
 is_valid_model() {
     local model=$1
-    for valid in "${VALID_MODELS[@]}"; do
+
+    # Check short names
+    for valid in "${VALID_SHORT_MODELS[@]}"; do
         if [ "$model" = "$valid" ]; then
             return 0
         fi
     done
+
+    # Check full model ID format
+    if echo "$model" | grep -qE "$FULL_MODEL_REGEX"; then
+        return 0
+    fi
+
+    # Check legacy model ID format
+    if echo "$model" | grep -qE "$LEGACY_MODEL_REGEX"; then
+        return 0
+    fi
+
     return 1
 }
 
@@ -37,7 +55,8 @@ is_valid_model() {
 extract_field() {
     local file=$1
     local field=$2
-    sed -n '1,/^---$/p' "$file" | grep "^${field}:" | sed "s/^${field}://" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
+    # Extract content between first and second '---' delimiters
+    awk '/^---$/{if(++count==2)exit;next}count==1' "$file" | grep "^${field}:" | sed "s/^${field}://" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//'
 }
 
 echo -e "${BLUE}Checking agent files in: $AGENTS_DIR${NC}\n"
