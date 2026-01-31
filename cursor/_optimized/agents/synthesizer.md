@@ -1,7 +1,7 @@
 ---
 name: synthesizer
 description: Combines multiple agent outputs into unified recommendation
-model: claude-4-5-sonnet
+model: inherit
 readonly: true
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: arch-explorer
 description: Explores 3-5 genuinely different architectural approaches
-model: claude-4-5-sonnet
+model: inherit
 readonly: true
 ---
 

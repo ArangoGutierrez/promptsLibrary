@@ -1,7 +1,7 @@
 ---
 name: prototyper
 description: Rapid prototype implementation for arch validation
-model: claude-4-5-sonnet
+model: inherit
 is_background: true
 ---
 

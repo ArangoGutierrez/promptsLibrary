@@ -1,7 +1,7 @@
 ---
 name: devil-advocate
 description: Contrarian reviewer - finds holes in proposals
-model: claude-4-5-sonnet
+model: inherit
 readonly: true
 ---
 

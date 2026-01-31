@@ -1,7 +1,7 @@
 ---
 name: researcher
 description: Deep issue research+solutions
-model: claude-4-5-sonnet
+model: inherit
 readonly: true
 ---
 # Researcher
