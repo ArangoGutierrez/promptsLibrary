@@ -20,9 +20,8 @@ jobs:
             **/README.md
             **/docs/**/*.md
             !node_modules
-            !cursor/**
-            !prompts/**
-            !snippets/**
+            !.cursor/**
+            !.claude/**
 
   spell-check:
     name: Spell Check

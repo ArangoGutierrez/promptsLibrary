@@ -31,6 +31,5 @@ jobs:
             --exclude 'https://your-webhook-url'
             --exclude-path 'node_modules'
             README.md
-            claude/README.md
           fail: false
         continue-on-error: true
