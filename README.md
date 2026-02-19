@@ -1,240 +1,114 @@
-# Cursor Prompts Library
+# AI Engineering Dotfiles
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/ArangoGutierrez/promptsLibrary?style=social)](https://github.com/ArangoGutierrez/promptsLibrary/stargazers)
 [![Lint](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/lint.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/lint.yml)
-[![Validate Prompts](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-prompts.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-prompts.yml)
+[![Validate Config](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-cursor.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-cursor.yml)
 
-> Research-backed prompt templates, commands, skills, and subagents for Cursor IDE
-
-A curated collection of AI configurations for software engineering. Built for [Cursor](https://cursor.sh/), leveraging native features like Commands, Skills, Subagents, and Hooks.
+Personal dotfiles for **Claude Code** and **Cursor IDE**. Opinionated engineering setup with TDD enforcement, signed commits, agent-driven workflows, and worktree-based development.
 
 ## Quick Start
-
-### Option A: One-Liner Install (Recommended)
-
-No git clone required — downloads and deploys directly:
-
-```bash
-# Using curl
-curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
-
-# Using wget
-wget -qO- https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
-```
-
-With options:
-
-```bash
-# Token-optimized version (~60% smaller)
-curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download --optimized
-
-# Lazy-loading framework (~95% smaller always-on)
-curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download --lazy
-```
-
-### Option B: Clone the Repository
-
-For auto-updates via symlinks:
 
 ```bash
 git clone https://github.com/ArangoGutierrez/promptsLibrary.git
 cd promptsLibrary
-
-# Deploy globally (to ~/.cursor/)
-./scripts/deploy-cursor.sh
-
-# Or deploy to a specific project
-./scripts/deploy-cursor.sh --project /path/to/your/project
+./scripts/deploy.sh
 ```
 
-### 3. Restart Cursor
-
-Restart Cursor to load the new configurations.
-
-### 4. Try It Out
-
-Type `/` in any Cursor chat to see available commands:
-
-- `/task` — Create a spec-first task prompt
-- `/review-pr` — Rigorous PR review with confidence scoring
-- `/audit` — Deep defensive audit for Go code
-- `/research` — Research a GitHub issue
-- `/architect` — Full architectural exploration
+That's it. The deploy script rsyncs `.claude/` and `.cursor/` to your home directory with automatic backup.
 
 ## What's Included
 
-### Commands (`/command`)
+### Claude Code (`.claude/`)
 
-Slash commands for common workflows:
+| Component | Count | Purpose |
+|-----------|-------|---------|
+| **CLAUDE.md** | 1 | Engineering standards (TDD, worktrees, iteration budgets) |
+| **settings.json** | 1 | Permissions, plugin config, environment variables |
+| **Hooks** | 6 | inject-date, sign-commits, prevent-push-workbench, enforce-worktree, validate-year, tdd-guard |
+| **Policies** | 2 | remote-settings.json, policy-limits.json |
+| **.claudeignore** | 1 | Context exclusions for large/irrelevant files |
 
-| Command | Description |
-|---------|-------------|
-| `/architect` | Full architectural exploration with parallel prototyping |
-| `/audit` | Deep Go/K8s production audit |
-| `/code` | Execute next TODO from AGENTS.md |
-| `/context-reset` | Reset/inspect context tracking state |
-| `/git-polish` | Rewrite commits atomically |
-| `/issue` | Convert GitHub issue to atomic task breakdown |
-| `/loop` | Ralph-loop persistent task execution |
-| `/parallel` | Parallel task execution with dependency analysis |
-| `/push` | Pre-push checks and PR creation |
-| `/quality` | Multi-agent quality review |
-| `/research` | Deep issue research and brainstorming |
-| `/review-pr` | Code review with confidence scoring |
-| `/self-review` | File-by-file self-review checklist |
-| `/task` | Spec-first task execution |
-| `/test` | Run and verify tests |
+### Cursor IDE (`.cursor/`)
 
-### Skills (Agent-Decided)
+| Component | Count | Purpose |
+|-----------|-------|---------|
+| **Agents** | 12 | researcher, auditor, arch-explorer, task-analyzer, perf-critic, api-reviewer, devil-advocate, prototyper, synthesizer, verifier, review-triager, ci-doctor |
+| **Rules** | 5 | core, tdd, workbench, go, k8s (.mdc format) |
+| **Hooks** | 5 | format, sign-commits, security-gate, task-loop, context-monitor |
+| **Commands** | 17 | /architect, /audit, /code, /research, /review-pr, /test, and more |
+| **Skills** | 5 | Cursor-native config skills (create-rule, create-skill, etc.) |
+| **Schemas** | 3 | JSON schemas for hooks and state validation |
 
-Cursor automatically invokes these based on context:
+### Key Behaviors Enforced
 
-| Skill | Auto-triggers on |
-|-------|------------------|
-| `go-audit` | "audit", "production-ready", "race condition" |
-| `pr-review` | "review PR", "code review", "check changes" |
-| `spec-first` | "create task", "implement", "build feature" |
-| `deep-analysis` | "think carefully", "complex problem" |
+- **TDD Guard**: Blocks implementation files without corresponding test files
+- **Signed Commits**: All commits require `-s -S` (DCO + GPG)
+- **Worktree Isolation**: Source code is read-only on `agents-workbench`; implementation happens in `.worktrees/`
+- **Year Validation**: New files must use current year in copyright headers
+- **Security Gate**: Blocks dangerous commands (`rm -rf /`, force-push to main)
 
-### Subagents (Isolated Execution)
+## Scripts
 
-Specialized agents for parallel/isolated work:
+| Script | Purpose |
+|--------|---------|
+| `./scripts/deploy.sh` | Deploy configs to `~/` (rsync with backup) |
+| `./scripts/capture.sh` | Capture live changes back into repo |
+| `./scripts/diff.sh` | Show drift between repo and live environment |
 
-| Agent | Purpose |
-|-------|---------|
-| `api-reviewer` | API design specialist (REST/gRPC/GraphQL) |
-| `arch-explorer` | Explores 3-5 architectural approaches |
-| `auditor` | Go/K8s security and reliability auditor |
-| `devil-advocate` | Contrarian reviewer, challenges assumptions |
-| `perf-critic` | Performance specialist |
-| `prototyper` | Rapid prototyping specialist |
-| `researcher` | Deep issue research and root cause analysis |
-| `synthesizer` | Combines multiple agent outputs |
-| `task-analyzer` | Identifies parallelization opportunities |
-| `verifier` | Skeptically validates claimed completions |
-
-### Hooks (Automation)
-
-Automatic behaviors:
-
-| Hook | Trigger | Action |
-|------|---------|--------|
-| `format.sh` | After file edit | Auto-format (Go, TS, Python, Rust) |
-| `security-gate.sh` | Before shell | Block dangerous commands |
-| `task-loop.sh` | On stop | Auto-continue iteration loops |
-
-### Rules (Always-On)
-
-Project rules applied to every conversation:
-
-- **Depth-forcing** — Anti-satisficing, enumerate≥3 options
-- **Verification** — Factor+Revise CoVe on all claims
-- **Security** — Explicit security constraints
-- **Token optimization** — Efficient output for large codebases
-
-## Deployment Options
+### Deploy Options
 
 ```bash
-# Remote installation (no clone needed)
-curl -fsSL https://raw.githubusercontent.com/ArangoGutierrez/promptsLibrary/main/scripts/deploy-cursor.sh | bash -s -- --download
-
-# Default: symlink to ~/.cursor/ (updates auto-propagate)
-./scripts/deploy-cursor.sh
-
-# Copy files instead (standalone, no auto-updates)
-./scripts/deploy-cursor.sh --copy
-
-# Token-optimized version (~60% smaller context)
-./scripts/deploy-cursor.sh --optimized
-
-# Lazy-loading framework (~95% smaller always-on)
-./scripts/deploy-cursor.sh --lazy
-
-# Deploy to specific project
-./scripts/deploy-cursor.sh --project /path/to/project
-
-# Preview what would be done
-./scripts/deploy-cursor.sh --dry-run
-
-# Overwrite existing files
-./scripts/deploy-cursor.sh --force
-
-# Smart update (pull latest, show changes, deploy)
-./scripts/deploy-cursor.sh --update
-
-# Remove deployed configurations
-./scripts/deploy-cursor.sh --uninstall
+./scripts/deploy.sh              # Full deploy with backup
+./scripts/deploy.sh --dry-run    # Preview without changes
+./scripts/deploy.sh --force      # Skip backup
+./scripts/deploy.sh --claude-only # Deploy only Claude Code config
+./scripts/deploy.sh --cursor-only # Deploy only Cursor config
+./scripts/deploy.sh --delete     # Remove files not in repo (careful!)
 ```
+
+## Workflow
+
+```
+Edit live environment → capture.sh → review diff → commit → push
+```
+
+When you tweak configs in `~/.claude/` or `~/.cursor/`, run `capture.sh` to sync changes back to the repo. Review with `git diff`, commit, push.
+
+## Customization
+
+1. **Fork** this repo
+2. **Edit** configs in `.claude/` and `.cursor/` directly
+3. **Deploy** with `./scripts/deploy.sh`
+4. Or edit live, then `./scripts/capture.sh` to pull changes back
 
 ## Project Structure
 
-```text
-cursor/                 → Cursor configurations (deploy these)
-├── commands/           → Slash commands (/command)
-├── skills/             → Agent skills (auto-invoked)
-├── agents/             → Custom subagents
-├── hooks/              → Automation scripts
-├── hooks.json          → Hook configuration
-└── rules/              → Project rules
-
-scripts/
-└── deploy-cursor.sh    → Deployment script
-
-prompts/                → [DEPRECATED] Original prompts (reference only)
-docs/                   → Documentation
-snippets/               → Cursor rules snippets
 ```
+.claude/              → Claude Code config (mirrors ~/.claude/)
+  ├── CLAUDE.md       → Engineering standards
+  ├── settings.json   → Permissions and hooks config
+  ├── hooks/          → 6 lifecycle hooks
+  └── plugins/        → Plugin manifest
 
-## How It Works
+.cursor/              → Cursor IDE config (mirrors ~/.cursor/)
+  ├── agents/         → 12 custom subagents
+  ├── rules/          → 5 project rules (.mdc)
+  ├── hooks/          → 5 automation hooks
+  ├── commands/       → 17 slash commands
+  ├── skills-cursor/  → 5 config skills
+  └── schemas/        → 3 JSON schemas
 
-These configurations use techniques from recent research:
-
-- **Chain of Verification (CoVe)** — Claims verified independently before reporting
-- **Multi-perspective reflection (PR-CoT)** — Considers logic, completeness, edge cases
-- **Spec-first workflow** — Defines "done" before coding
-- **Confidence scoring** — Only reports high-confidence findings
-- **Token optimization** — Efficient output for large codebases
-
-The result: fewer hallucinations, more thorough analysis, and outputs you can trust.
-
-## Documentation
-
-- [Getting Started](docs/getting-started.md) — Full setup walkthrough
-- [Cursor Setup](docs/cursor-setup.md) — Configuration options
-- [Prompt Catalog](docs/prompt-catalog.md) — All prompts explained
-
-## Migrating from `prompts/`
-
-> **Note:** The `prompts/` folder is deprecated. Use the new `cursor/` structure instead.
-
-The original prompts have been migrated to Cursor's native format:
-
-- `prompts/*.md` → `cursor/commands/*.md`
-- Key prompts also converted to Skills for auto-invocation
-
-The `prompts/` folder is kept for reference but will be removed in a future version.
-
-## Contributing
-
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-
-When adding configurations:
-
-- Explain what problem it solves
-- Include research citations if relevant
-- Test the deployment script before submitting
+scripts/              → Deploy, capture, diff utilities
+docs/plans/           → Design documents
+```
 
 ## Requirements
 
-- **Cursor IDE** (latest version recommended)
-- **macOS or Linux** (Windows/WSL not currently supported)
+- **macOS or Linux** (Windows/WSL untested)
 - **jq** (for hooks that parse JSON)
+- **GPG** (for signed commits)
+- **rsync** (for deploy/capture scripts)
 
 ## License
 
-[MIT](LICENSE) — Use freely, attribution appreciated.
-
----
-
-*Built on research from META AI, Peking University, Intel Labs, Anthropic, and the prompt engineering community.*
+[MIT](LICENSE)

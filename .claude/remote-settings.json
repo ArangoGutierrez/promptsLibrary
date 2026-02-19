@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(rm:*)",
+      "Bash",
+      "WebFetch"
+    ]
+  },
+  "sandbox": {
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "*.github.com",
+        "*.teleport.sh",
+        "*.gitlab-master.nvidia.com",
+        "gitlab-master.nvidia.com"
+      ],
+      "allowManagedDomainsOnly": true
+    }
+  }
+}

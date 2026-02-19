@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "plugins": {
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/eduardoa/.claude/plugins/cache/claude-plugins-official/code-review/8deab8460a9d",
+        "version": "8deab8460a9d",
+        "installedAt": "2026-01-31T18:29:03.803Z",
+        "lastUpdated": "2026-02-19T09:57:23.909Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "code-simplifier@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/eduardoa/.claude/plugins/cache/claude-plugins-official/code-simplifier/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-31T18:29:10.131Z",
+        "lastUpdated": "2026-01-31T18:29:10.131Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "superpowers@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/eduardoa/.claude/plugins/cache/claude-plugins-official/superpowers/4.3.0",
+        "version": "4.3.0",
+        "installedAt": "2026-01-31T18:29:33.550Z",
+        "lastUpdated": "2026-02-13T10:29:30.443Z",
+        "gitCommitSha": "06b92f36820f38175b2ed6ff3f8df45157d54731"
+      }
+    ],
+    "gopls-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/eduardoa/.claude/plugins/cache/claude-plugins-official/gopls-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-31T18:30:11.133Z",
+        "lastUpdated": "2026-01-31T18:30:11.133Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ]
+  }
+}

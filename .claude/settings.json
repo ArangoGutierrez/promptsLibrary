@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "respectGitignore": true,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(go *)",
+      "Bash(git *)",
+      "Bash(make *)",
+      "Bash(kubectl *)",
+      "Bash(gh *)",
+      "Bash(kind *)",
+      "Bash(helm *)",
+      "Bash(kustomize *)",
+      "Bash(controller-gen *)",
+      "Bash(setup-envtest *)",
+      "Bash(golangci-lint *)",
+      "Bash(govulncheck *)",
+      "Bash(gosec *)",
+      "Bash(trivy *)",
+      "Bash(grype *)",
+      "Bash(npm *)",
+      "Bash(yarn *)",
+      "Bash(pnpm *)",
+      "Bash(jq *)",
+      "Bash(rg *)",
+      "Bash(* --version)",
+      "Bash(* --help)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "WebFetch(*)",
+      "WebSearch",
+      "mcp__github__*"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secret*)",
+      "Read(**/credential*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*id_rsa*)",
+      "Read(**/.ssh/*)",
+      "Read(**/.aws/*)",
+      "Read(**/.kube/config)",
+      "Read(**/*token*)",
+      "Read(**/*password*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Write(**/*secret*)",
+      "Write(**/*credential*)",
+      "Write(**/*.pem)",
+      "Write(**/*.key)"
+    ],
+    "ask": [
+      "Bash(rm *)",
+      "Bash(rm -rf *)",
+      "Bash(git rebase *)",
+      "Bash(git reset --hard *)",
+      "Bash(git push --force *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/inject-date.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/sign-commits.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/prevent-push-workbench.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/enforce-worktree.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/validate-year.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/enforce-worktree.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": true
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "teammateMode": "in-process",
+  "effortLevel": "medium"
+}

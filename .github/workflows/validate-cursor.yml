@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'cursor/**'
+      - '.cursor/**'
       - '.github/workflows/validate-cursor.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'cursor/**'
+      - '.cursor/**'
       - '.github/workflows/validate-cursor.yml'
   workflow_dispatch:
 
@@ -28,32 +28,32 @@ jobs:
       - name: Validate hooks.json
         run: |
           echo "Validating hooks.json..."
-          if [ -f "cursor/hooks.json" ]; then
-            if ! jq empty cursor/hooks.json 2>/dev/null; then
-              echo "❌ cursor/hooks.json is not valid JSON"
+          if [ -f ".cursor/hooks.json" ]; then
+            if ! jq empty .cursor/hooks.json 2>/dev/null; then
+              echo "❌ .cursor/hooks.json is not valid JSON"
               exit 1
             fi
-            
+
             # Check required fields
-            if ! jq -e '.version' cursor/hooks.json >/dev/null; then
+            if ! jq -e '.version' .cursor/hooks.json >/dev/null; then
               echo "❌ Missing required field: version"
               exit 1
             fi
-            if ! jq -e '.hooks' cursor/hooks.json >/dev/null; then
+            if ! jq -e '.hooks' .cursor/hooks.json >/dev/null; then
               echo "❌ Missing required field: hooks"
               exit 1
             fi
-            
+
             # Validate hook commands reference existing files
-            for hook_path in $(jq -r '.. | .command? // empty' cursor/hooks.json); do
-              # Convert ~/.cursor/hooks/x.sh to cursor/hooks/x.sh for repo check
-              local_path="${hook_path/#~\/.cursor/cursor}"
+            for hook_path in $(jq -r '.. | .command? // empty' .cursor/hooks.json); do
+              # Convert ~/.cursor/hooks/x.sh to .cursor/hooks/x.sh for repo check
+              local_path="${hook_path/#~\/.cursor/.cursor}"
               if [ ! -f "$local_path" ]; then
                 echo "❌ Hook references non-existent script: $hook_path"
                 exit 1
               fi
             done
-            
+
             echo "✅ hooks.json is valid"
           else
             echo "⚠️ hooks.json not found (optional)"
@@ -63,15 +63,15 @@ jobs:
         run: |
           echo "Validating hook scripts..."
           ERRORS=0
-          
-          for script in cursor/hooks/*.sh; do
+
+          for script in .cursor/hooks/*.sh; do
             if [ ! -f "$script" ]; then
               continue
             fi
-            
+
             filename=$(basename "$script")
             echo "Checking: $filename"
-            
+
             # Check shebang
             if ! head -1 "$script" | grep -qE '^#!/bin/(ba)?sh'; then
               echo "  ❌ Missing or invalid shebang"
@@ -79,7 +79,7 @@ jobs:
             else
               echo "  ✓ Valid shebang"
             fi
-            
+
             # Check shell syntax
             if ! bash -n "$script" 2>/dev/null; then
               echo "  ❌ Shell syntax error"
@@ -87,15 +87,8 @@ jobs:
             else
               echo "  ✓ Valid shell syntax"
             fi
-            
-            # Check for fail-open patterns (jq missing → exit 0)
-            if grep -qE 'jq.*not.*installed.*exit 0' "$script" 2>/dev/null; then
-              if ! grep -qB5 'continue.*false' "$script" 2>/dev/null; then
-                echo "  ⚠️ Potential fail-open: exits 0 when jq missing"
-              fi
-            fi
           done
-          
+
           if [ $ERRORS -gt 0 ]; then
             echo "❌ Found $ERRORS errors in hook scripts"
             exit 1
@@ -106,52 +99,40 @@ jobs:
         run: |
           echo "Validating agent files..."
           ERRORS=0
-          
-          for file in cursor/agents/*.md; do
+
+          for file in .cursor/agents/*.md; do
             if [ ! -f "$file" ]; then
               continue
             fi
-            
+
             filename=$(basename "$file")
             echo "Checking: $filename"
-            
+
             # Check for frontmatter
             if ! head -1 "$file" | grep -q '^---$'; then
               echo "  ❌ Missing frontmatter (must start with ---)"
               ERRORS=$((ERRORS + 1))
               continue
             fi
-            
+
             # Extract frontmatter between first and second '---' delimiters
             frontmatter=$(awk '/^---$/{if(++count==2)exit;next}count==1' "$file")
-            
+
             if ! echo "$frontmatter" | grep -qE '^name:'; then
               echo "  ❌ Missing required field: name"
               ERRORS=$((ERRORS + 1))
             else
               echo "  ✓ Has name field"
             fi
-            
+
             if ! echo "$frontmatter" | grep -qE '^description:'; then
               echo "  ❌ Missing required field: description"
               ERRORS=$((ERRORS + 1))
             else
               echo "  ✓ Has description field"
             fi
-            
-            # Validate model field if present
-            if echo "$frontmatter" | grep -qE '^model:'; then
-              model_value=$(echo "$frontmatter" | grep '^model:' | sed 's/^model://' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-              # Valid model values: sonnet, opus, haiku, fast, inherit, claude-4-5-sonnet, or full model IDs
-              if ! echo "$model_value" | grep -qE '^(sonnet|opus|haiku|fast|inherit|claude-[0-9]+-[0-9]+-sonnet|claude-[0-9]+-[0-9]+-opus|claude-(sonnet|opus|haiku)-[0-9]+-[0-9]+-[0-9]+)$'; then
-                echo "  ⚠️ Potentially invalid model value: '$model_value'"
-                echo "  Valid values: sonnet, opus, haiku, fast, inherit, or full model IDs"
-              else
-                echo "  ✓ Valid model field: $model_value"
-              fi
-            fi
           done
-          
+
           if [ $ERRORS -gt 0 ]; then
             echo "❌ Found $ERRORS errors in agent files"
             exit 1
@@ -161,26 +142,18 @@ jobs:
       - name: Validate command structure
         run: |
           echo "Validating command files..."
-          ERRORS=0
           WARNINGS=0
-          
-          # All sections are now optional (warnings only) for token efficiency
+
           RECOMMENDED_SECTIONS=("## Usage" "## Workflow" "## Output" "## Constraints")
-          
-          for file in cursor/commands/*.md; do
+
+          for file in .cursor/commands/*.md; do
             if [ ! -f "$file" ]; then
               continue
             fi
-            
+
             filename=$(basename "$file")
-            
-            # Skip template file
-            if [ "$filename" = "_TEMPLATE.md" ]; then
-              continue
-            fi
-            
             echo "Checking: $filename"
-            
+
             for section in "${RECOMMENDED_SECTIONS[@]}"; do
               if ! grep -qE "^$section" "$file"; then
                 echo "  ⚠️ Missing recommended: $section"
@@ -190,7 +163,7 @@ jobs:
               fi
             done
           done
-          
+
           if [ $WARNINGS -gt 0 ]; then
             echo "⚠️ Found $WARNINGS warnings (missing recommended sections)"
           fi
@@ -200,41 +173,38 @@ jobs:
         run: |
           echo "Validating skill files..."
           ERRORS=0
-          
-          for dir in cursor/skills/*/; do
+
+          for dir in .cursor/skills-cursor/*/; do
             if [ ! -d "$dir" ]; then
               continue
             fi
-            
+
             skill_name=$(basename "$dir")
             skill_file="${dir}SKILL.md"
-            
+
             echo "Checking skill: $skill_name"
-            
-            # Check SKILL.md exists
+
             if [ ! -f "$skill_file" ]; then
               echo "  ❌ Missing SKILL.md file"
               ERRORS=$((ERRORS + 1))
               continue
             fi
-            
-            # Check for frontmatter
+
             if ! head -1 "$skill_file" | grep -q '^---$'; then
               echo "  ❌ Missing frontmatter"
               ERRORS=$((ERRORS + 1))
               continue
             fi
-            
-            # Check required frontmatter fields
+
             frontmatter=$(sed -n '1,/^---$/p' "$skill_file" | tail -n +2 | head -n -1)
-            
+
             if ! echo "$frontmatter" | grep -qE '^name:'; then
               echo "  ❌ Missing required field: name"
               ERRORS=$((ERRORS + 1))
             else
               echo "  ✓ Has name field"
             fi
-            
+
             if ! echo "$frontmatter" | grep -qE '^description:'; then
               echo "  ❌ Missing required field: description"
               ERRORS=$((ERRORS + 1))
@@ -242,7 +212,7 @@ jobs:
               echo "  ✓ Has description field"
             fi
           done
-          
+
           if [ $ERRORS -gt 0 ]; then
             echo "❌ Found $ERRORS errors in skill files"
             exit 1
@@ -253,44 +223,42 @@ jobs:
         run: |
           echo "Validating rule files..."
           ERRORS=0
-          
-          for file in cursor/rules/*.md; do
+
+          for file in .cursor/rules/*.mdc; do
             if [ ! -f "$file" ]; then
               continue
             fi
-            
+
             filename=$(basename "$file")
             echo "Checking: $filename"
-            
+
             # Check for frontmatter
             if ! head -1 "$file" | grep -q '^---$'; then
               echo "  ❌ Missing frontmatter"
               ERRORS=$((ERRORS + 1))
               continue
             fi
-            
+
             # Extract frontmatter
             frontmatter=$(sed -n '1,/^---$/p' "$file" | tail -n +2 | head -n -1)
-            
-            # Check for description
+
             if ! echo "$frontmatter" | grep -qE '^description:'; then
               echo "  ❌ Missing required field: description"
               ERRORS=$((ERRORS + 1))
             else
               echo "  ✓ Has description field"
             fi
-            
-            # Check for either alwaysApply or globs
+
             has_always=$(echo "$frontmatter" | grep -cE '^alwaysApply:' || true)
             has_globs=$(echo "$frontmatter" | grep -cE '^globs:' || true)
-            
+
             if [ "$has_always" -eq 0 ] && [ "$has_globs" -eq 0 ]; then
               echo "  ⚠️ Missing alwaysApply or globs (rule may not load)"
             else
               echo "  ✓ Has activation trigger"
             fi
           done
-          
+
           if [ $ERRORS -gt 0 ]; then
             echo "❌ Found $ERRORS errors in rule files"
             exit 1
@@ -301,81 +269,29 @@ jobs:
         run: |
           echo "Checking file naming conventions..."
           ERRORS=0
-          
-          # Check for spaces or uppercase in filenames
-          for file in cursor/**/*.md cursor/**/*.sh; do
+
+          for file in .cursor/**/*.md .cursor/**/*.sh .cursor/**/*.mdc; do
             if [ ! -f "$file" ]; then
               continue
             fi
-            
+
             filename=$(basename "$file")
-            
-            # Check for spaces
+
             if [[ "$filename" == *" "* ]]; then
               echo "❌ File has spaces in name: $file"
               ERRORS=$((ERRORS + 1))
             fi
-            
-            # Check for uppercase (except SKILL.md which is intentional)
+
             if [[ "$filename" != "SKILL.md" ]] && [[ "$filename" =~ [A-Z] ]]; then
               echo "⚠️ File has uppercase letters: $file (prefer kebab-case)"
             fi
           done
-          
+
           if [ $ERRORS -gt 0 ]; then
             echo "❌ Found $ERRORS naming convention errors"
             exit 1
           fi
           echo "✅ File naming conventions OK"
-
-      - name: Check for sync drift
-        run: |
-          echo "Checking for sync drift between main and optimized..."
-          WARNINGS=0
-          
-          # Check agents
-          for file in cursor/agents/*.md; do
-            if [ ! -f "$file" ]; then
-              continue
-            fi
-            filename=$(basename "$file")
-            opt_file="cursor/_optimized/agents/$filename"
-            
-            if [ -f "$opt_file" ]; then
-              # Both exist - check for significant size difference (>50% change)
-              main_lines=$(wc -l < "$file")
-              opt_lines=$(wc -l < "$opt_file")
-              
-              if [ "$opt_lines" -gt "$((main_lines * 2))" ]; then
-                echo "⚠️ Optimized larger than main: $filename"
-                WARNINGS=$((WARNINGS + 1))
-              fi
-            fi
-          done
-          
-          # Check commands
-          for file in cursor/commands/*.md; do
-            if [ ! -f "$file" ]; then
-              continue
-            fi
-            filename=$(basename "$file")
-            
-            # Skip template
-            if [ "$filename" = "_TEMPLATE.md" ]; then
-              continue
-            fi
-            
-            opt_file="cursor/_optimized/commands/$filename"
-            
-            if [ ! -f "$opt_file" ]; then
-              echo "ℹ️ No optimized version: commands/$filename"
-            fi
-          done
-          
-          if [ $WARNINGS -gt 0 ]; then
-            echo "⚠️ Found $WARNINGS potential sync issues"
-          fi
-          echo "✅ Sync drift check complete"
 
   validate-schemas:
     name: Validate JSON Schemas
@@ -388,8 +304,8 @@ jobs:
 
       - name: Validate hooks.json against schema
         run: |
-          if [ -f "cursor/schemas/hooks.schema.json" ] && [ -f "cursor/hooks.json" ]; then
-            ajv validate -s cursor/schemas/hooks.schema.json -d cursor/hooks.json --strict=false
+          if [ -f ".cursor/schemas/hooks.schema.json" ] && [ -f ".cursor/hooks.json" ]; then
+            ajv validate -s .cursor/schemas/hooks.schema.json -d .cursor/hooks.json --strict=false
             echo "✅ hooks.json validates against schema"
           else
             echo "⚠️ Schema or hooks.json not found, skipping validation"
