@@ -15,6 +15,7 @@
 ### Task 1: Create `docs/README.md` — Documentation Index
 
 **Files:**
+
 - Create: `docs/README.md`
 
 **Step 1: Write the docs index**
@@ -61,6 +62,7 @@ git commit -s -S -m "docs: add documentation index"
 ### Task 2: Write `docs/getting-started.md` — Extended Quickstart
 
 **Files:**
+
 - Create: `docs/getting-started.md`
 
 **Step 1: Write the getting started guide**
@@ -75,12 +77,14 @@ Sections (with approximate content):
    - rsync (`brew install rsync` / usually pre-installed)
 
 2. **Installation** — Three steps:
+
    ```bash
    git clone https://github.com/ArangoGutierrez/promptsLibrary.git
    cd promptsLibrary
    ./scripts/deploy.sh --dry-run  # preview first
    ./scripts/deploy.sh            # deploy with automatic backup
    ```
+
    Explain: what deploy.sh does (rsync to ~/), what gets backed up, where backups go (`~/.config/dotfiles-backup/`)
 
 3. **Verify Installation** — Commands to confirm:
@@ -125,6 +129,7 @@ git commit -s -S -m "docs: add getting started guide"
 ### Task 3: Write `docs/architecture.md` — Agents-Workbench Deep-Dive
 
 **Files:**
+
 - Create: `docs/architecture.md`
 
 **Step 1: Write the architecture document**
@@ -158,6 +163,7 @@ This is the centerpiece. Sections:
 3. **Architecture Diagram** (~40 lines)
 
    Mermaid diagram showing:
+
    ```
    graph TD
      subgraph "Remote (GitHub)"
@@ -190,6 +196,7 @@ This is the centerpiece. Sections:
    Step-by-step walkthrough with actual commands:
 
    **Phase 1: Plan (on agents-workbench)**
+
    ```bash
    git checkout agents-workbench
    # Use brainstorming skill → design doc saved to docs/plans/
@@ -197,6 +204,7 @@ This is the centerpiece. Sections:
    ```
 
    **Phase 2: Create Worktree (from remote ref)**
+
    ```bash
    git fetch upstream 2>/dev/null && \
      BASE="upstream/$(git symbolic-ref refs/remotes/upstream/HEAD 2>/dev/null | \
@@ -207,23 +215,28 @@ This is the centerpiece. Sections:
    git worktree add .worktrees/my-feature -b feat/my-feature "$BASE"
    cd .worktrees/my-feature
    ```
+
    Explain WHY from remote ref (local main may be stale after force-pushes or rebases).
 
    **Phase 3: TDD Cycle (in worktree)**
+
    ```
    [RED]    → Write failing test
    [GREEN]  → Minimal code to pass
    [REFACTOR] → Clean up (checkpoint first if >3 files or >50 LOC)
    ```
+
    Show the tdd-guard.sh blocking an implementation write without a test.
 
    **Phase 4: Push & PR**
+
    ```bash
    git push -u origin feat/my-feature
    gh pr create --title "feat: my feature" --body "..."
    ```
 
    **Phase 5: Cleanup**
+
    ```bash
    cd /path/to/repo
    git worktree remove .worktrees/my-feature
@@ -270,6 +283,7 @@ git commit -s -S -m "docs: add agents-workbench architecture deep-dive"
 ### Task 4: Write `docs/claude-code.md` — Claude Code Reference
 
 **Files:**
+
 - Create: `docs/claude-code.md`
 
 **Step 1: Write the Claude Code reference**
@@ -335,6 +349,7 @@ git commit -s -S -m "docs: add Claude Code configuration reference"
 ### Task 5: Write `docs/cursor.md` — Cursor Reference
 
 **Files:**
+
 - Create: `docs/cursor.md`
 
 **Step 1: Write the Cursor reference**
@@ -397,6 +412,7 @@ git commit -s -S -m "docs: add Cursor IDE configuration reference"
 ### Task 6: Write `docs/deployment.md` — Scripts Reference
 
 **Files:**
+
 - Create: `docs/deployment.md`
 
 **Step 1: Write the deployment reference**
@@ -406,18 +422,21 @@ Sections:
 1. **Overview** (~30 lines)
    - The deploy/capture/diff triad
    - Workflow diagram (Mermaid):
+
      ```
      graph LR
        REPO[Repo .claude/ .cursor/] -->|deploy.sh| LIVE[~/.claude/ ~/.cursor/]
        LIVE -->|capture.sh| REPO
        REPO <-->|diff.sh| LIVE
      ```
+
    - Typical workflow: edit live → capture → diff → commit → push
 
 2. **deploy.sh** (~60 lines)
    - What it does: rsyncs .claude/ and .cursor/ from repo to ~/
    - Automatic backup: creates timestamped tar.gz in `~/.config/dotfiles-backup/`
    - Flags table:
+
      | Flag | Effect |
      |------|--------|
      | `--dry-run` | Preview without making changes |
@@ -426,6 +445,7 @@ Sections:
      | `--cursor-only` | Deploy only .cursor/ |
      | `--no-plugins` | Skip plugin files |
      | `--delete` | Remove files in ~/ not in repo (use with caution) |
+
    - Post-deploy verification: checks key files exist, hooks are executable, JSON is valid
 
 3. **capture.sh** (~40 lines)
@@ -471,6 +491,7 @@ git commit -s -S -m "docs: add deployment scripts reference"
 ### Task 7: Write `docs/skills-and-commands.md` — Skills & Commands Reference
 
 **Files:**
+
 - Create: `docs/skills-and-commands.md`
 
 **Step 1: Write the skills and commands reference**
@@ -485,6 +506,7 @@ Sections:
 
 2. **Claude Code Skills (Superpowers Plugin)** (~80 lines)
    Table + brief descriptions:
+
    | Skill | Purpose |
    |-------|---------|
    | brainstorming | Collaborative design exploration — mandatory before any implementation |
@@ -506,6 +528,7 @@ Sections:
    Grouped by workflow phase:
 
    **Planning & Research:**
+
    | Command | Description | Key Agents |
    |---------|-------------|------------|
    | `/architect` | Full architecture exploration | explorer, advocate, prototyper x2, synthesizer |
@@ -513,6 +536,7 @@ Sections:
    | `/issue` | GitHub issue analysis and task breakdown | task-analyzer |
 
    **Implementation:**
+
    | Command | Description |
    |---------|-------------|
    | `/code` | Execute next TODO from AGENTS.md |
@@ -522,6 +546,7 @@ Sections:
    | `/worktree` | Worktree lifecycle (create/list/status/done) |
 
    **Quality & Review:**
+
    | Command | Description | Key Agents |
    |---------|-------------|------------|
    | `/audit` | Security/reliability audit | auditor |
@@ -531,6 +556,7 @@ Sections:
    | `/review-pr` | Review a pull request | N/A |
 
    **Git & CI:**
+
    | Command | Description |
    |---------|-------------|
    | `/push` | Safe push with pre-checks |
@@ -540,6 +566,7 @@ Sections:
 
 4. **Cursor Skills** (~30 lines)
    These are Cursor-specific config management skills:
+
    | Skill | Purpose |
    |-------|---------|
    | create-rule | Generate a new .mdc rule file |
@@ -569,6 +596,7 @@ git commit -s -S -m "docs: add skills and commands reference"
 ### Task 8: Rewrite Root `README.md`
 
 **Files:**
+
 - Modify: `README.md`
 
 **Step 1: Rewrite the README**
@@ -583,6 +611,7 @@ Keep the good parts of the current README (badges, quick start, tables) but rest
 
 3. **What This Gives You** (~30 lines) — NEW section
    Before/after comparison:
+
    | Without This Config | With This Config |
    |-------------------|-----------------|
    | AI writes code directly on main | Implementation isolated in worktrees |
@@ -594,11 +623,13 @@ Keep the good parts of the current README (badges, quick start, tables) but rest
 
 4. **Architecture Overview** (~20 lines)
    Mermaid diagram showing the deployment flow:
+
    ```
    graph LR
      REPO["This Repo<br/>.claude/ + .cursor/"] -->|"./scripts/deploy.sh"| HOME["Your Home<br/>~/.claude/ + ~/.cursor/"]
      HOME -->|"./scripts/capture.sh"| REPO
    ```
+
    Brief explanation + link to docs/architecture.md
 
 5. **Quick Start** (keep existing, slightly expanded)
@@ -628,6 +659,7 @@ git commit -s -S -m "docs: rewrite README with value proposition and docs links"
 **Step 1: Check all links between documents**
 
 Verify every cross-reference link works:
+
 - README.md links to docs/*.md
 - docs/README.md links to all docs
 - docs/architecture.md links to claude-code.md, cursor.md

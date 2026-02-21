@@ -14,6 +14,7 @@ isolated worktrees branched from the remote default branch.
 ## Decision
 
 **Option 1: Single-commit scaffold** was selected over:
+
 - Option 2 (scaffold + deploy script update) — deferred as separate concern
 - Option 3 (full migration + demo) — too much scope for initial setup
 
@@ -38,6 +39,7 @@ agents-workbench (local only, READ-ONLY source)
 ```
 
 Future work pattern:
+
 1. Update AGENTS.md on agents-workbench with the task
 2. `git worktree add .worktrees/<name> -b <branch> origin/main`
 3. Implement in the worktree
