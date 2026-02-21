@@ -4,17 +4,54 @@
 [![Lint](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/lint.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/lint.yml)
 [![Validate Config](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-cursor.yml/badge.svg)](https://github.com/ArangoGutierrez/promptsLibrary/actions/workflows/validate-cursor.yml)
 
-Personal dotfiles for **Claude Code** and **Cursor IDE**. Opinionated engineering setup with TDD enforcement, signed commits, agent-driven workflows, and worktree-based development.
+Dotfiles for **Claude Code** and **Cursor IDE** that turn AI-assisted development
+into a disciplined engineering practice. You get TDD enforcement, GPG-signed
+commits, worktree isolation, and agent-driven workflows — all enforced by hooks
+at the toolchain level, not just written down in a convention doc that gets
+ignored. Clone, deploy, and every AI session follows the same engineering
+standards automatically.
+
+## What This Gives You
+
+| Without This Config | With This Config |
+|---------------------|-----------------|
+| AI writes code directly on main | Implementation isolated in worktrees |
+| No test discipline | TDD enforced — implementation blocked without failing tests |
+| Unsigned commits | All commits GPG-signed with DCO signoff |
+| Manual code review | Multi-agent quality gates (audit, perf, security) |
+| No year validation | Current year enforced in new files |
+| No guardrails on dangerous commands | Destructive commands blocked (force-push main, `rm -rf /`) |
+
+## Architecture Overview
+
+This repo is a bare mirror of your Claude Code and Cursor IDE configurations.
+`deploy.sh` syncs from the repo to `~/`. `capture.sh` syncs changes made live
+back into the repo. `diff.sh` shows drift between the two.
+
+```mermaid
+graph LR
+    REPO["This Repo<br/>.claude/ + .cursor/"] -->|"./scripts/deploy.sh"| HOME["Your Home Dir<br/>~/.claude/ + ~/.cursor/"]
+    HOME -->|"./scripts/capture.sh"| REPO
+```
+
+The repo layout mirrors the home directory exactly so rsync can deploy without
+path translation. See the [Architecture deep-dive](docs/architecture.md) for the
+agents-workbench pattern, worktree isolation model, and hook execution order.
 
 ## Quick Start
 
 ```bash
 git clone https://github.com/ArangoGutierrez/promptsLibrary.git
 cd promptsLibrary
-./scripts/deploy.sh
+./scripts/deploy.sh --dry-run  # preview changes before applying
+./scripts/deploy.sh            # deploy with automatic backup
 ```
 
-That's it. The deploy script rsyncs `.claude/` and `.cursor/` to your home directory with automatic backup.
+The deploy script rsyncs `.claude/` and `.cursor/` to your home directory.
+A timestamped backup is created automatically before any files are overwritten.
+
+See [Getting Started](docs/getting-started.md) for prerequisites, verification
+steps, and first-session walkthrough.
 
 ## What's Included
 
@@ -47,60 +84,16 @@ That's it. The deploy script rsyncs `.claude/` and `.cursor/` to your home direc
 - **Year Validation**: New files must use current year in copyright headers
 - **Security Gate**: Blocks dangerous commands (`rm -rf /`, force-push to main)
 
-## Scripts
+## Documentation
 
-| Script | Purpose |
-|--------|---------|
-| `./scripts/deploy.sh` | Deploy configs to `~/` (rsync with backup) |
-| `./scripts/capture.sh` | Capture live changes back into repo |
-| `./scripts/diff.sh` | Show drift between repo and live environment |
-
-### Deploy Options
-
-```bash
-./scripts/deploy.sh              # Full deploy with backup
-./scripts/deploy.sh --dry-run    # Preview without changes
-./scripts/deploy.sh --force      # Skip backup
-./scripts/deploy.sh --claude-only # Deploy only Claude Code config
-./scripts/deploy.sh --cursor-only # Deploy only Cursor config
-./scripts/deploy.sh --delete     # Remove files not in repo (careful!)
-```
-
-## Workflow
-
-```
-Edit live environment → capture.sh → review diff → commit → push
-```
-
-When you tweak configs in `~/.claude/` or `~/.cursor/`, run `capture.sh` to sync changes back to the repo. Review with `git diff`, commit, push.
-
-## Customization
-
-1. **Fork** this repo
-2. **Edit** configs in `.claude/` and `.cursor/` directly
-3. **Deploy** with `./scripts/deploy.sh`
-4. Or edit live, then `./scripts/capture.sh` to pull changes back
-
-## Project Structure
-
-```
-.claude/              → Claude Code config (mirrors ~/.claude/)
-  ├── CLAUDE.md       → Engineering standards
-  ├── settings.json   → Permissions and hooks config
-  ├── hooks/          → 6 lifecycle hooks
-  └── plugins/        → Plugin manifest
-
-.cursor/              → Cursor IDE config (mirrors ~/.cursor/)
-  ├── agents/         → 12 custom subagents
-  ├── rules/          → 5 project rules (.mdc)
-  ├── hooks/          → 5 automation hooks
-  ├── commands/       → 17 slash commands
-  ├── skills-cursor/  → 5 config skills
-  └── schemas/        → 3 JSON schemas
-
-scripts/              → Deploy, capture, diff utilities
-docs/plans/           → Design documents
-```
+| Document | Description |
+|----------|-------------|
+| [Getting Started](docs/getting-started.md) | Prerequisites, installation, verification |
+| [Architecture](docs/architecture.md) | agents-workbench deep-dive with diagrams |
+| [Claude Code](docs/claude-code.md) | Hooks, settings, plugins, policies |
+| [Cursor](docs/cursor.md) | Agents, commands, rules, hooks |
+| [Deployment](docs/deployment.md) | deploy.sh, capture.sh, diff.sh scripts |
+| [Skills & Commands](docs/skills-and-commands.md) | Complete reference |
 
 ## Requirements
 
@@ -108,6 +101,13 @@ docs/plans/           → Design documents
 - **jq** (for hooks that parse JSON)
 - **GPG** (for signed commits)
 - **rsync** (for deploy/capture scripts)
+
+## Contributing
+
+1. Fork this repo
+2. Edit configs in `.claude/` and `.cursor/` directly, or edit live and run `./scripts/capture.sh`
+3. Deploy with `./scripts/deploy.sh`
+4. Open a PR against `main`
 
 ## License
 
