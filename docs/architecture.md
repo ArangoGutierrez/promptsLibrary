@@ -92,7 +92,7 @@ The architecture is not just convention — it is mechanically enforced by shell
 - AI agents do not know what they do not know. They cannot self-enforce discipline they were not trained to apply.
 - Hooks fire automatically, every time, without requiring anyone to remember.
 
-Claude Code hooks fire via the `hooks` section of `.claude/settings.json`. Cursor hooks fire via `.cursor/agents/` and the Cursor hook system. Both sets of hooks are deployed to the appropriate config locations by `scripts/deploy.sh`.
+Claude Code hooks fire via the `hooks` section of `.claude/settings.json`. Cursor hooks are configured via `.cursor/hooks.json` and `.cursor/hooks/*` and wired into the Cursor hook system. Both sets of hooks are deployed to the appropriate config locations by `scripts/deploy.sh`.
 
 ---
 

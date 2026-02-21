@@ -20,7 +20,7 @@ standards automatically.
 | Unsigned commits | All commits GPG-signed with DCO signoff |
 | Manual code review | Multi-agent quality gates (audit, perf, security) |
 | No year validation | Current year enforced in new files |
-| No guardrails on dangerous commands | Destructive commands blocked (force-push main, `rm -rf /`) |
+| No guardrails on dangerous commands | Guardrails on destructive commands (confirm force-push main; block `rm -rf /`) |
 
 ## Architecture Overview
 

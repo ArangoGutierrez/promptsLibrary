@@ -613,9 +613,20 @@ Hooks are shell scripts in `.cursor/hooks/` wired to Cursor agent events via `.c
 
 ```json
 {
-  "afterFileEdit": ["format.sh"],
-  "beforeShellExecution": ["sign-commits.sh", "security-gate.sh"],
-  "stop": ["task-loop.sh", "context-monitor.sh"]
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      { "command": "~/.cursor/hooks/format.sh" }
+    ],
+    "beforeShellExecution": [
+      { "command": "~/.cursor/hooks/sign-commits.sh" },
+      { "command": "~/.cursor/hooks/security-gate.sh" }
+    ],
+    "stop": [
+      { "command": "~/.cursor/hooks/task-loop.sh" },
+      { "command": "~/.cursor/hooks/context-monitor.sh" }
+    ]
+  }
 }
 ```
 

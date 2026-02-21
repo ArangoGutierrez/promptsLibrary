@@ -7,7 +7,7 @@
 What this configuration adds:
 
 - **Engineering standards** codified in `CLAUDE.md` — a mandatory brainstorm-first policy, a full TDD protocol (Plan→Red→Green→Refactor), an iteration budget, and a clear priority stack (Security > Correctness > Performance > Style).
-- **Enforcement hooks** that make the standards machine-checkable — seven shell scripts that intercept file writes and Bash commands before Claude executes them, blocking violations with actionable error messages.
+- **Enforcement hooks** that make the standards machine-checkable — six shell scripts that intercept file writes and Bash commands before Claude executes them, blocking violations with actionable error messages.
 - **A plugin ecosystem** — four official plugins covering code review, code simplification, Go language server integration, and the `superpowers` workflow engine that drives brainstorming, TDD, worktree management, and parallel agent dispatch.
 - **A fine-grained permissions model** — explicit allow/deny/ask lists for every tool Claude can call, plus a sandbox with network restrictions for remote use.
 

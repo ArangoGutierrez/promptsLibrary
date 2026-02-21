@@ -110,7 +110,7 @@ What this does:
 
 - Rsyncs `.claude/` from the repo into `~/.claude/`
 - Rsyncs `.cursor/` from the repo into `~/.cursor/`
-- Creates a timestamped backup of any existing files at `~/.config/dotfiles-backup/` before overwriting them (for example: `~/.config/dotfiles-backup/claude-2026-02-20T14-30-00.tar.gz`)
+- Creates a timestamped backup of any existing files at `~/.config/dotfiles-backup/` before overwriting them (for example: `~/.config/dotfiles-backup/dotfiles-backup-20260220-143000.tar.gz`)
 
 The script is safe to re-run. Each run creates a fresh backup before making changes, so you can always roll back.
 
@@ -130,7 +130,7 @@ ls -la ~/.claude/hooks/
 
 You should see six scripts, all with executable permissions (`-rwxr-xr-x`):
 
-- `enforce-worktree.sh` — blocks implementation in the main branch
+- `enforce-worktree.sh` — blocks source edits on the `agents-workbench` branch
 - `inject-date.sh` — injects the current date into Claude Code context
 - `prevent-push-workbench.sh` — prevents pushing the `agents-workbench` branch
 - `sign-commits.sh` — enforces signed commits (`-s -S` flags)
@@ -151,10 +151,11 @@ Open a Claude Code session inside any Git repository and ask it to commit someth
 
 In a Claude Code session, ask it to write an implementation file (for example, a new `.go` or `.py` file) without first creating a corresponding test file. The `tdd-guard.sh` hook should block the write and prompt you to write the test first.
 
-To bypass for a one-off case (for example, when adding a config file that genuinely has no test):
+To bypass for a one-off case (for example, when adding a config file that genuinely has no test), export the variable before the file write/edit operation that triggers the hook:
 
 ```bash
-SKIP_TDD_GUARD=1 git commit ...
+export SKIP_TDD_GUARD=1
+# then perform the write/edit operation that triggers tdd-guard.sh
 ```
 
 ### Claude Code plugins loaded
@@ -314,10 +315,11 @@ git worktree prune
 The guard checks for the presence of a test file before allowing implementation writes. If it is blocking something that genuinely does not need a test (configuration files, generated files, documentation):
 
 ```bash
-SKIP_TDD_GUARD=1 git commit -s -S -m "chore: add config file"
+export SKIP_TDD_GUARD=1
+# then perform the write/edit operation that triggers tdd-guard.sh
 ```
 
-Use this sparingly. The guard exists to enforce TDD discipline.
+Use this sparingly. The guard exists to enforce TDD discipline. Note that `SKIP_TDD_GUARD` is checked by the Write/Edit hook, not by `git commit`, so it must be set in the environment before the file operation.
 
 ### Deploy overwrote my local changes
 
