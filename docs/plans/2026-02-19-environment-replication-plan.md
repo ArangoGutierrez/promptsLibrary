@@ -13,6 +13,7 @@
 ### Task 1: Create the new .claude/ directory from live environment
 
 **Files:**
+
 - Create: `.claude/CLAUDE.md` (copy from `~/.claude/CLAUDE.md`)
 - Create: `.claude/settings.json` (copy from `~/.claude/settings.json`)
 - Create: `.claude/remote-settings.json` (copy from `~/.claude/remote-settings.json`)
@@ -81,6 +82,7 @@ Captures the canonical Claude Code configuration from ~/.claude:
 ### Task 2: Create the new .cursor/ directory from live environment
 
 **Files:**
+
 - Create: `.cursor/agents/` (12 agent files from `~/.cursor/agents/`)
 - Create: `.cursor/rules/` (5 .mdc files from `~/.cursor/rules/`)
 - Create: `.cursor/hooks/` (5 hook scripts from `~/.cursor/hooks/`)
@@ -130,6 +132,7 @@ chmod +x .cursor/hooks/*.sh
 **Step 2: Verify file counts match**
 
 Run:
+
 ```bash
 echo "Agents: $(ls .cursor/agents/*.md | wc -l) (expected 12)"
 echo "Rules: $(ls .cursor/rules/*.mdc | wc -l) (expected 5)"
@@ -162,6 +165,7 @@ Captures the canonical Cursor configuration from ~/.cursor:
 ### Task 3: Remove old directories
 
 **Files:**
+
 - Delete: `claude/` (entire directory)
 - Delete: `cursor/` (entire directory)
 - Delete: `prompts/` (entire directory — deprecated)
@@ -203,11 +207,13 @@ Removes directories superseded by the bare mirror layout:
 ### Task 4: Update .gitignore
 
 **Files:**
+
 - Modify: `.gitignore`
 
 **Step 1: Write new .gitignore**
 
 Replace the current `.gitignore` with one that:
+
 - Removes the `.cursor/` exclusion (we now WANT it tracked)
 - Adds runtime data exclusions for both `.claude/` and `.cursor/`
 - Keeps OS/editor/env exclusions
@@ -324,6 +330,7 @@ runtime data (debug logs, sessions, caches, teams, tasks, etc.)."
 ### Task 5: Write scripts/deploy.sh
 
 **Files:**
+
 - Create: `scripts/deploy.sh`
 
 **Step 1: Write the deploy script**
@@ -520,6 +527,7 @@ before overwriting."
 ### Task 6: Write scripts/capture.sh
 
 **Files:**
+
 - Create: `scripts/capture.sh`
 
 **Step 1: Write the capture script**
@@ -623,6 +631,7 @@ excluding runtime data. Resolves symlinks in commands/."
 ### Task 7: Write scripts/diff.sh
 
 **Files:**
+
 - Create: `scripts/diff.sh`
 
 **Step 1: Write the diff script**
@@ -741,6 +750,7 @@ excluding runtime data. Resolves symlinks for command comparison."
 ### Task 8: Update CI workflows
 
 **Files:**
+
 - Modify: `.github/workflows/validate-cursor.yml` (update paths from `cursor/` to `.cursor/`)
 - Modify: `.github/workflows/links.yml` (update paths)
 - Modify: `.github/workflows/lint.yml` (update exclusions)
@@ -749,6 +759,7 @@ excluding runtime data. Resolves symlinks for command comparison."
 **Step 1: Update validate-cursor.yml paths**
 
 All references to `cursor/` become `.cursor/`:
+
 - Trigger paths: `cursor/**` → `.cursor/**`
 - `cursor/hooks.json` → `.cursor/hooks.json`
 - `cursor/hooks/*.sh` → `.cursor/hooks/*.sh`
@@ -767,6 +778,7 @@ Change `claude/README.md` to just `README.md` (or remove if the main README cove
 **Step 3: Update lint.yml**
 
 Update exclusions:
+
 - Remove `!cursor/**` exclusion (no longer at that path)
 - Add `!.cursor/**` and `!.claude/**` if we want to exclude them from markdown lint
 - Remove `!prompts/**` and `!snippets/**` (directories deleted)
@@ -795,11 +807,13 @@ git commit -s -S -m "chore: update CI workflows for bare mirror layout
 ### Task 9: Update README.md
 
 **Files:**
+
 - Modify: `README.md`
 
 **Step 1: Rewrite README for the new structure**
 
 The README should cover:
+
 - What this repo is (personal dotfiles for Claude Code + Cursor)
 - Quick start (`git clone && ./scripts/deploy.sh`)
 - What's included (overview of .claude/ and .cursor/ contents)
@@ -823,6 +837,7 @@ and scripts reference for the new dotfiles structure."
 ### Task 10: Clean up remaining files
 
 **Files:**
+
 - Review: `docs/` — keep `docs/plans/` with design docs, remove obsolete docs
 - Review: `.lycheeignore`, `.markdownlint.json`, `.typos.toml` — update if needed
 - Review: `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `LICENSE` — keep as-is

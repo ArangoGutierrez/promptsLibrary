@@ -43,6 +43,7 @@ Expected: `agents-workbench`
 ### Task 2: Update .gitignore
 
 **Files:**
+
 - Modify: `.gitignore`
 
 **Step 1: Add .worktrees/ entry**
@@ -67,6 +68,7 @@ Expected: `OK`
 ### Task 3: Create .agents/plans/ directory
 
 **Files:**
+
 - Create: `.agents/plans/.gitkeep`
 
 **Step 1: Create directory with .gitkeep**
@@ -89,13 +91,14 @@ Expected: file exists.
 ### Task 4: Create AGENTS.md
 
 **Files:**
+
 - Create: `AGENTS.md`
 
 **Step 1: Write AGENTS.md**
 
 Create `AGENTS.md` with the following content:
 
-```markdown
+````markdown
 # Agents Workbench — promptsLibrary
 
 ## Project Overview
@@ -151,7 +154,7 @@ snippets/            Cursor rules snippets
 
 ## Current Task
 
-_None — workbench just initialized._
+*None — workbench just initialized.*
 
 ## Next Tasks
 
@@ -192,7 +195,7 @@ git worktree remove .worktrees/<name>
 2. **Source code is READ-ONLY** on agents-workbench — all edits happen in worktrees
 3. **AGENTS.md is the exception** — it is updated on agents-workbench to track coordination state
 4. **Plans go in .agents/plans/** — one file per task/feature
-```
+````
 
 **Step 2: Verify**
 
