@@ -28,9 +28,6 @@ CLAUDE_EXCLUDES=(
   plugins/cache/
   plugins/known_marketplaces.json
   plugins/marketplaces/
-  commands/
-  docs/
-  team/
   settings.local.json
 )
 
