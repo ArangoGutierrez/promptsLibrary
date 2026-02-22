@@ -54,6 +54,50 @@ These skills are provided by the superpowers plugin and live in the Claude Code 
 
 ---
 
+## Claude Code Team Commands
+
+These are slash commands in `.claude/commands/` that coordinate multi-agent team workflows. They are invoked as `/team-plan`, `/team-execute`, and `/team-shutdown`. Each command defines a phase of the team lifecycle.
+
+### Team Structure
+
+All three commands share the same team structure:
+
+- **Team Lead (you):** Coordinates from the `agents-workbench` branch. Does not make technical decisions.
+- **Distinguished Systems Engineer:** Senior technical authority. Makes architectural decisions, reviews PRs for architecture/security violations, triages external review bot comments. Reads from `team/lib/architect-*.md` reference material. Location: `agents-workbench` (read-only).
+- **QA Agent:** Validates implementations against CI pipelines, verifies quality gates, blocks merges if issues found. Only agent authorized to promote draft PRs to ready-for-review (`gh pr ready`). Location: `agents-workbench` (read-only).
+- **Workers (1–3):** Implement tasks following TDD in dedicated worktrees. Escalate design decisions to Distinguished Engineer. Create draft PRs only. Report to QA when ready for testing.
+
+Team size is capped at 5 spawned agents (1 Distinguished Engineer + 1 QA + up to 3 Workers). For more than 3 tasks, work is organized in waves — Distinguished Engineer and QA persist across waves while Workers rotate.
+
+### Commands
+
+| Command | Phase | Purpose |
+|---------|-------|---------|
+| `/team-plan` | Planning | Validates branch source, brainstorms approach (≥3 options), decomposes work into scored tasks, chooses branching strategy, writes structured plan to `.agents/plans/`, updates `AGENTS.md` |
+| `/team-execute` | Execution | Creates worktrees, spawns agents in mandatory order (Distinguished Engineer → QA → Workers), coordinates TDD implementation, manages draft PR → QA validation → Distinguished Engineer review → merge cycle |
+| `/team-shutdown` | Shutdown | Verifies all PRs merged, runs TeamDelete to shut down agents, removes worktrees, updates `AGENTS.md` with final status, runs context cleanup |
+
+### Communication Protocol
+
+- **Workers → Distinguished Engineer:** Design decisions (present ≥3 options with trade-offs)
+- **Workers → QA:** Ready for testing (feature name, summary, test status, draft PR URL)
+- **QA → Distinguished Engineer:** Quality issues requiring design changes
+- **Distinguished Engineer → Workers:** Consolidated review feedback (own review + triaged external bot comments)
+
+### Supporting Files
+
+The team commands depend on reference material in `.claude/team/`:
+
+| File | Used By | Purpose |
+|------|---------|---------|
+| `team/lib/planning-guide.md` | `/team-plan` | Task decomposition methodology and wave construction rules |
+| `team/lib/branch-validator.md` | `/team-plan`, `/team-execute` | Validates branch source is up-to-date before creating worktrees |
+| `team/lib/qa-validator.md` | QA Agent | Full validation checklist: git signatures, language checks, CI replication, PR metadata |
+| `team/lib/decision-template.md` | Distinguished Engineer | ADR template for recording architectural decisions |
+| `team/lib/architect-*.md` (7 files) | Distinguished Engineer | Reference material covering patterns, security, distributed systems, infrastructure, observability, decisions, validation |
+
+---
+
 ## Cursor Slash Commands
 
 Commands are markdown files in `.cursor/commands/`. Each defines a workflow that the AI follows when you type the corresponding slash command in Cursor. Many commands orchestrate multiple specialized subagents in sequence or in parallel.

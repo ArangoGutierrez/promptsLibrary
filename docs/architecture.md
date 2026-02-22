@@ -371,3 +371,20 @@ As AI-assisted development becomes the norm, the question "who wrote this?" beco
 ### Why `.worktrees/` gitignored?
 
 Worktrees are developer-local working directories, not project artifacts. Their existence and naming reflect the current developer's workflow, not the project's history. Committing references to `.worktrees/` would expose local workflow state in the project repository and create noise in the git index for other contributors. Gitignoring the directory keeps the separation between project history and developer tooling clean.
+
+---
+
+## 7. Team Library Reference
+
+The `.claude/team/` directory contains reference material used by the Distinguished Systems Engineer agent during multi-agent team workflows (`/team-plan`, `/team-execute`, `/team-shutdown`).
+
+The `team/lib/` subdirectory holds 11 files organized by concern:
+
+- **Planning:** `planning-guide.md` (task decomposition, wave construction), `branch-validator.md` (upstream/origin validation before worktree creation), `decision-template.md` (ADR format for recording architectural decisions)
+- **Architecture:** `architect-patterns.md` (design patterns by category), `architect-decisions.md` (technology selection criteria), `architect-validation.md` (dependency cycles, complexity metrics, API contracts)
+- **Security:** `architect-security.md` (STRIDE threat model with per-language mitigations)
+- **Infrastructure:** `architect-distributed.md` (CAP, consensus, Saga/Outbox, CQRS), `architect-infrastructure.md` (Kubernetes, Slurm, cloud services, IaC, deployment strategies)
+- **Observability:** `architect-observability.md` (metrics/logs/traces, SLI/SLO, alerting patterns, OpenTelemetry)
+- **Quality:** `qa-validator.md` (validation checklist for git signatures, language checks, CI replication, PR metadata)
+
+The Distinguished Engineer reads these libraries at team startup and consults them when Workers escalate design decisions. The QA Agent reads `qa-validator.md` to run its validation checklist. This material is what gives the team agents domain-specific knowledge beyond their base capabilities.

@@ -70,9 +70,6 @@ ISSUE_RESEARCH.md
 .claude/stats-cache.json
 .claude/plugins/cache/
 .claude/plugins/known_marketplaces.json
-.claude/commands/
-.claude/docs/
-.claude/team/
 .claude/settings.local.json
 
 # ── Cursor runtime (never tracked) ──
