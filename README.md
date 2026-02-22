@@ -64,6 +64,10 @@ steps, and first-session walkthrough.
 | **Hooks** | 6 | inject-date, sign-commits, prevent-push-workbench, enforce-worktree, validate-year, tdd-guard |
 | **Policies** | 2 | remote-settings.json, policy-limits.json |
 | **.claudeignore** | 1 | Context exclusions for large/irrelevant files |
+| **Commands** | 3 | team-plan, team-execute, team-shutdown (multi-agent coordination) |
+| **Team Library** | 15 | Architect reference material, planning guide, QA validator, decision templates |
+| **Scripts** | 1 | setup-workbench.sh (initializes agents-workbench branch) |
+| **Templates** | 1 | AGENTS.md template for task coordination |
 
 ### Cursor IDE (`.cursor/`)
 
