@@ -61,7 +61,10 @@ steps, and first-session walkthrough.
 |-----------|-------|---------|
 | **CLAUDE.md** | 1 | Engineering standards (TDD, worktrees, iteration budgets) |
 | **settings.json** | 1 | Permissions, plugin config, environment variables |
-| **Hooks** | 6 | inject-date, sign-commits, prevent-push-workbench, enforce-worktree, validate-year, tdd-guard |
+| **Hooks** | 13 | inject-date, sign-commits, prevent-push-workbench, enforce-worktree, validate-year, tdd-guard, auto-format, bash-audit-log, mutation-gate, pre-compact-context, reflection-staleness, test-dep-map, test-quality-lint |
+| **Agents** | 4 | doc-writer, explorer, principal-engineer, qa-engineer |
+| **Rules** | 7 | constitution, go/k8s/container conventions, git-workflow, security, learned-anti-patterns |
+| **Skills** | 10 | eureka, go-review, k8s-debug, pr-review-ingest, reflection, tdd-protocol, team-{plan,execute,shutdown}, worktree-guide |
 | **Policies** | 2 | remote-settings.json, policy-limits.json |
 | **.claudeignore** | 1 | Context exclusions for large/irrelevant files |
 | **Commands** | 3 | team-plan, team-execute, team-shutdown (multi-agent coordination) |
@@ -87,6 +90,7 @@ steps, and first-session walkthrough.
 - **Worktree Isolation**: Source code is read-only on `agents-workbench`; implementation happens in `.worktrees/`
 - **Year Validation**: New files must use current year in copyright headers
 - **Security Gate**: Blocks dangerous commands (`rm -rf /`, force-push to main)
+- **Auto-format & test-quality-lint**: PostToolUse hooks format code and check test quality on every Write/Edit
 
 ## Documentation
 
