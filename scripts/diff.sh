@@ -23,15 +23,28 @@ CLAUDE_EXCLUDES=(
   backups/
   ide/
   plans/
+  sessions/
+  audit/
+  archive/
+  image-cache/
   history.jsonl
   stats-cache.json
+  cleanup-errors.log
+  .cleaned-this-week
+  audit.md
+  migration.md
+  proposal.md
   plugins/cache/
   plugins/known_marketplaces.json
   plugins/marketplaces/
+  plugins/install-counts-cache.json
+  plugins/blocklist.json
+  hooks/*.bak-*
+  settings.local.json
+  # Repo-only dirs not present under ~/.claude/ — exclude here so diff doesn't spam REPO ONLY.
   commands/
   docs/
   team/
-  settings.local.json
 )
 
 CURSOR_EXCLUDES=(
@@ -49,6 +62,8 @@ CURSOR_EXCLUDES=(
   .deploy-version
   docs/
   skills/
+  mcp-servers/venv/
+  mcp-servers/memory.retired/
 )
 
 # --- Defaults ---
@@ -107,11 +122,14 @@ is_excluded() {
         return 0
       fi
     else
-      # File or glob pattern - match exact or as final component
-      if [[ "$rel_path" == "$pattern" ]]; then
+      # File or glob pattern - match exact or as final component.
+      # NOTE: $pattern unquoted so glob metacharacters (e.g. hooks/*.bak-*) work.
+      # shellcheck disable=SC2053
+      if [[ "$rel_path" == $pattern ]]; then
         return 0
       fi
-      if [[ "$rel_path" == */"$pattern" ]]; then
+      # shellcheck disable=SC2053
+      if [[ "$rel_path" == */$pattern ]]; then
         return 0
       fi
     fi
