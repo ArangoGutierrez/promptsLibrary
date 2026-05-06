@@ -74,6 +74,9 @@ CURSOR_EXCLUDES=(
   # Cursor IDE-managed sync state (timestamps only)
   skills-cursor/.cursor-managed-skills-manifest.json
   skills-cursor/.sync-manifest.json
+  # Live ~/.cursor/mcp.json contains NVIDIA-internal MCP servers
+  # (mempalace) and personal venv paths. Repo ships an empty template.
+  mcp.json
 )
 
 # --- Defaults ---

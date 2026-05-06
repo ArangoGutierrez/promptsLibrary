@@ -90,6 +90,9 @@ NVIDIA_CURSOR_EXCLUDES=(
   hooks/extract-learnings.sh
   hooks/inject-context.sh
   entities.json
+  # Live ~/.cursor/mcp.json contains NVIDIA-internal MCP servers
+  # (mempalace) and personal venv paths. Repo ships an empty template.
+  mcp.json
 )
 
 # --- Defaults ---
