@@ -16,11 +16,23 @@ set -o pipefail
 
 INPUT=$(cat)
 
+# Extract file path from tool input first, so git context can be resolved
+# relative to the FILE rather than the parent shell's CWD. The harness CWD
+# may point at a different worktree than the target file (e.g., the
+# controller created a docs worktree but the implementer is editing a feature
+# worktree). Without this, `git rev-parse --show-toplevel` returns the wrong
+# worktree, the relative-path arithmetic breaks, and the mirror-tree lookup
+# misses real test files.
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // empty')
+[ -z "$FILE_PATH" ] && exit 0
+FILE_DIR=$(dirname "$FILE_PATH")
+
 # Not in a git repo? Allow.
-GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+GIT_ROOT=$(git -C "$FILE_DIR" rev-parse --show-toplevel 2>/dev/null) || exit 0
 
 # Git mid-operation? Allow — this is integration work, not new implementation.
-GIT_DIR=$(git rev-parse --git-dir 2>/dev/null) || exit 0
+# Use --absolute-git-dir (git >=2.13) so sentinel paths work regardless of CWD.
+GIT_DIR=$(git -C "$FILE_DIR" rev-parse --absolute-git-dir 2>/dev/null) || exit 0
 for sentinel in \
     "$GIT_DIR/MERGE_HEAD" \
     "$GIT_DIR/CHERRY_PICK_HEAD" \
@@ -29,10 +41,6 @@ for sentinel in \
     "$GIT_DIR/rebase-apply"; do
     [ -e "$sentinel" ] && exit 0
 done
-
-# Extract file path from tool input
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // empty')
-[ -z "$FILE_PATH" ] && exit 0
 
 # Normalize to relative path
 REL_PATH="${FILE_PATH#"$GIT_ROOT"/}"
@@ -66,10 +74,20 @@ case "$REL_PATH" in
     *.xml)              exit 0 ;;
     *.html|*.css)       exit 0 ;;
     *.sh)               exit 0 ;;
-    Makefile|Dockerfile|*.dockerfile) exit 0 ;;
+    Makefile|*/Makefile|Dockerfile|*/Dockerfile|*.dockerfile) exit 0 ;;
     *commitlint.config.*|*.commitlintrc.*) exit 0 ;;
     *next.config.*|*eslint.config.*|*.eslintrc.*) exit 0 ;;
     .gitignore|.gitattributes) exit 0 ;;
+    *vitest.config.*|*vite.config.*|*rollup.config.*|*webpack.config.*) exit 0 ;;
+    *tsup.config.*|*tsconfig*.json|*electron-builder.*) exit 0 ;;
+    *tailwind.config.*|*postcss.config.*) exit 0 ;;
+    *.prettierrc*|*prettier.config.*) exit 0 ;;
+    .editorconfig|*/.editorconfig) exit 0 ;;
+    .gitignore|.gitattributes|*/.gitignore|*/.gitattributes) exit 0 ;;
+    .nvmrc|.node-version|.npmrc|.yarnrc|*/.nvmrc|*/.node-version) exit 0 ;;
+    LICENSE|LICENSE.*|COPYING|COPYING.*|*/LICENSE|*/LICENSE.*|*/COPYING|*/COPYING.*) exit 0 ;;
+    NOTICE|*/NOTICE|AUTHORS|*/AUTHORS|CONTRIBUTORS|*/CONTRIBUTORS) exit 0 ;;
+    OWNERS|*/OWNERS|CODEOWNERS|*/CODEOWNERS|.github/CODEOWNERS) exit 0 ;;
     go.mod|go.sum)      exit 0 ;;
     package.json|package-lock.json) exit 0 ;;
     yarn.lock|pnpm-lock.yaml) exit 0 ;;
@@ -81,12 +99,47 @@ case "$REL_PATH" in
     .agents/*)          exit 0 ;;
     .worktrees/*)       exit 0 ;;
     docs/*)             exit 0 ;;
+    # Demo scripts (run inside K8s pods, not library code)
+    demos/*/scripts/*)  exit 0 ;;
+    # CGo bridge files (buildmode=c-shared, no unit tests possible)
+    */bridge/*.go)      exit 0 ;;
+    *.h|*.c)            exit 0 ;;
+    # Pure data-structure files (no logic to test)
+    *config_types.go)   exit 0 ;;
+    # Binary entrypoints (require full stack/K8s mocking, not unit-TDD-eligible)
+    cmd/*/main.go)      exit 0 ;;
+    # Database schema definitions (declarative, no logic to test)
+    */schema/*.ts)      exit 0 ;;
+    # Next.js error boundaries (framework convention files)
+    */error.tsx)        exit 0 ;;
+    # Next.js route entrypoint files (page.tsx, layout.tsx, loading.tsx, not-found.tsx)
+    # These are component compositions with no unit-testable logic, analogous to cmd/*/main.go
+    */page.tsx)         exit 0 ;;
+    */layout.tsx)       exit 0 ;;
+    */loading.tsx)      exit 0 ;;
+    */not-found.tsx)    exit 0 ;;
+    # Drizzle migrations (generated SQL)
+    */drizzle/*.sql)    exit 0 ;;
+    # Electron framework glue: main process (BrowserWindow lifecycle, IPC),
+    # preload (contextBridge), and renderer mount points. These require a
+    # full Electron environment to exercise; analogous to cmd/*/main.go.
+    # Component-level renderer code (panels, dialogs) is NOT exempt and
+    # must be TDD'd via @testing-library/react + jsdom.
+    electron/main/*)    exit 0 ;;
+    */electron/main/*)  exit 0 ;;
+    electron/preload/*) exit 0 ;;
+    */electron/preload/*) exit 0 ;;
+    electron/renderer/main.tsx) exit 0 ;;
+    */electron/renderer/main.tsx) exit 0 ;;
+    electron/renderer/index.html) exit 0 ;;
+    */electron/renderer/index.html) exit 0 ;;
 esac
 
 # --- This is an implementation file. Check for corresponding test. ---
 
-# Find test files modified in the current git session (staged or unstaged)
-CHANGED_TEST_FILES=$(git diff --name-only HEAD 2>/dev/null; git diff --name-only --cached 2>/dev/null)
+# Find test files modified in the current git session (staged or unstaged).
+# Use git -C to bind to the file's worktree, not the parent shell's CWD.
+CHANGED_TEST_FILES=$(git -C "$FILE_DIR" diff --name-only HEAD 2>/dev/null; git -C "$FILE_DIR" diff --name-only --cached 2>/dev/null)
 
 # Check if ANY test file has been changed (indicating active TDD)
 HAS_CHANGED_TESTS=false
@@ -110,12 +163,28 @@ DIRNAME=$(dirname "$REL_PATH")
 EXTENSION="${BASENAME##*.}"
 NAME="${BASENAME%.*}"
 
-# Look for a corresponding test file
+# Look for a corresponding test file.
+# If the impl is under src/, also check the mirror path under test/.
+MIRROR_DIR=""
+if [[ "$REL_PATH" == src/* ]]; then
+    MIRROR_DIR="test/${DIRNAME#src/}"
+elif [[ "$REL_PATH" == lib/* ]]; then
+    MIRROR_DIR="test/${DIRNAME#lib/}"
+elif [[ "$REL_PATH" == electron/renderer/* ]]; then
+    # Electron renderer testable code (lib/, components/, hooks/) mirrors
+    # to test/electron/ — flat layout since the renderer is a single
+    # bundle target. Glue files (main.tsx, index.html) are exempted above.
+    MIRROR_DIR="test/electron"
+fi
+
 FOUND_TEST=false
 for pattern in \
     "${DIRNAME}/${NAME}_test.${EXTENSION}" \
     "${DIRNAME}/${NAME}.test.${EXTENSION}" \
     "${DIRNAME}/${NAME}.spec.${EXTENSION}" \
+    ${MIRROR_DIR:+"${MIRROR_DIR}/${NAME}_test.${EXTENSION}"} \
+    ${MIRROR_DIR:+"${MIRROR_DIR}/${NAME}.test.${EXTENSION}"} \
+    ${MIRROR_DIR:+"${MIRROR_DIR}/${NAME}.spec.${EXTENSION}"} \
     "${DIRNAME}/test_${NAME}.py" \
     "${DIRNAME}/tests/test_${NAME}.py" \
     "${DIRNAME}/../tests/test_${NAME}.py" \
@@ -136,10 +205,19 @@ if [ "$FOUND_TEST" = false ]; then
     echo "File: $REL_PATH" >&2
     echo "" >&2
     echo "Write the failing test FIRST (Red phase), then implement." >&2
-    echo "Expected test file locations:" >&2
-    echo "  ${DIRNAME}/${NAME}_test.${EXTENSION}" >&2
-    echo "  ${DIRNAME}/${NAME}.test.${EXTENSION}" >&2
-    echo "  ${DIRNAME}/tests/${NAME}_test.${EXTENSION}" >&2
+    echo "" >&2
+    # Use test-dep-map to show related tests if any exist via cross-references
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    DEP_MAP=$("$SCRIPT_DIR/test-dep-map.sh" "$GIT_ROOT/$REL_PATH" 2>/dev/null)
+    if [ -n "$DEP_MAP" ] && ! echo "$DEP_MAP" | grep -q "NO TESTS FOUND"; then
+        echo "Related test files found by dependency analysis:" >&2
+        echo "$DEP_MAP" >&2
+    else
+        echo "Expected test file locations:" >&2
+        echo "  ${DIRNAME}/${NAME}_test.${EXTENSION}" >&2
+        echo "  ${DIRNAME}/${NAME}.test.${EXTENSION}" >&2
+        echo "  ${DIRNAME}/tests/${NAME}_test.${EXTENSION}" >&2
+    fi
     echo "" >&2
     echo "If this is not a TDD-eligible file, add its pattern to tdd-guard.sh." >&2
     exit 2
