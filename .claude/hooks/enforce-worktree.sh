@@ -33,6 +33,8 @@ case "$REL_PATH" in
     .agents/*)                    exit 0 ;;
     .worktrees/*)                 exit 0 ;;
     docs/plans/*)                 exit 0 ;;
+    docs/audits/*)                exit 0 ;;
+    docs/design-languages/*)      exit 0 ;;
     CLAUDE.md)                    exit 0 ;;
     .cursor/rules/*)              exit 0 ;;
     .cursor/AGENTS.md)            exit 0 ;;
@@ -63,5 +65,5 @@ echo "  git fetch upstream 2>/dev/null && BASE=\"upstream/$DEFAULT_BRANCH\" || {
 echo "  git worktree add .worktrees/<name> -b <branch-name> \"\$BASE\"" >&2
 echo "" >&2
 echo "Allowed files on agents-workbench:" >&2
-echo "  AGENTS.md, .agents/*, .worktrees/*, docs/plans/*, CLAUDE.md, .cursor/rules/*, .gitignore" >&2
+echo "  AGENTS.md, .agents/*, .worktrees/*, docs/plans/*, docs/audits/*, docs/design-languages/*, CLAUDE.md, .cursor/rules/*, .gitignore" >&2
 exit 2
