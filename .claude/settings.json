@@ -8,6 +8,7 @@
     "commit": "",
     "pr": ""
   },
+  "includeGitInstructions": false,
   "permissions": {
     "allow": [
       "Bash(go *)",
@@ -70,6 +71,7 @@
       "Bash(sudo *)"
     ]
   },
+  "model": "opus[1m]",
   "hooks": {
     "SessionStart": [
       {
@@ -77,6 +79,10 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/inject-date.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/reflection-staleness.sh"
           }
         ]
       }
@@ -87,11 +93,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/eduardoa/.claude/hooks/sign-commits.sh"
+            "command": "/Users/eduardoa/.claude/hooks/sign-commits.sh",
+            "if": "Bash(git commit *)"
           },
           {
             "type": "command",
-            "command": "/Users/eduardoa/.claude/hooks/prevent-push-workbench.sh"
+            "command": "/Users/eduardoa/.claude/hooks/prevent-push-workbench.sh",
+            "if": "Bash(git push *)"
           }
         ]
       },
@@ -125,18 +133,64 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/auto-format.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/test-quality-lint.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/bash-audit-log.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/pre-compact-context.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the assistant's last response claims work is complete, fixed, or passing. If it does, verify: did the assistant actually run a verification command (test, build, lint) and show the output BEFORE making the claim? If the claim is unverified, respond with 'STOP: You claimed completion without running verification. Run the relevant test/build command first.' Otherwise respond with 'OK'."
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true
+    "gopls-lsp@claude-plugins-official": true,
+    "clangd-lsp@claude-plugins-official": true
   },
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true
   },
-  "teammateMode": "in-process",
-  "effortLevel": "medium"
+  "effortLevel": "high",
+  "autoMemoryEnabled": true,
+  "teammateMode": "in-process"
 }
