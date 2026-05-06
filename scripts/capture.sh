@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_DIR="${REPO_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
 # --- Exclude lists (runtime data, not config) ---
 
@@ -62,6 +62,25 @@ CURSOR_EXCLUDES=(
   mcp-servers/memory.retired/
 )
 
+# --- Public-safe excludes: NVIDIA-internal references ---
+# These paths reference NVIDIA-internal tooling (MemPalace MCP,
+# nvinfo-cli CLI, omnistation platform). Excluded from the public repo.
+
+NVIDIA_CLAUDE_EXCLUDES=(
+  skills/nvinfo-cli/
+  skills/managing-omnistation/
+  hooks/mempalace-wake.sh
+  remote-settings.json
+)
+
+NVIDIA_CURSOR_EXCLUDES=(
+  commands/recall.md
+  commands/ingest-pr.md
+  hooks/extract-learnings.sh
+  hooks/inject-context.sh
+  entities.json
+)
+
 # --- Defaults ---
 CLAUDE_ONLY=false
 CURSOR_ONLY=false
@@ -81,20 +100,21 @@ EOF
   exit 0
 }
 
-# --- Parse flags ---
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --claude-only) CLAUDE_ONLY=true; shift ;;
-    --cursor-only) CURSOR_ONLY=true; shift ;;
-    -h|--help)     usage ;;
-    *)             echo "Unknown option: $1" >&2; exit 1 ;;
-  esac
-done
+parse_flags() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --claude-only) CLAUDE_ONLY=true; shift ;;
+      --cursor-only) CURSOR_ONLY=true; shift ;;
+      -h|--help)     usage ;;
+      *)             echo "Unknown option: $1" >&2; exit 1 ;;
+    esac
+  done
 
-if $CLAUDE_ONLY && $CURSOR_ONLY; then
-  echo "Error: --claude-only and --cursor-only are mutually exclusive." >&2
-  exit 1
-fi
+  if $CLAUDE_ONLY && $CURSOR_ONLY; then
+    echo "Error: --claude-only and --cursor-only are mutually exclusive." >&2
+    exit 1
+  fi
+}
 
 # --- Helpers ---
 
@@ -108,6 +128,71 @@ run_rsync() {
   rsync_args+=("$src" "$dest")
 
   /usr/bin/rsync "${rsync_args[@]}"
+}
+
+# --- Sanitizer: scrub mixed public/private content from captured files ---
+
+sanitize_claude() {
+  local dest="$REPO_DIR/.claude"
+
+  # 1. Strip local-scoped plugins from installed_plugins.json
+  local plugins_file="$dest/plugins/installed_plugins.json"
+  if [[ -f "$plugins_file" ]]; then
+    local tmp
+    tmp="$(/usr/bin/mktemp -t capture-sanitize.XXXXXX)"
+    if /usr/bin/jq '
+      .plugins |= with_entries(
+        .value |= map(select(.scope != "local"))
+      )
+      | .plugins |= with_entries(select(.value | length > 0))
+    ' "$plugins_file" > "$tmp"; then
+      /bin/mv "$tmp" "$plugins_file"
+    else
+      echo "ERROR: sanitize installed_plugins.json failed" >&2
+      /bin/rm -f "$tmp"
+      return 1
+    fi
+  fi
+
+  # 2. Strip mempalace-wake.sh hook entries from settings.json
+  local settings_file="$dest/settings.json"
+  if [[ -f "$settings_file" ]]; then
+    local tmp
+    tmp="$(/usr/bin/mktemp -t capture-sanitize.XXXXXX)"
+    if /usr/bin/jq '
+      walk(
+        if type == "object" and has("hooks") and (.hooks | type) == "array"
+        then .hooks |= map(select((.command // "") | endswith("mempalace-wake.sh") | not))
+        else .
+        end
+      )
+    ' "$settings_file" > "$tmp"; then
+      /bin/mv "$tmp" "$settings_file"
+    else
+      echo "ERROR: sanitize settings.json failed" >&2
+      /bin/rm -f "$tmp"
+      return 1
+    fi
+  fi
+
+  # 3. Strip the ## Memory section from CLAUDE.md (NVIDIA-internal MemPalace block)
+  local claude_md="$dest/CLAUDE.md"
+  if [[ -f "$claude_md" ]]; then
+    local tmp
+    tmp="$(/usr/bin/mktemp -t capture-sanitize.XXXXXX)"
+    if /usr/bin/awk '
+      /^## Memory$/ { skip = 1; next }
+      skip && /^# / { skip = 0 }
+      skip && /^## / { skip = 0 }
+      !skip { print }
+    ' "$claude_md" > "$tmp"; then
+      /bin/mv "$tmp" "$claude_md"
+    else
+      echo "ERROR: sanitize CLAUDE.md failed" >&2
+      /bin/rm -f "$tmp"
+      return 1
+    fi
+  fi
 }
 
 # --- Capture ---
@@ -125,12 +210,14 @@ capture_claude() {
   /bin/mkdir -p "$dest"
 
   local exclude_args=()
-  for pattern in "${CLAUDE_EXCLUDES[@]}"; do
+  for pattern in "${CLAUDE_EXCLUDES[@]}" "${NVIDIA_CLAUDE_EXCLUDES[@]}"; do
     exclude_args+=(--exclude "$pattern")
   done
 
   # Use --copy-links to resolve symlinks
   run_rsync "$src" "$dest" --copy-links "${exclude_args[@]}"
+
+  sanitize_claude
 }
 
 capture_cursor() {
@@ -146,7 +233,7 @@ capture_cursor() {
   /bin/mkdir -p "$dest"
 
   local exclude_args=()
-  for pattern in "${CURSOR_EXCLUDES[@]}"; do
+  for pattern in "${CURSOR_EXCLUDES[@]}" "${NVIDIA_CURSOR_EXCLUDES[@]}"; do
     exclude_args+=(--exclude "$pattern")
   done
 
@@ -156,24 +243,33 @@ capture_cursor() {
 
 # --- Main ---
 
-echo "=== dotfiles capture ==="
-echo ""
+main() {
+  parse_flags "$@"
 
-if ! $CURSOR_ONLY; then
-  capture_claude
-fi
-if ! $CLAUDE_ONLY; then
-  capture_cursor
-fi
+  echo "=== dotfiles capture ==="
+  echo ""
 
-echo ""
-echo "Done. Review changes with:"
-echo ""
-echo "  cd $REPO_DIR"
-echo "  git diff"
-echo "  git diff --stat"
-echo ""
-echo "To see untracked files:"
-echo ""
-echo "  git status"
-echo ""
+  if ! $CURSOR_ONLY; then
+    capture_claude
+  fi
+  if ! $CLAUDE_ONLY; then
+    capture_cursor
+  fi
+
+  echo ""
+  echo "Done. Review changes with:"
+  echo ""
+  echo "  cd $REPO_DIR"
+  echo "  git diff"
+  echo "  git diff --stat"
+  echo ""
+  echo "To see untracked files:"
+  echo ""
+  echo "  git status"
+  echo ""
+}
+
+# Only run main when executed directly; allow sourcing for tests.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
