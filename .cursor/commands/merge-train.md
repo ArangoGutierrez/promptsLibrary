@@ -149,7 +149,7 @@ For each PR, gather:
 
 ```sh
 # CI status
-gh pr checks {N} --json name,state,conclusion,detailsUrl
+gh pr checks {N} --watch --fail-fast --json name,state,conclusion,detailsUrl
 
 # Reviews & threads
 gh api graphql -f query='
@@ -257,7 +257,7 @@ Re-assess because earlier merges may have changed the landscape:
 
 ```sh
 gh pr view {N} --json number,state,mergeable,reviewDecision,headRefName,baseRefName
-gh pr checks {N} --json name,state,conclusion
+gh pr checks {N} --watch --fail-fast --json name,state,conclusion
 ```
 
 - If PR was closed/merged since plan → skip: "PR #{N} already merged, skipping."
@@ -443,6 +443,7 @@ Backup refs: merge-train/pre-rebase/{12}
 12. **Retarget stacked PRs** — after merging base, retarget child PRs before processing them.
 13. **Worktree isolation** — all code modifications (fixes, rebases) happen in `.worktrees/mt-{number}/`, never in the main workspace. The main workspace (which may be on `agents-workbench`) stays read-only for source code.
 14. **Worktree cleanup** — remove each PR's worktree after merge is verified. On train pause, leave worktrees intact for manual resolution.
+15. **CI always watched** — every `gh pr checks` call uses `--watch` so the agent never acts on stale check status. Exception: Phase 4.6 uses `gh run list`, which has no watch equivalent; that step is intentionally non-blocking.
 
 ---
 
