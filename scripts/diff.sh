@@ -41,9 +41,12 @@ CLAUDE_EXCLUDES=(
   plugins/blocklist.json
   hooks/*.bak-*
   settings.local.json
+  # Home dotfile dup of capture.sh logic
+  .gitignore
+  # Personal design/plan docs (may reference NVIDIA-internal infra)
+  docs/
   # Repo-only dirs not present under ~/.claude/ — exclude here so diff doesn't spam REPO ONLY.
   commands/
-  docs/
   team/
 )
 
@@ -64,6 +67,13 @@ CURSOR_EXCLUDES=(
   skills/
   mcp-servers/venv/
   mcp-servers/memory.retired/
+  # Personal plan docs (may reference NVIDIA-internal infra)
+  plans/
+  # Dynamic MemPalace-generated rule (contains personal/NVIDIA context)
+  rules/active-context.mdc
+  # Cursor IDE-managed sync state (timestamps only)
+  skills-cursor/.cursor-managed-skills-manifest.json
+  skills-cursor/.sync-manifest.json
 )
 
 # --- Defaults ---
