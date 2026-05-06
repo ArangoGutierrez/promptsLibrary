@@ -23,11 +23,23 @@ CLAUDE_EXCLUDES=(
   backups/
   ide/
   plans/
+  sessions/
+  audit/
+  archive/
+  image-cache/
   history.jsonl
   stats-cache.json
+  cleanup-errors.log
+  .cleaned-this-week
+  audit.md
+  migration.md
+  proposal.md
   plugins/cache/
   plugins/known_marketplaces.json
   plugins/marketplaces/
+  plugins/install-counts-cache.json
+  plugins/blocklist.json
+  hooks/*.bak-*
   settings.local.json
 )
 
@@ -46,6 +58,8 @@ CURSOR_EXCLUDES=(
   .deploy-version
   docs/
   skills/
+  mcp-servers/venv/
+  mcp-servers/memory.retired/
 )
 
 # --- Defaults ---
