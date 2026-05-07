@@ -133,7 +133,7 @@ User-invocable. Generates a structured handoff prompt for a fresh session. Outpu
 <git diff --name-only HEAD output>
 
 ## Decisions made
-<extracted from CLAUDE conversations — needs human curation>
+<auto-extracted from session transcript — see below>
 
 ## Next session should
 1. <action 1>
@@ -143,7 +143,16 @@ User-invocable. Generates a structured handoff prompt for a fresh session. Outpu
 <commands to run>
 ```
 
-The skill prompts the user for the "Decisions made" and "Next session should" sections — those need human curation.
+**Auto-extraction approach:**
+The `/handoff` skill resolves the active session's transcript and dispatches a focused subagent to synthesize decisions. Sequence:
+
+1. **Locate transcript.** Read `transcript_path` from the skill's input env (Claude Code injects this for hooks; for skills, query via `$CLAUDE_TRANSCRIPT_PATH` or look it up in `~/.claude/projects/<project-slug>/conversations/<session-id>.jsonl`). Resolution method to be confirmed during implementation.
+2. **Dispatch synthesis subagent** (`general-purpose`, scoped read-only, prompt budget < 2000 tokens):
+   > Read the JSONL transcript at `<path>`. Extract architectural/design decisions, approach choices, and explicit user preferences expressed during this session. Output as a bullet list (≤10 bullets). Format: `- <decision> — <rationale if stated>`. Skip routine task tracking, file paths, and tool outputs. Focus on commitments that affect future sessions.
+3. **Inject result** into the handoff doc's "Decisions made" section.
+4. **Fallback:** if transcript unreadable or synthesis fails, mark section `<auto-extraction unavailable — manually summarize before sending>` and proceed.
+
+"Next session should" stays as a user-prompted field — it's a forward-looking commitment only the user can make.
 
 ##### 10b. New hook `~/.claude/hooks/context-watch.sh`
 
@@ -235,6 +244,7 @@ After each stage:
 
 1. **Item 7:** Does Claude Code currently expose a `PermissionDenied` event to hooks? Research surfaced it as 2.1.x but unverified in installed version. *Resolution: check during implementation; if absent, defer item 7 with a note.*
 2. **Item 10b:** Does Stop hook input include `transcript_path` or token-usage field? *Resolution: dump hook input JSON during implementation to learn schema; fallback to size-based proxy.*
+2a. **Item 10a:** Where does Claude Code store the active session transcript, and how does a skill resolve its path? *Resolution: check `~/.claude/projects/<slug>/conversations/` and any documented env var (e.g., `CLAUDE_TRANSCRIPT_PATH`) during implementation. Skill must locate transcript before dispatching synthesis subagent.*
 3. **Item 8:** Are statusline field names `rate_limits.5h_used_percent` etc. correct for the installed Claude Code version? *Resolution: check Claude Code version + docs during implementation.*
 
 These are not design risks — they are minor implementation discoveries. None block this design.
