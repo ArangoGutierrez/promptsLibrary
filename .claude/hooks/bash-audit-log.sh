@@ -9,6 +9,10 @@
 INPUT=$(cat)
 
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+COMMAND=$(echo "$COMMAND" | /usr/bin/sed -E \
+  -e 's,://[^/]*:[^@/]*@,://<redacted>@,g' \
+  -e 's,://[^/@:]+@,://<redacted>@,g' \
+  -e 's,(--?(token|password|api[-_]?key|secret)[= ])[^[:space:]]+,\1<redacted>,gi')
 [ -z "$COMMAND" ] && exit 0
 
 LOG_DIR="$HOME/.claude/audit"
