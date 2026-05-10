@@ -103,7 +103,7 @@ case "$REL_PATH" in
     demos/*/scripts/*)  exit 0 ;;
     # CGo bridge files (buildmode=c-shared, no unit tests possible)
     */bridge/*.go)      exit 0 ;;
-    *.h|*.c)            exit 0 ;;
+    */bridge/*.h|*/bridge/*.c) exit 0 ;;
     # Pure data-structure files (no logic to test)
     *config_types.go)   exit 0 ;;
     # Binary entrypoints (require full stack/K8s mocking, not unit-TDD-eligible)

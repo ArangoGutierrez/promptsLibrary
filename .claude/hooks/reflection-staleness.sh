@@ -17,6 +17,7 @@ fi
 
 LAST_RUN=$(cat "$TIMESTAMP_FILE")
 LAST_RUN_EPOCH=$(date -j -f "%Y-%m-%d" "$LAST_RUN" +%s 2>/dev/null || date -d "$LAST_RUN" +%s 2>/dev/null || echo 0)
+[ "$LAST_RUN_EPOCH" -eq 0 ] && exit 0
 NOW_EPOCH=$(date +%s)
 DIFF_DAYS=$(( (NOW_EPOCH - LAST_RUN_EPOCH) / 86400 ))
 
