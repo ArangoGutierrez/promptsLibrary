@@ -1,0 +1,14 @@
+{
+  "id": "chatcmpl-test-null",
+  "object": "chat.completion",
+  "model": "nvidia/nvidia/nemotron-3-super-v3",
+  "choices": [{
+    "finish_reason": "length",
+    "index": 0,
+    "message": {
+      "role": "assistant",
+      "content": null,
+      "reasoning_content": "We need to output VERDICT: HOLD with rationale..."
+    }
+  }]
+}
