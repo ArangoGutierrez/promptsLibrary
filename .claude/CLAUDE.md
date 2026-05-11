@@ -73,3 +73,14 @@ Security > Correctness > Performance > Style
 
 ## Context Hygiene
 - Commit context to agents-workbench before ending long sessions
+
+## Recommendation Panel
+`AskUserQuestion` calls with a `(Recommended)` option are intercepted by the `validate-recommendation` hook. Two panelists run in parallel:
+- **Devil's advocate** — Nemotron-3 super via `dispatch-da.sh` (POSTs to the NVIDIA inference API). Independent reasoner; needs `$NVIDIA_INFERENCE_API_KEY` exported.
+- **Principal Engineer** — `principal-engineer` Claude subagent. Reads `~/.claude/CLAUDE.md` and `~/.claude/rules/` via tools.
+
+If both **HOLD** → recommendation is taken automatically with abbreviated rationales printed.
+If either **OVERTURN** → question is re-asked with a `**Panel review:**` summary appended; user picks.
+On **ERROR** (API down, malformed response) → original question is asked unmodified.
+
+Bypass: `CLAUDE_PANEL=off claude`. Skill: `.claude/skills/validate-recommendation/`.
