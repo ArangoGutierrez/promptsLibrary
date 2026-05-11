@@ -68,9 +68,13 @@ fi
 # Both HOLD → HOLD
 if [ "$DA_VERDICT" = "HOLD" ] && [ "$PE_VERDICT" = "HOLD" ]; then
     echo "PANEL_VERDICT: HOLD"
-    # Abbreviate rationales to first sentence for the user-facing summary
-    DA_SHORT=$(echo "$DA_RATIONALE" | sed 's/\([.!?]\).*/\1/')
-    PE_SHORT=$(echo "$PE_RATIONALE" | sed 's/\([.!?]\).*/\1/')
+    # Abbreviate rationales to first sentence for the user-facing summary.
+    # Require [.!?] followed by whitespace and an uppercase letter so the
+    # regex doesn't misfire on dots inside file paths (~/.claude) or
+    # abbreviations (e.g., i.e.). If no sentence boundary is found, the
+    # whole rationale is kept (sed leaves the input unchanged on no match).
+    DA_SHORT=$(echo "$DA_RATIONALE" | sed 's/\([.!?]\)[[:space:]]\{1,\}[[:upper:]].*/\1/')
+    PE_SHORT=$(echo "$PE_RATIONALE" | sed 's/\([.!?]\)[[:space:]]\{1,\}[[:upper:]].*/\1/')
     echo "DA: $DA_SHORT"
     echo "PE: $PE_SHORT"
     exit 0
