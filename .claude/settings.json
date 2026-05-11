@@ -124,6 +124,15 @@
             "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
           }
         ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/validate-recommendation.sh"
+          }
+        ]
       }
     ]
   },
