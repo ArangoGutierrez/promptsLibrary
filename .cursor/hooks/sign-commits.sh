@@ -17,8 +17,8 @@ if ! echo "$command" | grep -qE "^git commit"; then
     exit 0
 fi
 
-has_s=$(echo "$command" | grep -qE "\s-s(\s|$)|--signoff" && echo 1 || echo 0)
-has_S=$(echo "$command" | grep -qE "\s-S(\s|$)|--gpg-sign" && echo 1 || echo 0)
+has_s=$(echo "$command" | grep -qE "\s-[a-zA-Z]*s[a-zA-Z]*(\s|$)|--signoff" && echo 1 || echo 0)
+has_S=$(echo "$command" | grep -qE "\s-[a-zA-Z]*S[a-zA-Z]*(\s|$)|--gpg-sign" && echo 1 || echo 0)
 
 if [ "$has_s" = "1" ] && [ "$has_S" = "1" ]; then
     echo '{"permission":"allow"}'
@@ -41,6 +41,7 @@ fi
 corrected="git commit ${add} ${command#git commit}"
 corrected=$(echo "$corrected" | sed 's/  */ /g')
 
-cat << EOF
-{"permission":"ask","user_message":"Commit is missing signing flags. Suggested: ${corrected}","agent_message":"Add ${add} flags to the git commit command for DCO/GPG signing."}
-EOF
+jq -n \
+    --arg msg "Commit is missing signing flags. Suggested: ${corrected}" \
+    --arg agent "Add ${add} flags to the git commit command for DCO/GPG signing." \
+    '{"permission":"ask","user_message":$msg,"agent_message":$agent}'
