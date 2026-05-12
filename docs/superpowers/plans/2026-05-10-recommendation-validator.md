@@ -2,13 +2,36 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a hook + skill that validates `(Recommended)` answers in `AskUserQuestion` calls via two parallel subagents (devil's advocate + principal-engineer). Auto-take when both hold; re-ask with dissent summary when either overturns.
+**Goal:** Add a hook + skill that validates `(Recommended)` answers in `AskUserQuestion` calls via two parallel panelists. Auto-take when both hold; re-ask with dissent summary when either overturns.
 
-**Architecture:** A `PreToolUse` hook on `AskUserQuestion` detects the marker, writes tool input to a session-scoped state file, and blocks with stderr feedback instructing the assistant to invoke a `/validate-recommendation` skill. The skill orchestrates two parallel `Agent` calls, parses verdicts via a `aggregate.sh` helper, and emits a directive (HOLD / DISSENT / ERROR) for the assistant to act on.
+**Architecture (revised — see addendum below):** A `PreToolUse` hook on `AskUserQuestion` detects the marker, writes tool input to a session-scoped state file, and blocks with stderr feedback instructing the assistant to invoke a `/validate-recommendation` skill. The skill orchestrates two parallel calls — DA via `dispatch-da.sh` (POSTs to a user-configured OpenAI-compatible chat completions endpoint), PE via `Agent` with `principal-engineer` subagent — parses verdicts via a `aggregate.sh` helper, and emits a directive (HOLD / DISSENT / ERROR) for the assistant to act on.
 
-**Tech Stack:** bash 4+, jq, Claude Code hook+skill model. No new runtime dependencies. Repo: ArangoGutierrez/promptsLibrary (dotfiles-as-mirror pattern, `deploy.sh` syncs `.claude/` to `~/.claude/`).
+**Tech Stack:** bash 4+, jq, curl, Claude Code hook+skill model. External chat-completion API for DA backend (configured via `$PANEL_DA_API_KEY`, `$CLAUDE_PANEL_DA_ENDPOINT`, `$CLAUDE_PANEL_DA_MODEL` env vars; never embedded in repo). Repo: ArangoGutierrez/promptsLibrary (dotfiles-as-mirror pattern, `deploy.sh` syncs `.claude/` to `~/.claude/`).
 
 **Spec:** `docs/superpowers/specs/2026-05-10-recommendation-validator-design.md`
+
+---
+
+## Revision addendum (2026-05-10)
+
+After T1–T4 were committed, the design shifted to a hybrid backend: DA goes through an external OpenAI-compatible chat completions endpoint rather than a Claude `general-purpose` subagent; PE remains a Claude `principal-engineer` subagent. Rationale: independent reasoning from a different model family for the adversarial check, while keeping tool access for the principle-evaluation check.
+
+**Net effect on the plan:**
+
+- **T1–T6 (fixtures, aggregator, hook): UNCHANGED.** The aggregator is backend-agnostic; the hook never knew about backends. Already committed work stands.
+- **NEW T6.5 — DA dispatch test (Red).** A bash test for `dispatch-da.sh` using a mock HTTP server (or fixture-based response).
+- **NEW T6.6 — DA dispatch impl (Green).** The HTTP wrapper that POSTs to the configured DA endpoint and writes a verdict file.
+- **T7 (Personas): MODIFIED.** DA persona becomes external-backend-tuned (one-shot example of strict format included to maximize compliance across model families).
+- **T8 (SKILL.md): MODIFIED.** Skill orchestration now dispatches DA via `Bash(./dispatch-da.sh ...)` instead of `Agent(general-purpose, ...)`. PE dispatch unchanged. Aggregation step unchanged.
+- **T9 (README): MODIFIED.** Documents `$PANEL_DA_API_KEY`, `$CLAUDE_PANEL_DA_ENDPOINT`, `$CLAUDE_PANEL_DA_MODEL`, fallback behavior when API unreachable.
+- **T11 (CLAUDE.md): MODIFIED.** Mentions the new env var and the ERROR-fallback path.
+- **T10, T12, T13: UNCHANGED** (settings registration, verification, PR).
+
+**Secrets handling:**
+
+`$PANEL_DA_API_KEY` is read by `dispatch-da.sh` at runtime. NEVER persisted to any file in the repo, never logged in trace output, never echoed in error messages (use a redacted form like `<key set: ${PANEL_DA_API_KEY:0:6}...>` if debugging). Tests use a synthetic key set via `PANEL_DA_API_KEY=test-key ./dispatch-da_test.sh`. The key is passed to curl via `-H @<file>` so it does not appear in process argv. Real-API smoke tests are documented in the README; no automated CI runs them.
+
+**For implementer subagents:** receive task instructions directly from the controller, not from this plan file. The original T7–T13 sections below are left intact for reference; the controller will hand subagents the revised task text inline.
 
 ---
 
