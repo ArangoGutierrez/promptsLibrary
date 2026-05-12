@@ -73,3 +73,19 @@ Security > Correctness > Performance > Style
 
 ## Context Hygiene
 - Commit context to agents-workbench before ending long sessions
+
+## Recommendation Panel
+`AskUserQuestion` calls with a `(Recommended)` option are intercepted by the `validate-recommendation` hook. Two panelists run in parallel:
+- **Devil's advocate** — external chat-completion model via `dispatch-da.sh` (POSTs to any OpenAI-compatible endpoint). Independent reasoner; needs `$PANEL_DA_API_KEY`, `$CLAUDE_PANEL_DA_ENDPOINT`, and `$CLAUDE_PANEL_DA_MODEL` exported.
+- **Principal Engineer** — `principal-engineer` Claude subagent. Reads `~/.claude/CLAUDE.md` and `~/.claude/rules/` via tools.
+
+If both **HOLD** → recommendation is taken automatically with abbreviated rationales printed.
+If either **OVERTURN** → question is re-asked with a `**Panel review:**` summary appended; user picks.
+On **ERROR** (API down, malformed response) → original question is asked unmodified.
+
+Modes (`CLAUDE_PANEL` env var):
+- `on` (default) — auto-take recommendation on HOLD; re-ask augmented on DISSENT/ERROR.
+- `advise` — never auto-take; surface panel commentary on every recommendation question.
+- `off` — bypass the panel entirely.
+
+Skill: `.claude/skills/validate-recommendation/`.
