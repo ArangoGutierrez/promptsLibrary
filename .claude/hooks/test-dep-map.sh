@@ -13,14 +13,15 @@ GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$GIT_ROOT" || exit 0
 
 # --- Go test mapping ---
-find_go_tests() {
+# regex_go_tests implements the original regex-based path. Used as a fallback
+# when the AST helper is disabled, missing, or fails to parse.
+regex_go_tests() {
     local src_file="$1"
     local rel_path="${src_file#"$GIT_ROOT"/}"
     rel_path="${rel_path#./}"
     local dir=$(dirname "$rel_path")
     local base=$(basename "$rel_path" .go)
 
-    # Go tests live in the same package directory
     # Direct companion: foo.go → foo_test.go
     local companion="${dir}/${base}_test.go"
     if [ -f "$companion" ]; then
@@ -32,8 +33,6 @@ find_go_tests() {
     for tf in "${dir}"/*_test.go; do
         [ -f "$tf" ] || continue
         [ "$tf" = "$companion" ] && continue
-        # Check if test file references symbols from source file
-        # Extract exported function/type names from source
         local symbols=$(grep -oE '^func ([A-Z][a-zA-Z0-9]*)' "$rel_path" 2>/dev/null | awk '{print $2}')
         symbols="$symbols $(grep -oE '^type ([A-Z][a-zA-Z0-9]*)' "$rel_path" 2>/dev/null | awk '{print $2}')"
         for sym in $symbols; do
@@ -55,6 +54,30 @@ find_go_tests() {
             echo "  ${tf} (${test_count} tests, integration)"
         done
     done
+}
+
+# find_go_tests dispatches: AST helper for accurate ranking, else regex.
+# Env var TDAD_DISABLE_AST (values 1|YES|yes|true|TRUE) forces the regex path.
+find_go_tests() {
+    local src_file="$1"
+    case "${TDAD_DISABLE_AST:-}" in
+        1|YES|yes|true|TRUE)
+            regex_go_tests "$src_file"
+            return
+            ;;
+    esac
+    local helper
+    helper="$(dirname "$0")/bin/test-dep-map-ast"
+    if [ ! -x "$helper" ]; then
+        regex_go_tests "$src_file"
+        return
+    fi
+    local out
+    if ! out=$("$helper" "$src_file" 2>/dev/null); then
+        regex_go_tests "$src_file"
+        return
+    fi
+    printf '%s\n' "$out"
 }
 
 # --- TS/JS test mapping ---
