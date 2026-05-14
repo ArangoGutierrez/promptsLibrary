@@ -40,6 +40,8 @@ CLAUDE_EXCLUDES=(
   plugins/install-counts-cache.json
   plugins/blocklist.json
   hooks/*.bak-*
+  hooks/bin/
+  hooks/src/*/test-dep-map-ast
   settings.local.json
   # Home dotfile dup of capture.sh logic
   .gitignore
