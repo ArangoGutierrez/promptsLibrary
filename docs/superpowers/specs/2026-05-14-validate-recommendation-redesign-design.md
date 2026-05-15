@@ -596,3 +596,119 @@ Total v1: ~10–14 days. Each phase ends with a clean commit, working panel, and
 | Trace log `~/.claude/debug/panel-trace.log` | Preserved as ops telemetry (event=trigger, event=verdict). Distinct from `decisions.jsonl` (data telemetry). |
 | Two-panelist composition | Generalized to N panelists with odd-N invariant. Default ships 3 (DA + PE + QA). |
 | State file in `$TMPDIR/claude-panel-<session>.json` | Relocated to `~/.claude/panel/state-<qhash>.json` to support cycle tracking and survive sandbox $TMPDIR restrictions. |
+
+---
+
+## Amendment v2.1 — NAT integration (2026-05-15)
+
+After Phase 1 + Phase 2 shipped (foundation bug fixes + Python aggregator port), evaluation of NVIDIA NeMo Agent Toolkit (NAT) led to a decision to use NAT as the substrate for HTTP-backed panelists. This amendment supersedes the relevant sections of v2.0 with the changes below. Sections not mentioned here are unchanged.
+
+### Why NAT
+
+- **Org alignment**: NAT is the NVIDIA-internal agent toolkit. Building personal tooling on top aligns with how teammates will likely build agent systems.
+- **Multi-LLM coordination native**: NAT abstracts over LLM providers (NIM, OpenAI, Anthropic, etc.) with a single Python API. Adding a new panelist backend becomes a config change, not a new shell script.
+- **Observability**: optional OpenTelemetry / Phoenix / LangSmith integration replaces hand-rolled telemetry for production-grade tracing when wanted.
+
+What NAT does NOT provide (so remains custom):
+- Voting / consensus / debate primitives — no panel pattern in NAT.
+- Re-brainstorm cycle accounting — NAT has no concept of cycles.
+- Claude Code hook integration — the panel hook stays bash, qhash-keyed state stays custom.
+- Severity logic and rationale gating — custom Python.
+
+### Architectural changes from v2.0
+
+| v2.0 component | v2.1 disposition |
+|---|---|
+| `dispatch-http.sh` (planned in Phase 3) | **Replaced** by `panel/dispatch.py` — calls NAT's Python API in-process. No shell-curl dispatcher. |
+| `~/.claude/panel/config.json` (planned schema) | **Replaced** by `~/.claude/panel/config.yml` (YAML, NAT-compatible). |
+| Default ships N=3 (DA + PE + QA, all enabled) | **Replaced** by default N=1 (DA only, enabled by default). PE/QA/other roles are **opt-in** via `enabled: true` in the YAML config. |
+| Persona files per role drive backend choice | **Generalized**: per-panelist `backend` field in config explicitly names the dispatch mechanism (`nat-nim`, `nat-anthropic`, `nat-openai`, `claude-subagent`, future `nat-other`). |
+| Aggregator handles N panelists | Unchanged — aggregator (`panel/aggregate.py`) already generic over N verdict files. |
+| Severity, re-brainstorm, telemetry-JSONL, hook | Unchanged. |
+
+### Updated config schema
+
+```yaml
+version: 1
+panelists:
+  - id: da-nemotron
+    role: DA
+    enabled: true                       # default ON
+    backend: nat-nim
+    model: nvidia/nemotron-3-super-v3
+    max_tokens: 32768
+    temperature: 0.3
+    timeout_seconds: 60
+
+  - id: pe
+    role: PE
+    enabled: false                      # opt-in
+    backend: claude-subagent
+    subagent_type: principal-engineer
+
+  - id: qa
+    role: QA
+    enabled: false                      # opt-in
+    backend: claude-subagent
+    subagent_type: qa-engineer
+
+severity:
+  hard_threshold: majority
+  rationale_gate:
+    requires_principle_or_alternative: true
+failure_mode:
+  on_panelist_error: auto
+re_brainstorm:
+  enabled: true
+  max_cycles: 2
+telemetry:
+  jsonl: ~/.claude/panel/decisions.jsonl
+  otel_endpoint: null                   # optional Phoenix/LangSmith endpoint
+```
+
+**Odd-N invariant** still enforced: `panel lint-config` rejects configs where the count of `enabled: true` panelists is even.
+
+### Backend abstraction
+
+Each panelist's `backend` field selects the dispatch mechanism:
+
+| Backend | Implementation | Use case |
+|---|---|---|
+| `nat-nim` | NAT's `nat.llm.nim_llm` provider | NVIDIA NIM endpoints (Nemotron, etc.) |
+| `nat-anthropic` | NAT's Anthropic provider | When you want PE/QA quality with paid Anthropic API + NAT file-reading tools for CLAUDE.md/rules/ access |
+| `nat-openai` | NAT's OpenAI provider | Optional alternative DA (e.g., gpt-5) for cross-vendor diversity |
+| `claude-subagent` | Claude Code's `Agent` tool, invoked inline by SKILL.md | Free PE/QA via your Claude Code session — preserves principal-engineer subagent identity with full tool access |
+
+The skill orchestrator (`SKILL.md`) reads `config.yml`, separates enabled panelists by backend, and dispatches in a single parallel message:
+- All `nat-*` panelists → one `Bash python3.12 -m panel dispatch --panelist <id>` call per panelist.
+- All `claude-subagent` panelists → one `Agent` tool call per panelist.
+
+`panel/dispatch.py` imports `nat` as a library and calls the NAT runtime in-process (no `nat run` subprocess hop — that would add ~1–2 s cold-start per call). The shell still drives parallelism; NAT only handles single-panelist LLM dispatch.
+
+### Cost / latency implications
+
+| Aspect | v2.0 plan | v2.1 plan |
+|---|---|---|
+| Default panel cost | ~$0.001/call (DA + PE + QA, last two free via Claude subagent) | ~$0.001/call (DA only by default) |
+| Per-call cost when PE+QA opted in | ~$0.001 (subagents free) | ~$0.001 (subagents free) OR ~$0.01–0.05 (if backends switched to `nat-anthropic`) |
+| Cold-start latency | ~50 ms (bash dispatcher) | ~100 ms (Python+NAT in-process) |
+| Dependency footprint | bash, jq, Python stdlib | + `nvidia-nat[langchain]` (~200 MB pip install) |
+| New backend | Write a new `dispatch-*.sh` | Add a backend type to `panel.dispatch` (Python class) |
+
+### Migration plan adjustments
+
+The 6-phase migration from v2.0 is partially obsolete. Phase 1 and Phase 2 still ship as-is (Python aggregator and bug fixes are foundational regardless of dispatcher). Phase 3 is rewritten; Phases 4-6 lightly adjusted.
+
+| Phase | v2.0 scope | v2.1 disposition |
+|---|---|---|
+| 1 — Foundation bug fixes | dispatch-da.sh bug fixes | **Shipped.** Stays. (dispatch-da.sh will be deleted in revised Phase 3.) |
+| 2 — Port aggregator to Python | Replace aggregate.sh with Python | **Shipped.** Stays. |
+| 3 — Config + multi-panelist | dispatch-http.sh, config.json, personas split | **Rewritten as v2.1 Phase 3**: NAT-based `panel/dispatch.py`, YAML config, opt-in panelists. Personas split still happens. |
+| 4 — Severity tiers | severity decision tree | Mostly unchanged. Aggregator reads N verdicts (NAT-emitted or subagent-emitted) the same way. |
+| 5 — Re-brainstorm cycles | State files, hook re-entry, Markdown directive | Unchanged. Cycle mechanic is Claude-Code-specific, NAT doesn't touch it. |
+| 6 — Telemetry + CLI | decisions.jsonl, panel-review CLI, PostToolUse hook | Unchanged in core, with optional OTel export added: `telemetry.otel_endpoint` config knob routes decision events to Phoenix/LangSmith in addition to JSONL when set. |
+
+### Open questions tracked in v2.1
+
+- **`nat-anthropic` for PE/QA quality**: should the default config flip PE/QA's backend to `nat-anthropic` (with file-reading tools) instead of `claude-subagent`? Trade-off: paid API tokens for uniformity, but loses the free Claude subagent path and the principal-engineer subagent identity. Defer until usage data shows whether the quality of `claude-subagent` PE/QA is materially better than `nat-anthropic` would be.
+- **NAT workflow YAML mode**: NAT also supports `nat run --config_file workflow.yml` as a standalone CLI. We're using the Python library API instead (in-process). If we later want to make the panel workflow externally invokable via `nat run` (e.g., from a non-Claude context), we'd add a panel-workflow.yml file. Out of scope for v2.1.
