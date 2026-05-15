@@ -627,7 +627,7 @@ func TestRun_CompanionBonus(t *testing.T) {
 
 func Do() {}
 `)
-	// Companion test references Do (score 3) + companion bonus (+1) = 4.
+	// Companion test references Do (score 3). Companion ranks first by contract.
 	writeFile(t, dir, "thing_test.go", `package mypkg
 
 import "testing"
@@ -636,7 +636,7 @@ func TestDo(t *testing.T) {
 	Do()
 }
 `)
-	// Non-companion test references Do (score 3) + no bonus = 3.
+	// Non-companion test references Do (score 3). Ranks second behind companion.
 	writeFile(t, dir, "other_test.go", `package mypkg
 
 import "testing"
@@ -1140,13 +1140,13 @@ case_3_companion_bonus() {
 package mypkg
 func Do() {}
 EOF
-    # Companion: Do referenced, +1 bonus.
+    # Companion: Do referenced; companion ranks first by contract.
     cat > "$d/thing_test.go" <<'EOF'
 package mypkg
 import "testing"
 func TestDo(t *testing.T) { Do() }
 EOF
-    # Non-companion: Do referenced, no bonus.
+    # Non-companion: Do referenced; ranks below companion.
     cat > "$d/other_test.go" <<'EOF'
 package mypkg
 import "testing"
