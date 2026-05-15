@@ -60,6 +60,31 @@ func extractSymbols(path string, src []byte) ([]string, error) {
 	return out, nil
 }
 
+// extractImports returns the set of package identifiers in scope for this
+// file. For `import "net/http"`, "http" is in scope. For `import x "net/http"`,
+// "x" is in scope. For `import . "fmt"` and `import _ "side"`, nothing is added.
+func extractImports(file *ast.File) map[string]struct{} {
+	imports := map[string]struct{}{}
+	for _, imp := range file.Imports {
+		var name string
+		if imp.Name != nil {
+			name = imp.Name.Name
+		} else {
+			p := strings.Trim(imp.Path.Value, `"`)
+			if i := strings.LastIndex(p, "/"); i >= 0 {
+				name = p[i+1:]
+			} else {
+				name = p
+			}
+		}
+		if name == "" || name == "_" || name == "." {
+			continue
+		}
+		imports[name] = struct{}{}
+	}
+	return imports
+}
+
 // scoreTestFile parses the test file once and returns everything the caller
 // needs to rank and render it. Companion bonus is applied by the caller
 // (it depends on the source filename, not the test file).
@@ -84,8 +109,18 @@ func scoreTestFile(testPath string, srcSymbols []string) (int, []string, int, er
 	for _, s := range srcSymbols {
 		want[s] = struct{}{}
 	}
+	imports := extractImports(file)
 	hit := map[string]struct{}{}
 	ast.Inspect(file, func(n ast.Node) bool {
+		// Skip imported-package selectors: `pkg.X` is a reference to the
+		// imported package's X, not to a same-named source symbol.
+		if sel, ok := n.(*ast.SelectorExpr); ok {
+			if id, ok := sel.X.(*ast.Ident); ok {
+				if _, isImport := imports[id.Name]; isImport {
+					return false
+				}
+			}
+		}
 		id, ok := n.(*ast.Ident)
 		if !ok {
 			return true
@@ -116,10 +151,11 @@ func scoreTestFile(testPath string, srcSymbols []string) (int, []string, int, er
 // rankedEntry is one row of the output: a test file path with its score,
 // matched source symbols, and Test*** count (for the cosmetic "N tests" field).
 type rankedEntry struct {
-	path      string
-	score     int
-	hits      []string
-	testFuncs int
+	path        string
+	score       int
+	hits        []string
+	testFuncs   int
+	isCompanion bool
 }
 
 // run is the top-level entry point. It parses srcPath, walks sibling
@@ -153,15 +189,20 @@ func run(srcPath string, out io.Writer) error {
 		if err != nil {
 			continue // Skip unreadable/unparseable test files; don't fail the run.
 		}
-		if name == companion {
-			score++
-		}
-		if score == 0 {
+		isCompanion := name == companion
+		// Companion files are always emitted; non-companions need a real hit.
+		if score == 0 && !isCompanion {
 			continue
 		}
-		ranked = append(ranked, rankedEntry{path: tfPath, score: score, hits: hits, testFuncs: testFuncs})
+		ranked = append(ranked, rankedEntry{path: tfPath, score: score, hits: hits, testFuncs: testFuncs, isCompanion: isCompanion})
 	}
 	sort.Slice(ranked, func(i, j int) bool {
+		// Companion always ranks first regardless of score (literal companion
+		// is the highest-confidence signal; tdd-guard usually catches it first
+		// but if it lands in our candidate set, we must surface it).
+		if ranked[i].isCompanion != ranked[j].isCompanion {
+			return ranked[i].isCompanion
+		}
 		if ranked[i].score != ranked[j].score {
 			return ranked[i].score > ranked[j].score
 		}

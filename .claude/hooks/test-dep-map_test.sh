@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-dep-map_test.sh - Integration tests for test-dep-map.sh + AST helper.
-# Runs all seven cases from the design doc and prints PASS/FAIL summary.
+# Runs all eight cases from the design doc and prints PASS/FAIL summary.
 # Exits 0 on full pass, 1 on any failure.
 
 set -uo pipefail
@@ -61,6 +61,7 @@ main() {
     run_case "env var disable" case_5_env_var_disable
     run_case "no tests found sentinel" case_6_no_tests_found_sentinel
     run_case "perf budget" case_7_perf_budget
+    run_case "stdlib import no false positive" case_8_stdlib_import_no_false_positive
 
     echo ""
     echo "==========="
@@ -297,6 +298,45 @@ EOF
         echo "  perf budget exceeded: ${elapsed_ms}ms > 500ms"
         return 1
     fi
+    return 0
+}
+
+case_8_stdlib_import_no_false_positive() {
+    local d
+    d=$(new_corpus)
+    trap "rm -rf '$d'" RETURN
+    cat > "$d/thing.go" <<'EOF'
+package mypkg
+type Server struct{}
+func Run() {}
+EOF
+    # Test references http.Server (imported) — must NOT credit local Server.
+    cat > "$d/stdlib_test.go" <<'EOF'
+package mypkg
+
+import (
+	"net/http"
+	"testing"
+)
+
+func TestStdlib(t *testing.T) {
+	_ = &http.Server{}
+	Run()
+}
+EOF
+    local out
+    out=$(cd "$d" && "$HOOK" thing.go)
+    # Must list stdlib_test.go (because of Run()).
+    echo "$out" | grep -q "stdlib_test.go" || { echo "  stdlib_test.go missing: $out"; return 1; }
+    # References must be EXACTLY 'Run', not 'Server'.
+    echo "$out" | grep -qE 'stdlib_test\.go.*references[^)]*Server' && {
+        echo "  AST counted http.Server as local Server (false positive): $out"
+        return 1
+    }
+    echo "$out" | grep -qE 'stdlib_test\.go.*references[^)]*Run' || {
+        echo "  AST missed legitimate Run() call: $out"
+        return 1
+    }
     return 0
 }
 

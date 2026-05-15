@@ -77,11 +77,11 @@ The old regex body becomes `regex_go_tests` — unmodified, used as fallback.
 - Parse the test file.
 - Walk every `*ast.Ident` in the file; the walker visits `SelectorExpr.Sel` automatically, so `srv.Start()` contributes the identifier `Start`. Count exact-name matches against the source's symbol set.
 
-**Scoring.**
-- +3 per direct symbol reference in the test body.
-- +1 bonus if the test file's path is the literal companion (`foo_test.go` for `foo.go`).
-- Tests with final score 0 are omitted.
-- Ties broken by ascending path (deterministic for tests).
+**Scoring and ranking.**
+- +3 per direct symbol reference in the test body. Imported-package selectors (e.g. `http.Server`) are not counted as references to same-named source symbols.
+- The literal companion file (`foo_test.go` for `foo.go`) always ranks first if present in the candidate set, regardless of score. The companion is the highest-confidence signal; `tdd-guard.sh` typically catches it upstream but dep-map honors it when it doesn't.
+- Non-companion tests with score 0 are omitted. Companion is emitted even with score 0.
+- Among non-companion tests, sort by score desc, then path asc (deterministic).
 
 ### Data flow
 
