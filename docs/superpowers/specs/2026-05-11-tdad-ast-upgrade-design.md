@@ -82,6 +82,7 @@ The old regex body becomes `regex_go_tests` — unmodified, used as fallback.
 - The literal companion file (`foo_test.go` for `foo.go`) always ranks first if present in the candidate set, regardless of score. The companion is the highest-confidence signal; `tdd-guard.sh` typically catches it upstream but dep-map honors it when it doesn't.
 - Non-companion tests with score 0 are omitted. Companion is emitted even with score 0.
 - Among non-companion tests, sort by score desc, then path asc (deterministic).
+- **Known limitation:** dot imports (`import . "net/http"`) bring imported symbols into local scope as bare `*ast.Ident` nodes, indistinguishable from local-symbol references without type info. A test file using `import . "net/http"` that references `Server` will count as matching a same-named local `Server` source symbol. Dot imports are rare in production Go (mostly seen in `gocheck`/Ginkgo DSL test files); accepting the false positive is the YAGNI-correct call.
 
 ### Data flow
 
