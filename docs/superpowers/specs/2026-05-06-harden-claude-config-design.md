@@ -52,7 +52,7 @@ After line 19, add:
 [ "$LAST_RUN_EPOCH" -eq 0 ] && exit 0
 ```
 
-Skip the staleness check entirely when the timestamp file is corrupted or unparseable.
+Skip the staleness check entirely when the timestamp file is corrupted or unparsable.
 
 ### Stage 2 — Defensive hooks (items 5, 7, 10)
 
