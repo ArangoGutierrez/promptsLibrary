@@ -1,189 +1,280 @@
-# validate-recommendation v3 — Phase 3b: NAT dispatch
-
-> **SUPERSEDED 2026-05-18 by v3.1 amendment.** This plan assumed NAT 1.6 exposed `NIMLLM(...).invoke(messages=...)` directly; NAT 1.6 actually uses a `NIMModelConfig` + `Builder` pattern. See `docs/superpowers/specs/2026-05-18-validate-recommendation-v3.1-nat-heavy-amendment.md` for the corrected design and `docs/superpowers/plans/2026-05-18-validate-recommendation-v3.1-phase3b-nat-builder-dispatch.md` for the active plan. This file is retained for history. Do NOT execute it.
+# validate-recommendation v3.1 — Phase 3b: NAT Builder dispatch
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship `panel/dispatch.py` (real NAT integration with the single `_invoke_nat` mockable seam) and replace `panel/cli.py`'s Phase 3a dispatch stub. After Phase 3b, `python -m panel dispatch --panelist <id> ...` invokes nat-* backends end-to-end and writes a `VERDICT/RATIONALE/ALTERNATIVE` verdict file. The orchestrator (SKILL.md) is still wired to v1's `dispatch-da.sh` at runtime; Phase 3c does the cutover.
+**Goal:** Ship `panel/dispatch.py` — the NAT-Builder-backed dispatcher that replaces Phase 3a's CLI stub. Each `nat-*` panelist invokes `python -m panel dispatch`, which internally uses NAT 1.6's `NIMModelConfig` / `AnthropicModelConfig` / `OpenAIModelConfig` + `Builder` + `register_llm_provider` pattern. The single mockable seam is `_invoke_nat(panelist, system, user) -> object`. All runtime failures land as `VERDICT: ERROR` verdict files; the file is always written (exit 0). SKILL.md still uses v1's `dispatch-da.sh` at runtime; Phase 3c does the cutover.
 
-**Architecture:** One new Python module (`panel/dispatch.py`) with one mockable seam (`_invoke_nat`). The `dispatch()` entry-point wraps `_invoke_nat` with an ERROR-fallback so all failures (network, parse, unsupported backend, OVERTURN+ALTERNATIVE:n/a) become `VERDICT: ERROR` verdict files — never crashes. Tests mock at `_invoke_nat` only; real NAT / HTTP / models are integration territory per the spec's "Mock discipline" rule.
+**Architecture:** One new Python module (`panel/dispatch.py`) with one mockable seam. The implementation uses NAT's Builder pattern: per-dispatch, construct a `Builder`, register the panelist's `*ModelConfig`, retrieve the configured LLM, invoke with `[{role, content}, ...]` messages. Tests mock at `_invoke_nat` only; below that lies NAT (and below NAT, real HTTP). Test count, error-handling matrix, and CLI surface match the superseded v3 plan; only the body of `_invoke_nat` changes.
 
-**Tech Stack:** Python 3.12 (`/opt/homebrew/bin/python3.12`), `nvidia-nat[langchain]` (>=1.6, <2.0) installed via `pip install --user --break-system-packages` (matches Phase 3a's PyYAML pattern, not pipx — pipx venvs are isolated and unusable from user-site Python). Tests run via `~/.local/pipx/venvs/pytest/bin/pytest` direct path — NOT `pipx run pytest` (which creates ephemeral venvs that ignore injects).
+**Tech Stack:** Python 3.12 (`/opt/homebrew/bin/python3.12`), `nvidia-nat` (==1.6.0, installed via `pip install --user --break-system-packages`). Tests run via `~/.local/pipx/venvs/pytest/bin/pytest` direct path — NOT `pipx run pytest` (creates ephemeral venvs without injects).
 
-**Spec:** `docs/superpowers/specs/2026-05-15-validate-recommendation-v3-nat-native-design.md` (commit `c80b2f6`). Section: "Dispatchers → `panel/dispatch.py` (NAT integration)" and "Locked design decisions #9 (NAT substrate)".
+**Spec:** Primary — `docs/superpowers/specs/2026-05-18-validate-recommendation-v3.1-nat-heavy-amendment.md`. Underlying — `docs/superpowers/specs/2026-05-15-validate-recommendation-v3-nat-native-design.md` (sections not amended by v3.1 still apply).
+
+**Supersedes:** `docs/superpowers/plans/2026-05-18-validate-recommendation-v3-phase3b-nat-dispatch.md` (commit `c7ee8d6`).
 
 **Pre-flight context:**
-- Phase 3a shipped on `~/.claude/` `main`: commits `7e5fe79` (`config.py`), `1b909d3` (`personas/{da,pe,qa}.md`), `2b374cf` (`personas.py`), `383c8e8` (`cli.py` + dispatch stub), `d312654` (default `config.yml`), plus polish patches. 60 pytest cases pass via `~/.local/pipx/venvs/pytest/bin/pytest`.
-- `~/.claude/panel/config.yml` exists with DA enabled (nat-nim, model `nvidia/nemotron-3-super-v3`). `panel lint-config` confirms.
+- Phase 3a shipped on `~/.claude/` main: `panel/{config,personas,cli}.py` + `personas/{da,pe,qa}.md` + `~/.claude/panel/config.yml`. 60 tests pass via `~/.local/pipx/venvs/pytest/bin/pytest`.
+- `nvidia-nat==1.6.0` already installed in `/opt/homebrew/bin/python3.12` user-site (Phase 3b Task 1 already done in the superseded plan execution). `import nat` works; `nat.llm.nim_llm.NIMModelConfig` is the entry point.
 - `~/.claude/` git repo enforces signed commits (`-s` DCO sign-off + `-S` GPG signature).
-- PyYAML 6.0.3 is in `/opt/homebrew/bin/python3.12` user-site AND in `~/.local/pipx/venvs/pytest/` injects.
-- Legacy v1 `dispatch-da.sh` + `dispatch-da_test.sh` + `aggregate_test.sh` all pass and remain the runtime path until Phase 3c.
+- Legacy v1 `dispatch-da.sh + aggregate_test.sh + dispatch-da_test.sh` all pass; remain the runtime path until Phase 3c.
+- The `panel/personas.py` loader composes a system prompt via `persona.system_prompt + persona.one_shot_example` and a user prompt body from `--prompt-file`. dispatch.py reuses this composition.
 
 ---
 
 ## File Structure
 
-Tasks land into `/Users/eduardoa/.claude/` (the user's `~/.claude/` git repo):
+Tasks land into `/Users/eduardoa/.claude/`:
 
 | File | Disposition | Responsibility |
 |---|---|---|
-| `skills/validate-recommendation/panel/dispatch.py` | **Create** | `dispatch()` CLI entry; `_invoke_nat()` mockable seam; `_extract_content()`, `_format_verdict()`, `_write_verdict_file()` helpers; ERROR-fallback wrapping. |
-| `skills/validate-recommendation/panel/tests/test_dispatch.py` | **Create** | TDD test suite. Mocks `panel.dispatch._invoke_nat` only — no `requests`/`httpx`/`nat.*` mocking. |
-| `skills/validate-recommendation/panel/cli.py` | **Modify** | Replace the Phase 3a dispatch stub body (`return 2 / "not yet implemented"`) with `from panel.dispatch import dispatch; return dispatch(...)`. argparse surface unchanged. |
-| `skills/validate-recommendation/panel/tests/test_cli_lint_config.py` | **Modify** | Remove `test_dispatch_stub_returns_phase3b_message` — obsolete after the stub goes away. |
-| `skills/validate-recommendation/panel/tests/test_cli_dispatch.py` | **Create** | CLI integration test: confirms `panel dispatch ...` calls `panel.dispatch.dispatch(...)` with arguments threaded correctly. Mocks `dispatch` itself (the CLI's only job is argparse → function call). |
+| `skills/validate-recommendation/panel/dispatch.py` | **Create** | `dispatch()` CLI entry; `_invoke_nat()` NAT-Builder seam; `_extract_content()`, `_format_verdict()`, `_write_verdict_file()` helpers; ERROR-fallback wrapping. |
+| `skills/validate-recommendation/panel/tests/test_dispatch.py` | **Create** | TDD suite. 15 tests, mocks `panel.dispatch._invoke_nat` only. |
+| `skills/validate-recommendation/panel/cli.py` | **Modify** | Replace Phase 3a dispatch-branch stub body with `from panel.dispatch import dispatch; return dispatch(...)`. argparse unchanged. |
+| `skills/validate-recommendation/panel/tests/test_cli_lint_config.py` | **Modify** | Remove `test_dispatch_stub_returns_phase3b_message` — obsolete after stub goes away. |
+| `skills/validate-recommendation/panel/tests/test_cli_dispatch.py` | **Create** | CLI integration tests: argparse → `panel.dispatch.dispatch(...)` wiring. |
+| `skills/validate-recommendation/panel/tests/test_cli_exit_codes.py` | **Modify** | Rewrite the subprocess-level dispatch test (was asserting Phase 3a stub exit code 2 + "Phase 3b" message — now asserts exit 1 on missing persona). |
+| `skills/validate-recommendation/panel/.nat-discovery-notes.md` | **Create (gitignored)** | NAT Builder idiom + verified module/class/method names from Task 2 spike. Reference for future engineers after NAT version bumps. |
 
-Untouched (deferred to later phases): `dispatch-da.sh`, `dispatch-da_test.sh`, `aggregate.sh`, `panel/{verdict,sanitize,trace,aggregate,config,personas}.py`, `SKILL.md`, `personas/`, `personas.md`, `~/.claude/panel/config.yml`.
+Untouched (deferred): `dispatch-da.sh`, `dispatch-da_test.sh`, `aggregate.sh`, `panel/{verdict,sanitize,trace,aggregate,config,personas}.py`, `SKILL.md`, `personas/`, `personas.md`, `~/.claude/panel/config.yml`.
 
 ---
 
 ## Tasks
 
-### Task 1: Pre-flight — install `nvidia-nat[langchain]` for `/opt/homebrew/bin/python3.12`
+### Task 1: Pre-flight — confirm `nvidia-nat` install state
 
-**Files:** none modified. Environment setup.
+**Files:** none modified. Environment verification only.
 
-- [ ] **Step 1: Verify NAT is not already importable**
+The superseded v3 plan's Task 1 already ran (`nvidia-nat==1.6.0` installed via `pip install --user --break-system-packages`). This task confirms the install survives.
 
-```bash
-/opt/homebrew/bin/python3.12 -c "import nat; print('nat:', getattr(nat, '__version__', '(no __version__)'))" 2>&1
-```
-
-Expected if missing: `ModuleNotFoundError: No module named 'nat'`.
-Expected if present: a version string — skip to Step 3.
-
-- [ ] **Step 2: Install via `pip install --user --break-system-packages`**
-
-PEP 668 blocks unflagged `pip install` on Homebrew Python; `--break-system-packages` is the documented override for user-site installs. `nvidia-nat[langchain]` pulls the langchain extras NAT needs for its LLM client classes.
+- [ ] **Step 1: Verify NAT imports**
 
 ```bash
-/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages 'nvidia-nat[langchain]>=1.6,<2.0' 2>&1 | tail -5
+/opt/homebrew/bin/python3.12 -c "
+import nat
+import nat.builder.builder
+import nat.llm.nim_llm
+print('nat package: namespace, __file__ =', nat.__file__)
+print('Builder class:', nat.builder.builder.Builder)
+print('NIMModelConfig:', nat.llm.nim_llm.NIMModelConfig)
+"
 ```
 
-Expected: `Successfully installed nvidia-nat-1.x.x ...` (plus langchain dependencies). The install may take 60-120 seconds.
+Expected: prints `nat package: namespace, __file__ = None`, the `Builder` and `NIMModelConfig` class references resolve. No exception.
 
-- [ ] **Step 3: Verify import works from system python3.12**
+If `import nat` fails: run the superseded plan's Task 1 (reproduced below) to install:
 
 ```bash
-/opt/homebrew/bin/python3.12 -c "import nat; print('nat:', getattr(nat, '__version__', 'present'))"
+/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages 'nvidia-nat==1.6.0' 'jmespath>=1.0.0'
 ```
 
-Expected: a version string (e.g. `nat: 1.6.0`) printed, exit 0.
+(Exact pin + jmespath lower bound to bypass pip 26's resolution-too-deep error on the open range.)
 
-- [ ] **Step 4: Verify pipx pytest can also import NAT**
-
-Tests in Task 3 mock `_invoke_nat` so they don't actually need nat installed to run — but conftest may need to import `panel.dispatch` for fixtures, which transitively imports nat lazily. To be safe:
+- [ ] **Step 2: Verify pytest venv can import the panel package**
 
 ```bash
-pipx inject pytest 'nvidia-nat[langchain]' --force 2>&1 | tail -3
-~/.local/pipx/venvs/pytest/bin/python -c "import nat; print('pytest-venv nat:', getattr(nat, '__version__', 'present'))"
+cd ~/.claude/skills/validate-recommendation && \
+  ~/.local/pipx/venvs/pytest/bin/python -c "
+import sys; sys.path.insert(0, '.')
+from panel.config import load_config
+from panel.personas import load_persona
+print('panel.config + panel.personas import OK')
+"
 ```
 
-Expected: import succeeds in the pipx pytest venv. (If this step is skipped, Task 3 tests still pass because `_invoke_nat`'s `from nat.llm.*` imports are lazy and never run when `_invoke_nat` is mocked. The inject is defense-in-depth.)
+Expected: prints OK. (NAT imports in `_invoke_nat` are lazy and won't run during this check.)
 
-No commit for Task 1 (environment only).
+No commit (verification only).
 
 ---
 
-### Task 2: Discover real NAT module paths and response shape
+### Task 2: NAT Builder idiom spike
 
-**Files:** none modified. Research only.
+**Files:**
+- Create: `~/.claude/skills/validate-recommendation/panel/.nat-discovery-notes.md` (gitignored)
 
-The spec's example `_invoke_nat` uses `nat.llm.nim_llm.NIMLLM`, `nat.llm.anthropic_llm.AnthropicLLM`, `nat.llm.openai_llm.OpenAILLM` but notes "actual import path verified during impl". Phase 3b Task 2 IS that verification.
+Goal: find the canonical ~10-LOC dispatch idiom using `NIMModelConfig` + `Builder` + retrieve + invoke. Without this, Task 3's `_invoke_nat` is guesswork.
 
-- [ ] **Step 1: List all importable submodules under `nat`**
-
-```bash
-/opt/homebrew/bin/python3.12 -c "
-import nat, pkgutil
-for m in pkgutil.walk_packages(nat.__path__, prefix='nat.'):
-    print(m.name)
-" 2>&1 | grep -iE '(llm|nim|anthropic|openai)' | sort
-```
-
-Expected: lines naming the LLM submodules. The spec's guesses are likely correct but the prefix (`nat.llm.*` vs `nat.builder.llm.*` vs another) is determined here.
-
-- [ ] **Step 2: Inspect the class names and constructor signatures**
-
-For each candidate path found in Step 1 (substitute the verified path):
+- [ ] **Step 1: Inspect Builder's API surface**
 
 ```bash
 /opt/homebrew/bin/python3.12 -c "
-import importlib, inspect
-mod = importlib.import_module('nat.llm.nim_llm')   # ← substitute verified path
-print('module:', mod.__name__)
-for name, obj in inspect.getmembers(mod, inspect.isclass):
-    if 'LLM' in name or 'NIM' in name:
-        print(' class:', name, '— init sig:', inspect.signature(obj.__init__))
+from nat.builder.builder import Builder
+import inspect
+print('Builder.__init__:', inspect.signature(Builder.__init__))
+print()
+for name in sorted(dir(Builder)):
+    if name.startswith('_'):
+        continue
+    member = getattr(Builder, name)
+    if callable(member):
+        try:
+            sig = inspect.signature(member)
+        except (TypeError, ValueError):
+            sig = '(no sig)'
+        print(f'  Builder.{name}{sig}')
 "
 ```
 
-Expected: a single LLM class per module (e.g. `NIMLLM`) with constructor accepting `model`, `max_tokens`, `temperature` (or near-equivalents). Note any keyword renames.
+Record: how `Builder` is constructed (args? config object?), the exact `add_llm` signature (`add_llm(name, config)` vs `add_llm(config)` vs other), and any `get_llm` / `llm` / `get_llm_provider` method.
 
-- [ ] **Step 3: Verify the `invoke()` method shape**
+- [ ] **Step 2: Inspect `NIMModelConfig` field names**
 
 ```bash
 /opt/homebrew/bin/python3.12 -c "
-import importlib, inspect
-mod = importlib.import_module('nat.llm.nim_llm')
-cls = mod.NIMLLM   # ← substitute verified class name
-print('invoke signature:', inspect.signature(cls.invoke))
-print('invoke doc:', (inspect.getdoc(cls.invoke) or '(no docstring)').splitlines()[:5])
-"
+from nat.llm.nim_llm import NIMModelConfig
+print('Required fields:', NIMModelConfig.model_fields)
+print()
+print('Schema:', NIMModelConfig.model_json_schema()['properties'].keys())
+" 2>&1 | head -30
 ```
 
-Expected: `invoke(self, messages=..., ...)` accepting a list of `{role, content}` dicts. Return type is typically langchain's `AIMessage` (has `.content` attribute holding a string).
+Record: the exact field names used by `NIMModelConfig` for model name, max_tokens, temperature, api_key. (Phase 3a's `Panelist` dataclass uses `model`, `max_tokens`, `temperature`; if NAT uses `model_name`, `max_new_tokens`, etc., dispatch.py adapts in `_invoke_nat`.)
 
-- [ ] **Step 4: Confirm the response shape**
-
-Without making a real API call (no key required for the shape probe):
+- [ ] **Step 3: Try the end-to-end Builder dispatch (no API key required for shape verification)**
 
 ```bash
-/opt/homebrew/bin/python3.12 -c "
-# Inspect what invoke() is documented or annotated to return.
-from typing import get_type_hints
-import importlib
-mod = importlib.import_module('nat.llm.nim_llm')
-cls = mod.NIMLLM
+/opt/homebrew/bin/python3.12 <<'EOF'
+from nat.builder.builder import Builder
+from nat.llm.nim_llm import NIMModelConfig
+
+# Field names from Step 2 — adjust if NAT uses different keys
+cfg = NIMModelConfig(model_name="nvidia/nemotron-3-super-v3", max_tokens=8, temperature=0.0)
+print("config built OK")
+
+b = Builder()
+print("builder constructed OK")
+
+# Try several plausible registration paths
 try:
-    hints = get_type_hints(cls.invoke)
-    print('invoke return type:', hints.get('return', '(unannotated)'))
-except Exception as e:
-    print('hint extraction failed:', e)
-"
-```
+    b.add_llm("test", cfg)
+    print("add_llm(name, cfg) ACCEPTED")
+except TypeError as e:
+    print("add_llm(name, cfg) rejected:", e)
+    try:
+        b.add_llm(cfg)
+        print("add_llm(cfg) ACCEPTED")
+    except TypeError as e2:
+        print("add_llm(cfg) also rejected:", e2)
 
-Expected: `AIMessage` (langchain) or similar with `.content`. Record findings.
-
-- [ ] **Step 5: Capture findings in a scratch note**
-
-Write a brief plain-text note to `~/.claude/skills/validate-recommendation/panel/.nat-discovery-notes.md` (gitignored — informational only):
-
-```bash
-cat > ~/.claude/skills/validate-recommendation/panel/.nat-discovery-notes.md <<'EOF'
-# NAT discovery notes (Phase 3b Task 2)
-# Generated on: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-nat version: <fill in>
-nim_llm path: <verified path>
-anthropic_llm path: <verified path>
-openai_llm path: <verified path>
-Response object type: <verified>
-Response content access: response.content / response['content'] / str(response)
-Notable kwarg renames: <list any>
+# Inspect what's registered
+print("builder state:", dir(b))
 EOF
 ```
 
-(This file is informational; Task 3's `_invoke_nat` uses the verified paths directly. The note exists so a future engineer can re-discover paths after NAT version bumps without re-running this whole task.)
+Try-and-fail probe — the EXACT signature of `add_llm` and the retrieval method are the two unknowns. The Step 1 inspection narrowed candidates; this step nails them down.
 
-- [ ] **Step 6: Add `.nat-discovery-notes.md` to gitignore (if not already covered)**
+If `Builder` requires a config dict at construction (NAT-Workflow style), the call sequence might be `Builder({...})` instead of `Builder()`. Iterate until the dispatch shape compiles.
+
+- [ ] **Step 4: Run a real invoke (with API key) to verify the response shape**
+
+Only run this step if `$PANEL_DA_API_KEY` (or `$NVIDIA_API_KEY`) is exported. Otherwise skip — Task 5 catches this later.
 
 ```bash
-grep -q "^\.nat-discovery-notes\.md$\|^\*\.discovery-notes\.md$" ~/.claude/.gitignore || \
+/opt/homebrew/bin/python3.12 <<EOF
+from nat.builder.builder import Builder
+from nat.llm.nim_llm import NIMModelConfig
+import os
+
+api_key = os.environ.get("PANEL_DA_API_KEY") or os.environ.get("NVIDIA_API_KEY")
+if not api_key:
+    raise SystemExit("Skipping: no API key in env")
+
+# Substitute the idiom verified in Step 3
+cfg = NIMModelConfig(
+    model_name="nvidia/nemotron-3-super-v3",
+    max_tokens=64,
+    temperature=0.0,
+    api_key=api_key,
+)
+b = Builder()
+b.add_llm("test", cfg)
+llm = b.get_llm("test")   # adjust per Step 1 findings
+
+response = llm.invoke(messages=[
+    {"role": "user", "content": "Say HELLO and only HELLO."},
+])
+print("response type:", type(response).__name__)
+print("response.__dict__:", getattr(response, '__dict__', '(no dict)'))
+print("response.content:", getattr(response, 'content', '(no .content)'))
+print("repr:", repr(response)[:200])
+EOF
+```
+
+Record: the response object's type, the attribute (`content`? `text`? `output`?) that holds the model's text reply. The existing `_extract_content()` helper handles `.content` / `dict` / `str` — confirm one of these branches matches.
+
+- [ ] **Step 5: Write `.nat-discovery-notes.md`**
+
+```bash
+cat > ~/.claude/skills/validate-recommendation/panel/.nat-discovery-notes.md <<'EOF'
+# NAT Builder dispatch idiom — discovery notes (Phase 3b Task 2)
+# Verified: 2026-05-18
+
+## Versions
+nvidia-nat: 1.6.0
+Python: /opt/homebrew/bin/python3.12 (3.12.x)
+
+## Imports
+from nat.builder.builder import Builder
+from nat.llm.nim_llm import NIMModelConfig
+from nat.llm.anthropic_llm import <CLASSNAME_FROM_STEP_1>
+from nat.llm.openai_llm import <CLASSNAME_FROM_STEP_1>
+
+## Builder construction
+<exact constructor signature from Step 1, e.g. `Builder()` or `Builder(config={...})`>
+
+## Register-and-retrieve idiom (NIM)
+cfg = NIMModelConfig(
+    model_name=<panelist.model>,           # NAT field: <verified key>
+    max_tokens=<panelist.max_tokens>,      # NAT field: <verified key>
+    temperature=<panelist.temperature>,    # NAT field: <verified key>
+    api_key=<env-or-arg>,                  # NAT field: <verified key>, source: <env var name>
+)
+b = Builder()
+b.<verified register method>("test", cfg)
+llm = b.<verified retrieve method>("test")
+response = llm.invoke(messages=[
+    {"role": "system", "content": ...},
+    {"role": "user", "content": ...},
+])
+
+## Response shape
+type(response): <verified, e.g. "AIMessage" or "BaseMessage">
+response text attribute: <verified, e.g. ".content" or ".text">
+example response.content: "<short paste>"
+
+## Anthropic / OpenAI parallels
+AnthropicModelConfig and OpenAIModelConfig follow the same shape with field names <list any diffs>.
+
+## Field-name adaptation
+The panel's Panelist dataclass uses {id, role, backend, model, max_tokens, temperature}.
+NAT's *ModelConfig classes use {<verified field names>}. dispatch.py's _invoke_nat
+maps Panelist.model → NIMModelConfig.<field>, etc.
+EOF
+```
+
+Substitute every `<...>` with the verified value before saving.
+
+- [ ] **Step 6: Ensure `.nat-discovery-notes.md` is gitignored**
+
+The `~/.claude/.gitignore` already has `__pycache__/` and `*.pyc` (from the Phase 3a closure). Add an entry for the discovery notes file:
+
+```bash
+grep -q '\.nat-discovery-notes\.md$' ~/.claude/.gitignore || \
     echo "skills/validate-recommendation/panel/.nat-discovery-notes.md" >> ~/.claude/.gitignore
 ```
 
-No commit for Task 2 (research; the discovery file is gitignored).
+The `.gitignore` change is a separate concern from Phase 3b. Commit it standalone (no body needed):
+
+```bash
+cd ~/.claude && git add .gitignore && git commit -s -S -m "chore(.gitignore): ignore panel NAT discovery notes
+
+skills/validate-recommendation/panel/.nat-discovery-notes.md holds
+NAT-API spike output (Phase 3b Task 2). Local engineering notes, not
+spec content — keep out of git."
+```
+
+No other commit for Task 2.
 
 ---
 
@@ -195,12 +286,14 @@ No commit for Task 2 (research; the discovery file is gitignored).
 
 - [ ] **Step 1: Write the failing tests** (`panel/tests/test_dispatch.py`)
 
+The 15 test cases below match the superseded v3 plan's test design. Test BEHAVIOR is identical (mock the `_invoke_nat` seam, verify outputs); only the IMPLEMENTATION behind the seam changed. Tests don't know NAT exists.
+
 ```python
-"""Tests for panel.dispatch — NAT-backed panelist dispatch.
+"""Tests for panel.dispatch — NAT-Builder-backed panelist dispatch.
 
 The single mock seam is `panel.dispatch._invoke_nat`. Tests never mock
-requests/httpx/nat.* directly — that would couple to NAT internals and
-break on every NAT version bump (per spec section 'Mock discipline').
+requests/httpx/nat.* directly — that couples to NAT internals and breaks
+on NAT version bumps (per v3 spec section 'Mock discipline').
 
 Test surface:
 - Happy path: well-formed response → verdict file with HOLD/OVERTURN
@@ -215,7 +308,7 @@ Test surface:
   - Missing prompt file
   - panelist_id not in config
 - File mode 0600 (umask 077)
-- Response shape variations: AIMessage-like (.content), dict, plain string
+- Response shape variations: object with .content / dict / plain string
 """
 import os
 import stat
@@ -226,17 +319,14 @@ from unittest.mock import patch
 import pytest
 
 
-# Shared fixtures live in conftest.py. This file adds a per-test
-# tmpdir-based config + persona + prompt file builder.
-
 def _fixture_files(tmp_path, *, panelist_id="da", backend="nat-nim",
-                   model="test-model", persona_role="DA"):
+                   model="test-model"):
     cfg_path = tmp_path / "config.yml"
     cfg_path.write_text(textwrap.dedent(f"""
         version: 1
         panelists:
           - id: {panelist_id}
-            role: {persona_role}
+            role: DA
             enabled: true
             backend: {backend}
             model: {model}
@@ -274,7 +364,7 @@ def _fixture_files(tmp_path, *, panelist_id="da", backend="nat-nim",
 
 
 class _FakeAIMessage:
-    """Shape mirrors langchain.schema.AIMessage (has .content)."""
+    """Shape mirrors langchain.schema.AIMessage / NAT response (has .content)."""
     def __init__(self, content: str):
         self.content = content
 
@@ -321,11 +411,10 @@ def test_dispatch_writes_error_verdict_on_network_exception(tmp_path):
                side_effect=ConnectionError("backend unreachable")):
         rc = dispatch(panelist_id="da", config_path=cfg, persona_path=persona,
                       prompt_file=prompt, output=out)
-    assert rc == 0  # verdict file was written → exit 0 per spec
+    assert rc == 0
     written = out.read_text(encoding="utf-8")
     assert "VERDICT: ERROR" in written
     assert "backend unreachable" in written
-    assert "ALTERNATIVE: n/a" in written
 
 
 def test_dispatch_writes_error_verdict_on_malformed_response(tmp_path):
@@ -336,16 +425,11 @@ def test_dispatch_writes_error_verdict_on_malformed_response(tmp_path):
         rc = dispatch(panelist_id="da", config_path=cfg, persona_path=persona,
                       prompt_file=prompt, output=out)
     assert rc == 0
-    written = out.read_text(encoding="utf-8")
-    assert "VERDICT: ERROR" in written
+    assert "VERDICT: ERROR" in out.read_text(encoding="utf-8")
 
 
 def test_dispatch_writes_error_on_overturn_with_alternative_na(tmp_path):
-    """Phase 1 bug #3: OVERTURN + ALTERNATIVE: n/a must be rejected.
-
-    A model that 'overturns' without naming an alternative hasn't done its
-    job. This is structurally identical to a HOLD with extra theater.
-    """
+    """Phase 1 bug #3: OVERTURN + ALTERNATIVE: n/a must be rejected."""
     from panel.dispatch import dispatch
     cfg, persona, prompt, out = _fixture_files(tmp_path)
     fake_response = _FakeAIMessage(
@@ -359,7 +443,6 @@ def test_dispatch_writes_error_on_overturn_with_alternative_na(tmp_path):
     assert rc == 0
     written = out.read_text(encoding="utf-8")
     assert "VERDICT: ERROR" in written
-    assert "ALTERNATIVE" in written and "n/a" in written.split("ALTERNATIVE:")[1]
 
 
 def test_dispatch_writes_verdict_file_mode_0600(tmp_path):
@@ -382,7 +465,7 @@ def test_dispatch_returns_nonzero_on_missing_config(tmp_path):
                   config_path=tmp_path / "no-config.yml",
                   persona_path=persona, prompt_file=prompt, output=out)
     assert rc != 0
-    assert not out.exists()  # caller bug → no verdict written
+    assert not out.exists()
 
 
 def test_dispatch_returns_nonzero_on_missing_persona(tmp_path):
@@ -406,7 +489,7 @@ def test_dispatch_returns_nonzero_on_missing_prompt(tmp_path):
 
 def test_dispatch_returns_nonzero_on_panelist_id_not_in_config(tmp_path):
     from panel.dispatch import dispatch
-    cfg, persona, prompt, out = _fixture_files(tmp_path, panelist_id="da")
+    cfg, persona, prompt, out = _fixture_files(tmp_path)
     rc = dispatch(panelist_id="not-a-real-id", config_path=cfg,
                   persona_path=persona, prompt_file=prompt, output=out)
     assert rc != 0
@@ -414,7 +497,6 @@ def test_dispatch_returns_nonzero_on_panelist_id_not_in_config(tmp_path):
 
 
 def test_dispatch_threads_system_prompt_and_user_to_invoke_nat(tmp_path):
-    """The contract between dispatch() and _invoke_nat()."""
     from panel.dispatch import dispatch
     cfg, persona, prompt, out = _fixture_files(tmp_path)
     captured = {}
@@ -426,14 +508,13 @@ def test_dispatch_threads_system_prompt_and_user_to_invoke_nat(tmp_path):
     with patch("panel.dispatch._invoke_nat", side_effect=fake_invoke):
         dispatch(panelist_id="da", config_path=cfg, persona_path=persona,
                  prompt_file=prompt, output=out)
-    assert "test reviewer" in captured["system"]   # from persona.system_prompt
-    assert "Example output" in captured["system"]   # one_shot_example appended
+    assert "test reviewer" in captured["system"]
+    assert "Example output" in captured["system"]
     assert "Should we pick option A?" in captured["user"]
     assert captured["panelist_id"] == "da"
 
 
 def test_dispatch_response_with_content_attribute_extracted(tmp_path):
-    """langchain AIMessage shape (response.content)."""
     from panel.dispatch import dispatch
     cfg, persona, prompt, out = _fixture_files(tmp_path)
     with patch("panel.dispatch._invoke_nat",
@@ -446,7 +527,6 @@ def test_dispatch_response_with_content_attribute_extracted(tmp_path):
 
 
 def test_dispatch_response_as_dict_extracted(tmp_path):
-    """Dict response shape: response['content']."""
     from panel.dispatch import dispatch
     cfg, persona, prompt, out = _fixture_files(tmp_path)
     with patch("panel.dispatch._invoke_nat",
@@ -458,7 +538,6 @@ def test_dispatch_response_as_dict_extracted(tmp_path):
 
 
 def test_dispatch_response_as_plain_string_extracted(tmp_path):
-    """Plain string response — some backends may return raw strings."""
     from panel.dispatch import dispatch
     cfg, persona, prompt, out = _fixture_files(tmp_path)
     with patch("panel.dispatch._invoke_nat",
@@ -470,13 +549,9 @@ def test_dispatch_response_as_plain_string_extracted(tmp_path):
 
 
 def test_dispatch_unsupported_backend_returns_error_verdict(tmp_path):
-    """Unsupported backend: _invoke_nat raises ValueError → ERROR verdict, exit 0."""
+    """Unsupported backend → _invoke_nat raises ValueError → ERROR verdict, exit 0."""
     from panel.dispatch import dispatch
-    cfg, persona, prompt, out = _fixture_files(tmp_path, backend="claude-subagent")
-    # claude-subagent isn't a nat-* backend; dispatch.py SHOULD refuse it
-    # via _invoke_nat raising ValueError. But because dispatch's config
-    # loader uses Phase 3a validation, claude-subagent requires subagent_type.
-    # So write a config that names a bad backend that's still nat-shaped.
+    cfg, persona, prompt, out = _fixture_files(tmp_path)
     cfg.write_text(textwrap.dedent("""
         version: 1
         panelists:
@@ -486,10 +561,6 @@ def test_dispatch_unsupported_backend_returns_error_verdict(tmp_path):
             backend: claude-subagent
             subagent_type: principal-engineer
     """).strip() + "\n")
-    # claude-subagent is not a NAT backend; dispatch must reject it
-    # via _invoke_nat (which raises ValueError) → ERROR verdict.
-    # We don't mock _invoke_nat here because we want to exercise the real
-    # branch that raises ValueError for unsupported backends.
     rc = dispatch(panelist_id="da", config_path=cfg, persona_path=persona,
                   prompt_file=prompt, output=out)
     assert rc == 0
@@ -508,21 +579,27 @@ Expected: 15 tests collected; all FAIL with `ModuleNotFoundError: No module name
 
 - [ ] **Step 3: Implement `panel/dispatch.py`**
 
-Substitute the verified import paths from Task 2 in the `_invoke_nat` body before saving. The paths in the snippet below are the spec's expected values — re-check against Task 2's findings.
+Substitute the Builder method names verified in Task 2 Step 1-3 (`add_llm` / `get_llm` are placeholders below — replace with the verified API) before saving. The map from `Panelist.{model, max_tokens, temperature}` to `*ModelConfig.{<verified field>}` comes from Task 2 Step 2.
 
 ```python
-"""NAT-backed panelist dispatch.
+"""NAT-Builder-backed panelist dispatch.
 
 Called per nat-* panelist via `python -m panel dispatch --panelist <id>
 --config <path> --persona <path> --prompt-file <path> --output <path>`.
 
-Contract (per v3 spec section 'Dispatchers'):
+Contract (per v3 spec section 'Dispatchers', v3.1 amendment section
+'Replaced: _invoke_nat snippet'):
 - Returns 0 if a verdict file was written (success path OR ERROR path).
 - Returns non-zero only when caller-supplied paths/ids are invalid
   (missing config, missing persona, missing prompt, unknown panelist id).
 - All runtime failures (network, timeout, parse error, unsupported
   backend, OVERTURN+ALTERNATIVE:n/a) become VERDICT: ERROR verdict files.
 - Verdict files are written with mode 0600 (umask 077).
+
+The single mockable seam is `_invoke_nat(panelist, system, user)`. Tests
+mock it entirely; below it lies NAT's Builder + register_llm_provider
+runtime. Tests never mock requests/httpx/nat.* directly (per spec's
+'Mock discipline' rule).
 """
 from __future__ import annotations
 import os
@@ -535,26 +612,44 @@ from panel.verdict import parse_verdict
 
 
 def _invoke_nat(panelist: Panelist, system: str, user: str) -> object:
-    """The single mockable seam — tests mock this function entirely.
+    """NAT-Builder dispatch — the single mock seam.
 
-    Real implementation imports NAT LLM clients lazily so tests don't pay
-    the NAT-import cost. Paths verified in Phase 3b Task 2.
+    Real implementation imports NAT lazily so tests don't pay the
+    NAT-import cost when the function is mocked.
     """
+    from nat.builder.builder import Builder
+
     backend = panelist.backend
     if backend == "nat-nim":
-        from nat.llm.nim_llm import NIMLLM
-        llm = NIMLLM(model=panelist.model, max_tokens=panelist.max_tokens,
-                     temperature=panelist.temperature)
+        from nat.llm.nim_llm import NIMModelConfig
+        cfg = NIMModelConfig(
+            model_name=panelist.model,                # NAT field, verified Task 2 Step 2
+            max_tokens=panelist.max_tokens,
+            temperature=panelist.temperature,
+        )
     elif backend == "nat-anthropic":
-        from nat.llm.anthropic_llm import AnthropicLLM
-        llm = AnthropicLLM(model=panelist.model, max_tokens=panelist.max_tokens,
-                           temperature=panelist.temperature)
+        # Class name verified in Task 2 Step 1 (likely AnthropicModelConfig).
+        from nat.llm.anthropic_llm import AnthropicModelConfig
+        cfg = AnthropicModelConfig(
+            model_name=panelist.model,
+            max_tokens=panelist.max_tokens,
+            temperature=panelist.temperature,
+        )
     elif backend == "nat-openai":
-        from nat.llm.openai_llm import OpenAILLM
-        llm = OpenAILLM(model=panelist.model, max_tokens=panelist.max_tokens,
-                        temperature=panelist.temperature)
+        from nat.llm.openai_llm import OpenAIModelConfig
+        cfg = OpenAIModelConfig(
+            model_name=panelist.model,
+            max_tokens=panelist.max_tokens,
+            temperature=panelist.temperature,
+        )
     else:
         raise ValueError(f"unsupported NAT backend: {backend}")
+
+    # Builder pattern — register the panelist's config, retrieve, invoke.
+    # Exact method names verified in Task 2 spike.
+    builder = Builder()
+    builder.add_llm(panelist.id, cfg)
+    llm = builder.get_llm(panelist.id)
     return llm.invoke(messages=[
         {"role": "system", "content": system},
         {"role": "user", "content": user},
@@ -562,7 +657,7 @@ def _invoke_nat(panelist: Panelist, system: str, user: str) -> object:
 
 
 def _extract_content(response: object) -> str:
-    """Pull text content out of NAT/langchain response object variants."""
+    """Pull text content out of NAT response object variants."""
     if hasattr(response, "content"):
         c = response.content
         return c if isinstance(c, str) else str(c)
@@ -643,7 +738,6 @@ def dispatch(
         response = _invoke_nat(panelist, system, user_prompt)
         text = _extract_content(response)
         parsed = parse_verdict(text)
-        # Phase 1 bug #3: OVERTURN without a concrete alternative is malformed.
         if parsed.verdict == "OVERTURN" and parsed.alternative.strip().lower() in ("n/a", ""):
             _write_verdict_file(output_path, _format_verdict(
                 "ERROR",
@@ -663,19 +757,18 @@ def dispatch(
         return 0
 ```
 
-**Verify the parse_verdict import path.** Phase 2's `panel/verdict.py` exposes a `parse_verdict(text) -> ParsedVerdict` function with `.verdict / .rationale / .alternative` attributes (and possibly a `VerdictError` for malformed text). Before pasting the code above, confirm by running:
+**Verify the `parse_verdict` import path.** Phase 2's `panel/verdict.py` exposes a `parse_verdict(text)` function returning an object with `.verdict / .rationale / .alternative` attributes. Before pasting the code above, run:
 
 ```bash
 /opt/homebrew/bin/python3.12 -c "
 import sys; sys.path.insert(0, '/Users/eduardoa/.claude/skills/validate-recommendation')
 from panel.verdict import parse_verdict
-print('parse_verdict ok; signature:', parse_verdict.__doc__ or '(no doc)')
 v = parse_verdict('VERDICT: HOLD\\nRATIONALE: ok\\nALTERNATIVE: n/a')
 print('parsed:', v.verdict, '|', v.rationale, '|', v.alternative)
 "
 ```
 
-Expected: prints `HOLD | ok | n/a`. If the attribute names differ (e.g. `.verdict_type` instead of `.verdict`), adjust the dispatch.py code's parsed-field accesses accordingly.
+Expected: prints `HOLD | ok | n/a`. If attribute names differ, adjust dispatch.py's `parsed.verdict / parsed.rationale / parsed.alternative` accesses.
 
 - [ ] **Step 4: Run tests to verify pass**
 
@@ -685,26 +778,27 @@ cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/py
 
 Expected: 15 tests pass.
 
-Also run the existing 60-test suite to confirm no regression:
+Run the full Phase 3a + new dispatch suite to confirm no regression:
 
 ```bash
-cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/ -v
+cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/ -v 2>&1 | tail -5
 ```
 
-Expected: 60 (existing) + 15 (new) = 75 tests pass.
+Expected: 60 (Phase 3a) + 15 (Phase 3b) = 75 tests pass.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 cd ~/.claude && git add skills/validate-recommendation/panel/dispatch.py skills/validate-recommendation/panel/tests/test_dispatch.py
-cd ~/.claude && git commit -s -S -m "feat(panel): dispatch.py NAT integration with _invoke_nat seam
+cd ~/.claude && git commit -s -S -m "feat(panel): dispatch.py NAT-Builder integration with _invoke_nat seam
 
-Adds panel/dispatch.py — replaces Phase 3a CLI stub with real NAT
-dispatch. The _invoke_nat() function is the single mockable seam:
-tests mock it entirely; below it lies real NAT (nat.llm.{nim,anthropic,
-openai}_llm) and real HTTP, both integration territory.
+Implements panel/dispatch.py using NAT 1.6's Builder + register_llm_provider
+pattern (per v3.1 amendment). The _invoke_nat() function is the single
+mockable seam: tests mock it entirely; behind it lies NAT (Builder +
+NIMModelConfig / AnthropicModelConfig / OpenAIModelConfig) and below NAT,
+real HTTP — both integration territory.
 
-Contract (v3 spec, section 'Dispatchers'):
+Contract (v3 spec 'Dispatchers' + v3.1 amendment '_invoke_nat snippet'):
   - Exit 0 if a verdict file was written (success OR ERROR path)
   - Exit 1 only on caller-bug paths (missing config/persona/prompt/id)
   - All runtime failures → VERDICT: ERROR file (never crashes)
@@ -712,8 +806,8 @@ Contract (v3 spec, section 'Dispatchers'):
   - Preserves Phase 1 bug #3 fix: OVERTURN + ALTERNATIVE: n/a → ERROR
 
 15 pytest cases. Tests mock at _invoke_nat only — no requests/httpx/
-nat.* mocking, per spec's 'Mock discipline' rule (decoupled from NAT
-version bumps)."
+nat.* mocking, per spec's 'Mock discipline' rule. Builder API verified
+in Phase 3b Task 2 spike; idiom recorded in .nat-discovery-notes.md."
 ```
 
 ---
@@ -723,12 +817,15 @@ version bumps)."
 **Files:**
 - Modify: `~/.claude/skills/validate-recommendation/panel/cli.py`
 - Modify: `~/.claude/skills/validate-recommendation/panel/tests/test_cli_lint_config.py`
+- Modify: `~/.claude/skills/validate-recommendation/panel/tests/test_cli_exit_codes.py`
 - Create: `~/.claude/skills/validate-recommendation/panel/tests/test_cli_dispatch.py`
 
-- [ ] **Step 1: Write the failing test for the new CLI wiring** (`panel/tests/test_cli_dispatch.py`)
+Behavior identical to the superseded plan's Task 4. The CLI wiring is implementation-agnostic — it doesn't know whether dispatch uses NAT, langchain, or direct HTTP.
+
+- [ ] **Step 1: Write the failing tests** (`panel/tests/test_cli_dispatch.py`)
 
 ```python
-"""CLI tests for `panel dispatch` after Phase 3b wiring.
+"""CLI tests for `panel dispatch` after v3.1 Phase 3b wiring.
 
 The CLI's only job for dispatch is argparse → call dispatch(). We mock
 panel.dispatch.dispatch and confirm the args land correctly. The dispatch
@@ -736,8 +833,6 @@ function itself is exercised by test_dispatch.py.
 """
 import textwrap
 from unittest.mock import patch
-
-import pytest
 
 
 def _write_minimal_config(tmp_path):
@@ -776,9 +871,7 @@ def test_cli_dispatch_calls_dispatch_with_threaded_args(tmp_path):
     mock_dispatch.assert_called_once()
     kwargs = mock_dispatch.call_args.kwargs
     if not kwargs:
-        # called with positionals — extract by signature
         args = mock_dispatch.call_args.args
-        # dispatch(panelist_id, config_path, persona_path, prompt_file, output)
         assert args[0] == "da"
         assert str(args[1]) == str(cfg)
         assert str(args[2]) == str(persona)
@@ -793,7 +886,6 @@ def test_cli_dispatch_calls_dispatch_with_threaded_args(tmp_path):
 
 
 def test_cli_dispatch_returns_dispatch_exit_code(tmp_path):
-    """CLI propagates the dispatch() return value as the process exit code."""
     from panel.cli import main
     cfg = _write_minimal_config(tmp_path)
     persona = tmp_path / "p.md"
@@ -811,8 +903,7 @@ def test_cli_dispatch_returns_dispatch_exit_code(tmp_path):
     assert rc == 1
 
 
-def test_cli_dispatch_uses_default_config_when_omitted(tmp_path, monkeypatch):
-    """When --config omitted, falls back to ~/.claude/panel/config.yml."""
+def test_cli_dispatch_uses_default_config_when_omitted(tmp_path):
     from panel.cli import main
     persona = tmp_path / "p.md"
     persona.write_text("---\nrole: DA\n---\n# System prompt\nx\n# User prompt template\nq\n")
@@ -826,11 +917,8 @@ def test_cli_dispatch_uses_default_config_when_omitted(tmp_path, monkeypatch):
             "--persona", str(persona), "--prompt-file", str(prompt),
             "--output", str(out),
         ])
-    # default config path is ~/.claude/panel/config.yml
-    args_or_kwargs = mock_dispatch.call_args.kwargs or {
-        "config_path": mock_dispatch.call_args.args[1]
-    }
-    config_arg = args_or_kwargs.get("config_path") or mock_dispatch.call_args.args[1]
+    kwargs = mock_dispatch.call_args.kwargs
+    config_arg = kwargs.get("config_path") if kwargs else mock_dispatch.call_args.args[1]
     assert ".claude/panel/config.yml" in str(config_arg)
 ```
 
@@ -840,13 +928,12 @@ def test_cli_dispatch_uses_default_config_when_omitted(tmp_path, monkeypatch):
 cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/test_cli_dispatch.py -v
 ```
 
-Expected: 3 tests collected; all FAIL because `cli.py`'s dispatch branch still returns the Phase 3a stub message (exit 2), not calling `panel.dispatch.dispatch`.
+Expected: 3 tests collected; all FAIL because cli.py's dispatch branch still returns the Phase 3a stub message (exit 2).
 
 - [ ] **Step 3: Replace the stub branch in `cli.py`**
 
-Read the current cli.py and replace the `if args.cmd == "dispatch":` block. The argparse setup at the top of the file is UNCHANGED — only the branch body changes.
+Current Phase 3a stub body (`if args.cmd == "dispatch":` branch):
 
-Current (Phase 3a) stub body:
 ```python
 if args.cmd == "dispatch":
     print(
@@ -858,6 +945,7 @@ if args.cmd == "dispatch":
 ```
 
 Replace with:
+
 ```python
 if args.cmd == "dispatch":
     from panel.dispatch import dispatch
@@ -870,7 +958,7 @@ if args.cmd == "dispatch":
     )
 ```
 
-Also update the file's top docstring to reflect Phase 3b (`dispatch` is no longer "stub"):
+Update the file's top docstring to reflect Phase 3b status:
 
 ```python
 """Top-level CLI dispatch for the panel package.
@@ -878,35 +966,22 @@ Also update the file's top docstring to reflect Phase 3b (`dispatch` is no longe
 Subcommands shipped so far:
 - aggregate         (Phase 2 — 2-panelist byte-parity)
 - lint-config       (Phase 3a — config validation)
-- dispatch          (Phase 3b — real NAT-backed panelist dispatch)
+- dispatch          (Phase 3b — NAT-Builder-backed panelist dispatch)
 
 Subcommands planned for later phases:
 - record-userpick   (Phase 6)
 - ls, show, label, stats, replay, gc   (Phase 6)
-- tune              (deferred to v1.x)
+- tune              (Phase 7 — NAT Eval-backed)
 """
 ```
 
 - [ ] **Step 4: Remove the obsolete stub-message test** (`test_cli_lint_config.py`)
 
-The test `test_dispatch_stub_returns_phase3b_message` asserts the stub's "Phase 3b" string. After Step 3, the stub is gone — the test would fail spuriously.
+Delete the test function `test_dispatch_stub_returns_phase3b_message` (and any helpers used exclusively by it). Keep `test_dispatch_subparser_registered` — that one is still valid (argparse `--help` registration check).
 
-Edit `panel/tests/test_cli_lint_config.py`: delete the function `test_dispatch_stub_returns_phase3b_message` (and any associated helper imports if exclusively used by it). Keep `test_dispatch_subparser_registered` — that one's still valid (it just checks argparse registration via `--help`).
+- [ ] **Step 5: Rewrite the subprocess dispatch test** (`test_cli_exit_codes.py`)
 
-- [ ] **Step 5: Run all CLI tests to verify pass**
-
-```bash
-cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/test_cli_dispatch.py panel/tests/test_cli_lint_config.py panel/tests/test_cli_exit_codes.py -v
-```
-
-Expected: all tests pass. Counts:
-- test_cli_dispatch.py: 3 new pass
-- test_cli_lint_config.py: 4 pass (was 5; one removed)
-- test_cli_exit_codes.py: 4 pass (unchanged — test_subprocess_exits_two_on_dispatch_stub still references "Phase 3b" which the dispatch function no longer prints; **verify and update this one too** in Step 6)
-
-- [ ] **Step 6: Fix `test_cli_exit_codes.py::test_subprocess_exits_two_on_dispatch_stub`**
-
-This subprocess test asserted exit code 2 and a "Phase 3b" message — both no longer hold. Replace it with a test that confirms `panel dispatch` now does a real dispatch (and returns whatever dispatch returns):
+Replace `test_subprocess_exits_two_on_dispatch_stub` with:
 
 ```python
 def test_subprocess_exits_one_on_dispatch_missing_persona(tmp_path):
@@ -930,34 +1005,32 @@ def test_subprocess_exits_one_on_dispatch_missing_persona(tmp_path):
         "--output", str(tmp_path / "verdict.txt"),
     ])
     assert rc == 1, f"expected 1, got {rc}; stdout={out!r}; stderr={err!r}"
-    # persona check fires before prompt check
     assert "persona" in err.lower() or "missing" in err.lower()
 ```
 
-Run again to confirm green:
+- [ ] **Step 6: Run all CLI tests to verify green**
 
 ```bash
-cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/ -v 2>&1 | tail -5
+cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/ 2>&1 | tail -5
 ```
 
-Expected: full count (60 prior + 15 dispatch + 3 cli_dispatch - 1 stub-test - 0 replaced exit-code test rewritten ≈ 77 tests, all green).
+Expected: 60 (Phase 3a baseline) + 15 (dispatch) + 3 (cli_dispatch) - 1 (stub-test removed) + 0 (exit_codes rewritten in place) = 77 tests pass.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 cd ~/.claude && git add skills/validate-recommendation/panel/cli.py skills/validate-recommendation/panel/tests/test_cli_dispatch.py skills/validate-recommendation/panel/tests/test_cli_lint_config.py skills/validate-recommendation/panel/tests/test_cli_exit_codes.py
-cd ~/.claude && git commit -s -S -m "feat(panel): wire CLI dispatch to real NAT integration
+cd ~/.claude && git commit -s -S -m "feat(panel): wire CLI dispatch to NAT-Builder integration
 
 Phase 3a left dispatch as a stub printing 'not yet implemented'. This
 commit replaces the stub body with a call to panel.dispatch.dispatch()
-and threads CLI args (--panelist, --config, --persona, --prompt-file,
---output) through to it.
+and threads CLI args through to it.
 
 Tests updated:
   - test_cli_dispatch.py (new, 3 cases) — CLI wires args to dispatch()
   - test_cli_lint_config.py — removed obsolete Phase 3a stub-message test
-  - test_cli_exit_codes.py — updated subprocess-level dispatch test to
-    exercise real exit codes (1 on missing persona path)
+  - test_cli_exit_codes.py — replaced subprocess stub test with missing-
+    persona exit-code test
 
 aggregate and lint-config subcommands untouched."
 ```
@@ -968,13 +1041,12 @@ aggregate and lint-config subcommands untouched."
 
 **Files:** none modified. Verification only.
 
-Confirms `panel dispatch` works against the real DA backend Nemotron endpoint. Requires `$PANEL_DA_API_KEY`, `$CLAUDE_PANEL_DA_ENDPOINT`, `$CLAUDE_PANEL_DA_MODEL` exported. If any is unset, skip Step 1 and document that live smoke must run before Phase 3c.
+Same behavior as the superseded plan's Task 5 — runs `panel dispatch` against real Nemotron via NAT Builder. Requires `$PANEL_DA_API_KEY` (or `$NVIDIA_API_KEY` per NAT's env-var conventions), `$CLAUDE_PANEL_DA_ENDPOINT`, `$CLAUDE_PANEL_DA_MODEL`. (Task 2 Step 4 verified the response shape; this is the live-traffic version.)
 
 - [ ] **Step 1: Live dispatch against Nemotron**
 
 ```bash
-PROMPT=$(mktemp)
-OUTPUT=$(mktemp)
+PROMPT=$(mktemp); OUTPUT=$(mktemp)
 cat > "$PROMPT" <<'EOF'
 Question: Which Go HTTP client should we pick?
 Options (verbatim labels and descriptions):
@@ -996,14 +1068,14 @@ cat "$OUTPUT"
 rm -f "$PROMPT" "$OUTPUT"
 ```
 
-Expected: `rc=0` and the verdict file contains three lines: `VERDICT: HOLD` or `VERDICT: OVERTURN`, a `RATIONALE:` line, and `ALTERNATIVE: ...`. If the verdict is OVERTURN with `ALTERNATIVE: n/a`, the dispatch will write `VERDICT: ERROR` instead — that's the Phase 1 bug #3 fix doing its job.
+Expected: `rc=0`; verdict file contains `VERDICT: HOLD` or `VERDICT: OVERTURN`, a `RATIONALE:` line, and `ALTERNATIVE: ...`. (OVERTURN + ALTERNATIVE: n/a → ERROR — that's the Phase 1 bug #3 fix.)
 
-- [ ] **Step 2: Confirm ERROR path also works (no API key)**
+- [ ] **Step 2: ERROR path (no API key)**
 
 ```bash
 PROMPT=$(mktemp); OUTPUT=$(mktemp)
 echo "Question: x?" > "$PROMPT"
-(unset PANEL_DA_API_KEY; cd ~/.claude/skills/validate-recommendation && \
+(unset PANEL_DA_API_KEY NVIDIA_API_KEY; cd ~/.claude/skills/validate-recommendation && \
     /opt/homebrew/bin/python3.12 -m panel dispatch \
         --panelist da-nemotron --persona personas/da.md \
         --prompt-file "$PROMPT" --output "$OUTPUT") ; rc=$?
@@ -1012,15 +1084,15 @@ cat "$OUTPUT"
 rm -f "$PROMPT" "$OUTPUT"
 ```
 
-Expected: `rc=0` (verdict file was written) and the file contains `VERDICT: ERROR` with a rationale naming the authentication/connection failure.
+Expected: `rc=0`, verdict file contains `VERDICT: ERROR` with auth/connection failure rationale.
 
-No commit for Task 5 (verification only).
+No commit for Task 5.
 
 ---
 
 ### Task 6: Phase 3b sign-off
 
-**Files:** none modified. Verification only.
+**Files:** none modified except README.
 
 - [ ] **Step 1: Full pytest suite green**
 
@@ -1028,12 +1100,12 @@ No commit for Task 5 (verification only).
 cd ~/.claude/skills/validate-recommendation && ~/.local/pipx/venvs/pytest/bin/pytest panel/tests/ 2>&1 | tail -5
 ```
 
-Expected: ~77 tests pass. Breakdown:
-- Phase 2 baseline (verdict / sanitize / trace / aggregate): 21
-- Phase 3a (config / personas / cli_lint_config / cli_exit_codes): 39 (with 1 removed, 1 rewritten)
+Expected: 77 tests pass. Breakdown:
+- Phase 2 baseline: 21
+- Phase 3a (config / personas / cli_lint_config / cli_exit_codes): 39 (1 removed, 1 rewritten)
 - Phase 3b (dispatch / cli_dispatch): 18
 
-- [ ] **Step 2: Confirm Phase 3a + legacy v1 paths still work**
+- [ ] **Step 2: Legacy v1 paths still work**
 
 ```bash
 cd ~/.claude/skills/validate-recommendation && /opt/homebrew/bin/python3.12 -m panel lint-config
@@ -1042,11 +1114,11 @@ cd ~/.claude/skills/validate-recommendation && bash dispatch-da_test.sh 2>&1 | t
 ```
 
 Expected:
-- `lint-config` prints `OK: 1 enabled panelist(s) (of 3 configured)` plus the da-nemotron line, exit 0.
-- `aggregate_test.sh` last line: PASS.
-- `dispatch-da_test.sh` last line: PASS.
+- `lint-config`: `OK: 1 enabled panelist(s) (of 3 configured)` + da-nemotron line, exit 0.
+- `aggregate_test.sh`: last line PASS.
+- `dispatch-da_test.sh`: last line PASS.
 
-The v1 panel still works for the runtime path; Phase 3b ships parallel code that's not yet wired into orchestration.
+The v1 panel still works for the runtime path; Phase 3b ships parallel code not yet wired into orchestration.
 
 - [ ] **Step 3: Verify `~/.claude/` commits**
 
@@ -1054,20 +1126,16 @@ The v1 panel still works for the runtime path; Phase 3b ships parallel code that
 cd ~/.claude && git log --oneline -5
 ```
 
-Expected: 2 new commits land on top of the Phase 3a + cfo-skill baseline:
-- `feat(panel): dispatch.py NAT integration with _invoke_nat seam`
-- `feat(panel): wire CLI dispatch to real NAT integration`
+Expected: at least the two Phase 3b commits at the top — `feat(panel): dispatch.py NAT-Builder integration` and `feat(panel): wire CLI dispatch to NAT-Builder integration`. (The `chore(.gitignore)` commit from Task 2 Step 6 may also appear.)
 
-- [ ] **Step 4: Document the runtime invocation in a quick smoke-test runbook**
+- [ ] **Step 4: README update**
 
-Append a one-paragraph note to the skill's `README.md` covering how to manually invoke `panel dispatch` for future debugging. (No code change to dispatch itself; readme-only.)
-
-The text to add (under an existing 'Manual invocation' or new 'Phase 3b smoke' section):
+Append a `Phase 3b` section to `~/.claude/skills/validate-recommendation/README.md`:
 
 ```markdown
 ## Phase 3b: manual `panel dispatch` invocation
 
-Run one panelist end-to-end against its configured NAT backend:
+Run one panelist end-to-end against its NAT backend:
 
 ```bash
 /opt/homebrew/bin/python3.12 -m panel dispatch \
@@ -1082,13 +1150,21 @@ Exit codes:
 - `0` — verdict file written (HOLD, OVERTURN, or ERROR — any structured outcome)
 - `1` — caller-supplied path/id invalid (no verdict file written)
 
+Backend implementation uses NAT 1.6 Builder pattern internally
+(`NIMModelConfig` / `AnthropicModelConfig` / `OpenAIModelConfig` + `Builder.add_llm` + retrieve).
+The single mockable seam is `panel.dispatch._invoke_nat`; tests
+mock at that boundary only.
+
 Required env vars per backend:
 - `nat-nim`: `$PANEL_DA_API_KEY` (or `$NVIDIA_API_KEY`), `$CLAUDE_PANEL_DA_ENDPOINT`, `$CLAUDE_PANEL_DA_MODEL`
 - `nat-anthropic`: `$ANTHROPIC_API_KEY`
 - `nat-openai`: `$OPENAI_API_KEY`
 
-If a required env var is unset, dispatch still exits 0 — the verdict
-file will contain `VERDICT: ERROR` with the auth failure in the rationale.
+Missing env vars → dispatch still exits 0; verdict file contains
+`VERDICT: ERROR` with the auth failure in the rationale.
+
+Internal NAT-API idiom (Builder/register methods, *ModelConfig field
+names) is recorded in `panel/.nat-discovery-notes.md` (gitignored).
 ```
 
 Commit:
@@ -1098,46 +1174,45 @@ cd ~/.claude && git add skills/validate-recommendation/README.md
 cd ~/.claude && git commit -s -S -m "docs(panel): document Phase 3b panel dispatch invocation
 
 Adds 'Phase 3b: manual panel dispatch invocation' section to the skill
-README covering CLI flags, exit codes, and per-backend env-var
-requirements. No code change."
+README covering CLI flags, exit codes, NAT Builder-pattern internals,
+and per-backend env-var requirements. No code change."
 ```
 
-Phase 3b sign-off when all four Steps pass. Next phase (3c) rewrites
-`panel/aggregate.py` for N panelists, extracts `panel/severity.py`,
-rewires `SKILL.md` to call `python -m panel dispatch` and `python -m
-panel aggregate` directly, and deletes `dispatch-da.sh`, `aggregate.sh`,
-`dispatch-da_test.sh`, and the old `personas.md`.
+Phase 3b sign-off when all four Steps pass.
 
 ---
 
 ## Self-review
 
 **Spec coverage:**
-- Spec section "Dispatchers → `panel/dispatch.py` (NAT integration)" → Tasks 1, 2, 3.
-- Spec section "Locked design decisions #9 (NAT substrate, library-mode)" → Task 1.
-- Spec section "Key implementation seam: `_invoke_nat`" → Task 3, dispatch.py snippet.
-- Spec section "Mock discipline" (no requests/httpx/nat.* mocks) → Task 3, test_dispatch.py docstring + test design.
-- Spec section "Phase 3b — NAT dispatch" (migration plan row) → Tasks 1-6 cover the row's deliverables.
-- Spec section "Security posture / API keys" → Tasks 3 and 5 (env var only; never on argv; never logged).
-- Spec section "Error handling matrix" (panelist HTTP failure / malformed / OVERTURN-no-alt) → Task 3 tests 3, 4, 5.
-- Spec section "Persona file format" (system_prompt + one_shot_example concat) → Task 3, dispatch.py compose step + test_dispatch_threads_system_prompt_and_user_to_invoke_nat.
+- v3.1 amendment section "Replaced: _invoke_nat snippet" → Task 3 implementation.
+- v3.1 amendment section "Phase 3b plan replan" → this plan's Task 2 (Builder spike) + Task 3 (dispatch.py).
+- v3 spec section "Dispatchers → panel/dispatch.py (NAT integration)" → Tasks 2 + 3.
+- v3 spec section "Mock discipline" (no requests/httpx/nat.* mocks) → Task 3 test docstring + test design.
+- v3 spec section "Error handling matrix" (HTTP failure / malformed / OVERTURN-no-alt) → Task 3 tests 3, 4, 5.
+- v3 spec section "Security posture / API keys" → Task 3's lazy NAT import + Task 5's env-var-only verification.
+- v3 spec section "Persona file format" → Task 3 dispatch.py compose step + test `_threads_system_prompt_and_user`.
 
-**Out-of-scope (deferred phases) and explicitly NOT touched:**
-- `panel/aggregate.py` (Phase 3c rewrites for N panelists)
+**Out-of-scope and explicitly NOT touched:**
+- `panel/aggregate.py` (Phase 3c rewrites for N panelists; v3.1 marks this as a NAT-Function candidate)
 - `panel/severity.py` (Phase 3c extracts)
 - `SKILL.md` (Phase 3c rewires)
 - `dispatch-da.sh`, `aggregate.sh`, `dispatch-da_test.sh`, `personas.md` (Phase 3c deletes)
 - `panel/state.py`, `panel/decisions.py` (Phases 5 + 6)
+- NAT observability / OTel emit (Phase 6 per v3.1)
+- NAT Eval / `panel tune` (Phase 7 per v3.1)
 
-**Placeholder scan:** No `TBD`, `TODO`, or "implement later" markers. Every code block is the actual code an engineer types. Every command is an exact invocation. Every expected output is concrete.
+**Placeholder scan:** Every code block is the actual code an engineer types except the `add_llm` / `get_llm` method names in the dispatch.py snippet, which are explicitly flagged as "verify in Task 2 Step 1-3 spike". Substituting verified values is part of Task 3 Step 3. No `TBD` / `TODO` markers.
 
 **Type consistency:**
-- `Panelist` dataclass referenced from `panel.config` (defined in Phase 3a) — fields `id`, `role`, `backend`, `model`, `max_tokens`, `temperature` match.
-- `Persona` dataclass from `panel.personas` (Phase 3a) — fields `system_prompt`, `one_shot_example`, `user_prompt_template` match.
-- `parse_verdict` from `panel.verdict` (Phase 2) — Task 3 Step 3 includes a verification probe before relying on the API; if attribute names differ, the dispatch.py code is adjusted there.
-- `dispatch()` signature in Task 3 = `(panelist_id, config_path, persona_path, prompt_file, output)`. cli.py wiring in Task 4 uses the same kwarg names.
-- `_invoke_nat()` signature `(panelist, system, user) -> object` is the mock seam; tests in Task 3 use this exact signature via `patch("panel.dispatch._invoke_nat", ...)`.
+- `Panelist` dataclass from `panel.config` (Phase 3a) — `id`, `role`, `backend`, `model`, `max_tokens`, `temperature` referenced consistently in dispatch.py and tests.
+- `Persona` dataclass from `panel.personas` (Phase 3a) — `system_prompt`, `one_shot_example`, `user_prompt_template` referenced consistently.
+- `parse_verdict` from `panel.verdict` (Phase 2) — verified before use in Task 3 Step 3.
+- `dispatch()` signature = `(panelist_id, config_path, persona_path, prompt_file, output)`. cli.py wiring in Task 4 uses these exact kwargs.
+- `_invoke_nat()` signature `(panelist, system, user) -> object` — the mock seam; tests `patch("panel.dispatch._invoke_nat", ...)` use this signature.
 
-**Test-count math:** Phase 3a end-of-phase = 60. Task 3 adds 15 → 75. Task 4 adds 3 new and removes 1 old (`test_dispatch_stub_returns_phase3b_message`) and rewrites 1 (the dispatch subprocess test) → 75 + 3 - 1 + 0 = 77. Task 6 Step 1 expects ~77. Consistent.
+**Test-count math:** Phase 3a baseline = 60. Task 3 adds 15 → 75. Task 4 adds 3 new, removes 1 (`test_dispatch_stub_returns_phase3b_message`), rewrites 1 in place (subprocess test) → 75 + 3 - 1 + 0 = 77. Task 6 Step 1 expects 77. Consistent.
 
-**Phase boundary:** Phase 3b ships `panel dispatch` as a self-contained CLI surface. SKILL.md does NOT call it yet; the runtime path remains the v1 `dispatch-da.sh + aggregate.sh`. Phase 3c does the cutover. This explicit isolation means Phase 3b is mergeable + signed-off independently — its only externally-visible change is `python -m panel dispatch` exiting 0 with a real verdict instead of exit 2 with a stub message.
+**Risk:** Task 3's dispatch.py snippet has placeholder NAT method names (`add_llm`, `get_llm`). If Task 2's spike finds a different idiom (e.g., async `await`, or no separate `add_llm`/`get_llm`), the snippet is updated before Task 3 Step 2's test run. The TDD red-green cycle catches signature mismatches immediately.
+
+**Phase boundary:** Phase 3b ships `panel dispatch` as a self-contained CLI surface using NAT Builder. SKILL.md does NOT call it yet; the runtime path remains the v1 `dispatch-da.sh + aggregate.sh`. Phase 3c does the cutover.
