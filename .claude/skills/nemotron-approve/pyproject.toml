@@ -1,0 +1,17 @@
+[project]
+name = "nemotron-approve"
+version = "0.1.0"
+description = "PreToolUse classifier — auto-approve non-destructive Claude Code tool calls via regex + Nemotron LLM"
+requires-python = ">=3.12"
+dependencies = [
+    "nvidia-nat>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "freezegun>=1.5",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
