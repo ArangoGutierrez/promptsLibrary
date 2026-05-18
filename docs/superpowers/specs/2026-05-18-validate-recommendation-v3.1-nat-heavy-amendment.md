@@ -39,53 +39,60 @@ Decisions #1-#8 and #10-#14 are **unaffected**. The panel-to-user contract, seve
 
 ## Replaced: `_invoke_nat` snippet (v3 section "Dispatchers", lines 305-328)
 
-v3's snippet instantiated NAT LLM classes directly (`NIMLLM(...)`). That class does not exist in NAT 1.6. The snippet is replaced by the NAT Builder + `register_llm_provider` pattern:
+v3's snippet instantiated NAT LLM classes directly (`NIMLLM(...)`). That class does not exist in NAT 1.6.
+
+A Phase 3b Task 2 spike on 2026-05-18 attempted the NAT `WorkflowBuilder` + `nvidia-nat-langchain` + `langgraph` dispatch path. It hit three layers of NAT-design friction in succession:
+1. `Builder` is abstract; `WorkflowBuilder` is the concrete entry point with all methods `async`.
+2. `WorkflowBuilder.get_llm(name, wrapper_type)` requires a registered framework adapter; `nat-anthropic` is missing in 1.6.0 entirely.
+3. `nvidia-nat-langchain.register` requires `nvidia-nat-opentelemetry`, `openevals`, and `nat.plugins.eval` to be installed AND the register module imported explicitly before `WorkflowBuilder` knows about langchain wrappers.
+
+The pattern of escalating install + ceremony is a smell that NAT 1.6 is not designed for "make one LLM call". NAT 1.6 is a workflow framework; its dispatch primitives serve Workflows orchestrated by NAT itself. For the per-panelist seam choice, where SKILL.md drives the orchestration and NAT runs in `python -m panel dispatch`, the appropriate LLM client is the langchain provider directly.
+
+The snippet is therefore replaced with langchain providers (`ChatNVIDIA`, `ChatAnthropic`, `ChatOpenAI`) — synchronous, no Builder ceremony, no async bridging:
 
 ```python
 def _invoke_nat(panelist: Panelist, system: str, user: str) -> object:
     """The single mockable seam — tests mock this function entirely.
 
-    Implements LLM dispatch via NAT's Builder + register_llm_provider pattern.
-    The exact 10-LOC idiom is verified in Phase 3b plan Task 2 (NAT spike)
-    and documented in skills/validate-recommendation/panel/.nat-discovery-notes.md.
+    Dispatch uses langchain provider classes directly. NAT's Builder /
+    WorkflowBuilder primitives are not used here: they require async,
+    framework-adapter registration, and a deeper transitive-dep tree
+    than the per-panelist seam justifies. NAT lives in later phases
+    (Phase 6 observability, Phase 7 evaluation) where its design fits.
     """
-    from nat.builder.builder import Builder
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
     if panelist.backend == "nat-nim":
-        from nat.llm.nim_llm import NIMModelConfig
-        cfg = NIMModelConfig(
-            model_name=panelist.model,
-            max_tokens=panelist.max_tokens,
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+        llm = ChatNVIDIA(
+            model=panelist.model,
             temperature=panelist.temperature,
+            max_completion_tokens=panelist.max_tokens,
         )
     elif panelist.backend == "nat-anthropic":
-        from nat.llm.anthropic_llm import AnthropicModelConfig   # name verified in spike
-        cfg = AnthropicModelConfig(
-            model_name=panelist.model,
-            max_tokens=panelist.max_tokens,
+        from langchain_anthropic import ChatAnthropic
+        llm = ChatAnthropic(
+            model=panelist.model,
             temperature=panelist.temperature,
+            max_tokens=panelist.max_tokens,
         )
     elif panelist.backend == "nat-openai":
-        from nat.llm.openai_llm import OpenAIModelConfig          # name verified in spike
-        cfg = OpenAIModelConfig(
-            model_name=panelist.model,
-            max_tokens=panelist.max_tokens,
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(
+            model=panelist.model,
             temperature=panelist.temperature,
+            max_completion_tokens=panelist.max_tokens,
         )
     else:
         raise ValueError(f"unsupported NAT backend: {panelist.backend}")
-
-    # The exact retrieve-and-invoke idiom (Builder().add_llm(cfg) → invoke) is
-    # spiked in Phase 3b plan Task 2; the verified 10-LOC pattern goes here.
-    builder = Builder()
-    builder.add_llm(panelist.id, cfg)
-    llm = builder.get_llm(panelist.id)   # exact method name verified in spike
-    return llm.invoke(messages=[
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
-    ])
+    return llm.invoke(messages)
 ```
 
-**The method names (`add_llm`, `get_llm`, `invoke`) are placeholders** until Phase 3b Task 2 verifies the real Builder API. The amendment lists the SHAPE; the plan task pins down the IDIOM.
+The langchain provider classes expose `.invoke(messages)` synchronously and return a langchain `AIMessage` (has `.content`). Auth comes from per-provider env vars (`NVIDIA_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) — the same env-var-only posture v3's security section already specifies.
+
+**Naming note:** the function name `_invoke_nat` is kept for continuity with the seam-mock contract in v3. The "nat" suffix is historical; the function dispatches via langchain. Renaming (`_invoke_llm`) is a v3.2-or-later cleanup, not Phase 3b scope.
 
 Tests at the `_invoke_nat` seam are unchanged. Mocks return any object shape with `.content` / dict / string; `_extract_content()` from v3 dispatch design handles all three. Test count is unchanged from the original Phase 3b plan (15 dispatch tests).
 
@@ -95,8 +102,8 @@ Four rows in v3's "Migration plan" table gain explicit NAT-primitive notes:
 
 | Phase | Goal (revised) | NAT primitives used |
 |---|---|---|
-| 3b — NAT dispatch | `panel/dispatch.py` uses NAT Builder + `register_llm_provider` for `nat-*` backends. `_invoke_nat` is the mock seam; behind it sits NAT's runtime. | Builder, register_llm_provider, NIMModelConfig / AnthropicModelConfig / OpenAIModelConfig |
-| 3c — N-panelist aggregator + severity | `panel/aggregate.py` and `panel/severity.py` may be implemented as NAT Functions (registered via `Builder.add_function`) for composability with later NAT Workflows; decision made during 3c brainstorm. JSON directive contract unchanged. | NAT Function (decided in 3c) |
+| 3b — Panelist dispatch | `panel/dispatch.py` uses langchain provider classes (`ChatNVIDIA` / `ChatAnthropic` / `ChatOpenAI`) for `nat-*` backends. `_invoke_nat` is the mock seam; behind it sits langchain → HTTP. NAT 1.6's `WorkflowBuilder` was attempted in the Task 2 spike and rejected as wrong-tool-for-job (async + plugin registration + transitive-dep tree don't justify mediating one HTTP call). | None (NAT installed but unused in this phase) |
+| 3c — N-panelist aggregator + severity | `panel/aggregate.py` and `panel/severity.py` may be implemented as NAT Functions (registered via `WorkflowBuilder.add_function`) for composability with later NAT Workflows; decision made during 3c brainstorm. JSON directive contract unchanged. | NAT Function (decided in 3c) |
 | 6 — Telemetry + labeling CLI | `panel/decisions.py` emits via NAT's observability layer (canonical OpenTelemetry spans) → JSONL appender + optional remote OTel collector. Removes the custom-JSONL append code path; NAT's observability is the single emit. | NAT observability, OpenTelemetry instrumentation |
 | 7 — `panel tune` | `panel tune --candidate-personas-dir` runs candidate personas against the labeled `decisions.jsonl` corpus using NAT's Eval framework. Brings 7 forward from "deferred v1.x" — NAT makes it cheap enough to ship. | `nat.experimental.test_time_compute.scoring.*` (or replacement; pinned during 7 brainstorm) |
 
@@ -108,7 +115,7 @@ This section is informational. It documents the IDIOMS the panel will reuse acro
 
 ### Pattern A — LLM dispatch (Phase 3b)
 
-One `_invoke_nat` call per panelist. Builder is created per-dispatch (no shared global state), config registered, LLM retrieved + invoked. Tests mock the whole function.
+One `_invoke_nat` call per panelist. Uses a langchain provider class (`ChatNVIDIA` / `ChatAnthropic` / `ChatOpenAI`) per `nat-*` backend, constructed per-dispatch (no shared state), `.invoke(messages)` called synchronously. Tests mock the whole function. NAT is NOT used in this pattern — the NAT-heavy posture begins at Pattern B and after.
 
 ### Pattern B — Inner Function for pure logic (Phase 3c)
 

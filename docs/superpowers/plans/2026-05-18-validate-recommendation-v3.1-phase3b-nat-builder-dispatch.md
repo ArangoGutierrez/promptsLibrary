@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship `panel/dispatch.py` — the NAT-Builder-backed dispatcher that replaces Phase 3a's CLI stub. Each `nat-*` panelist invokes `python -m panel dispatch`, which internally uses NAT 1.6's `NIMModelConfig` / `AnthropicModelConfig` / `OpenAIModelConfig` + `Builder` + `register_llm_provider` pattern. The single mockable seam is `_invoke_nat(panelist, system, user) -> object`. All runtime failures land as `VERDICT: ERROR` verdict files; the file is always written (exit 0). SKILL.md still uses v1's `dispatch-da.sh` at runtime; Phase 3c does the cutover.
+**Goal:** Ship `panel/dispatch.py` — the panelist dispatcher that replaces Phase 3a's CLI stub. Each `nat-*` panelist invokes `python -m panel dispatch`, which internally calls a langchain provider (`ChatNVIDIA` / `ChatAnthropic` / `ChatOpenAI`) per backend. The single mockable seam is `_invoke_nat(panelist, system, user) -> object`. All runtime failures land as `VERDICT: ERROR` verdict files; the file is always written (exit 0). SKILL.md still uses v1's `dispatch-da.sh` at runtime; Phase 3c does the cutover.
 
-**Architecture:** One new Python module (`panel/dispatch.py`) with one mockable seam. The implementation uses NAT's Builder pattern: per-dispatch, construct a `Builder`, register the panelist's `*ModelConfig`, retrieve the configured LLM, invoke with `[{role, content}, ...]` messages. Tests mock at `_invoke_nat` only; below that lies NAT (and below NAT, real HTTP). Test count, error-handling matrix, and CLI surface match the superseded v3 plan; only the body of `_invoke_nat` changes.
+**Architecture:** One new Python module (`panel/dispatch.py`) with one mockable seam. Per-dispatch, instantiate a langchain provider class with the panelist's `model` / `max_tokens` / `temperature`, invoke `.invoke(messages=[...])` synchronously, parse the response. NAT 1.6's `WorkflowBuilder` was attempted in spike (see v3.1 amendment) and rejected as wrong-tool-for-one-call: required async + plugin registration + deep transitive-dep install. NAT lives in Phase 6 (observability) and Phase 7 (eval) where its design fits. Tests mock at `_invoke_nat` only; below it lies langchain → HTTP.
 
-**Tech Stack:** Python 3.12 (`/opt/homebrew/bin/python3.12`), `nvidia-nat` (==1.6.0, installed via `pip install --user --break-system-packages`). Tests run via `~/.local/pipx/venvs/pytest/bin/pytest` direct path — NOT `pipx run pytest` (creates ephemeral venvs without injects).
+**Tech Stack:** Python 3.12 (`/opt/homebrew/bin/python3.12`); `langchain-core` + `langchain-nvidia-ai-endpoints` + `langchain-anthropic` + `langchain-openai` (user-site installs). `nvidia-nat==1.6.0` is installed but UNUSED in this phase. Tests run via `~/.local/pipx/venvs/pytest/bin/pytest` direct path — NOT `pipx run pytest` (creates ephemeral venvs without injects).
 
 **Spec:** Primary — `docs/superpowers/specs/2026-05-18-validate-recommendation-v3.1-nat-heavy-amendment.md`. Underlying — `docs/superpowers/specs/2026-05-15-validate-recommendation-v3-nat-native-design.md` (sections not amended by v3.1 still apply).
 
@@ -14,7 +14,8 @@
 
 **Pre-flight context:**
 - Phase 3a shipped on `~/.claude/` main: `panel/{config,personas,cli}.py` + `personas/{da,pe,qa}.md` + `~/.claude/panel/config.yml`. 60 tests pass via `~/.local/pipx/venvs/pytest/bin/pytest`.
-- `nvidia-nat==1.6.0` already installed in `/opt/homebrew/bin/python3.12` user-site (Phase 3b Task 1 already done in the superseded plan execution). `import nat` works; `nat.llm.nim_llm.NIMModelConfig` is the entry point.
+- `nvidia-nat==1.6.0` already installed in `/opt/homebrew/bin/python3.12` user-site (Phase 3b Task 1 already done in the superseded plan execution). NAT is INSTALLED but UNUSED in this phase per the v3.1 amendment update — its WorkflowBuilder pattern was attempted and abandoned for dispatch use case.
+- `langchain-core`, `langchain-nvidia-ai-endpoints`, `langgraph` are already installed (from spike work earlier 2026-05-18). `langchain-anthropic` and `langchain-openai` need installing in Task 1.
 - `~/.claude/` git repo enforces signed commits (`-s` DCO sign-off + `-S` GPG signature).
 - Legacy v1 `dispatch-da.sh + aggregate_test.sh + dispatch-da_test.sh` all pass; remain the runtime path until Phase 3c.
 - The `panel/personas.py` loader composes a system prompt via `persona.system_prompt + persona.one_shot_example` and a user prompt body from `--prompt-file`. dispatch.py reuses this composition.
@@ -41,36 +42,55 @@ Untouched (deferred): `dispatch-da.sh`, `dispatch-da_test.sh`, `aggregate.sh`, `
 
 ## Tasks
 
-### Task 1: Pre-flight — confirm `nvidia-nat` install state
+### Task 1: Install langchain providers; confirm panel imports
 
-**Files:** none modified. Environment verification only.
+**Files:** none modified. Environment setup + verification.
 
-The superseded v3 plan's Task 1 already ran (`nvidia-nat==1.6.0` installed via `pip install --user --break-system-packages`). This task confirms the install survives.
+Three langchain providers are needed (one per `nat-*` backend). `langchain-core` and `langchain-nvidia-ai-endpoints` are already installed from earlier spike work; `langchain-anthropic` and `langchain-openai` need installing.
 
-- [ ] **Step 1: Verify NAT imports**
+- [ ] **Step 1: Verify already-installed providers**
 
 ```bash
 /opt/homebrew/bin/python3.12 -c "
-import nat
-import nat.builder.builder
-import nat.llm.nim_llm
-print('nat package: namespace, __file__ =', nat.__file__)
-print('Builder class:', nat.builder.builder.Builder)
-print('NIMModelConfig:', nat.llm.nim_llm.NIMModelConfig)
+from langchain_core.messages import HumanMessage
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
+import inspect
+print('ChatNVIDIA init args:', list(inspect.signature(ChatNVIDIA.__init__).parameters.keys())[:12])
+print('has .invoke:', hasattr(ChatNVIDIA, 'invoke'))
 "
 ```
 
-Expected: prints `nat package: namespace, __file__ = None`, the `Builder` and `NIMModelConfig` class references resolve. No exception.
+Expected: lists `ChatNVIDIA` init params (includes `model`, `temperature`, `max_completion_tokens`, `api_key`), `has .invoke: True`.
 
-If `import nat` fails: run the superseded plan's Task 1 (reproduced below) to install:
+- [ ] **Step 2: Install langchain-anthropic + langchain-openai**
 
 ```bash
-/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages 'nvidia-nat==1.6.0' 'jmespath>=1.0.0'
+/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages 'langchain-anthropic' 'langchain-openai' 2>&1 | tail -5
 ```
 
-(Exact pin + jmespath lower bound to bypass pip 26's resolution-too-deep error on the open range.)
+Expected: `Successfully installed langchain-anthropic-... langchain-openai-...`.
 
-- [ ] **Step 2: Verify pytest venv can import the panel package**
+If pip hits resolution-too-deep again, install one at a time with a `jmespath>=1.0.0` constraint:
+
+```bash
+/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages 'langchain-anthropic' 'jmespath>=1.0.0'
+/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages 'langchain-openai' 'jmespath>=1.0.0'
+```
+
+- [ ] **Step 3: Verify all three providers importable**
+
+```bash
+/opt/homebrew/bin/python3.12 -c "
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
+print('all three providers OK')
+"
+```
+
+Expected: prints `all three providers OK`, exit 0.
+
+- [ ] **Step 4: Verify pytest venv can import the panel package**
 
 ```bash
 cd ~/.claude/skills/validate-recommendation && \
@@ -82,9 +102,9 @@ print('panel.config + panel.personas import OK')
 "
 ```
 
-Expected: prints OK. (NAT imports in `_invoke_nat` are lazy and won't run during this check.)
+Expected: prints OK. (langchain imports in `_invoke_nat` are lazy; the pytest venv only needs to import langchain when running the un-mocked smoke test in Task 5, not unit tests.)
 
-No commit (verification only).
+No commit for Task 1 (environment only).
 
 ---
 
