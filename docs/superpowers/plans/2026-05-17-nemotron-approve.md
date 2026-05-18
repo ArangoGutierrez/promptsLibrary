@@ -50,14 +50,14 @@
 - Create: `~/.claude/skills/nemotron-approve/tests/__init__.py`
 - Create: `~/.claude/skills/nemotron-approve/README.md`
 
-- [ ] **Step 1.1: Create directory layout**
+- [x] **Step 1.1: Create directory layout**
 
 ```bash
 mkdir -p ~/.claude/skills/nemotron-approve/nemotron_approve
 mkdir -p ~/.claude/skills/nemotron-approve/tests
 ```
 
-- [ ] **Step 1.2: Write `pyproject.toml`**
+- [x] **Step 1.2: Write `pyproject.toml`**
 
 ```toml
 [project]
@@ -79,14 +79,14 @@ dev = [
 testpaths = ["tests"]
 ```
 
-- [ ] **Step 1.3: Write `__init__.py` (both)**
+- [x] **Step 1.3: Write `__init__.py` (both)**
 
 ```bash
 echo '"""nemotron-approve — PreToolUse classifier for Claude Code."""' > ~/.claude/skills/nemotron-approve/nemotron_approve/__init__.py
 echo '' > ~/.claude/skills/nemotron-approve/tests/__init__.py
 ```
 
-- [ ] **Step 1.4: Write skeleton `README.md`**
+- [x] **Step 1.4: Write skeleton `README.md`**
 
 ```markdown
 # nemotron-approve
@@ -120,7 +120,7 @@ Defense-in-depth: Lane B re-applies after Lane C allow.
 Spec: `docs/superpowers/specs/2026-05-17-nemotron-approve-design.md` in promptsLibrary.
 ```
 
-- [ ] **Step 1.5: Commit skeleton**
+- [x] **Step 1.5: Commit skeleton**
 
 ```bash
 cd ~/.claude
