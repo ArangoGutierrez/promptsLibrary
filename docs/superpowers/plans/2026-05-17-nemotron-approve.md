@@ -140,7 +140,7 @@ TDD-style."
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/verdict.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_verdict.py`
 
-- [ ] **Step 2.1: Write failing test**
+- [x] **Step 2.1: Write failing test**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_verdict.py`:
 
@@ -197,7 +197,7 @@ def test_verdict_to_hook_output_ask():
     assert "C:mutating:prod cluster" in out["hookSpecificOutput"]["permissionDecisionReason"]
 ```
 
-- [ ] **Step 2.2: Run test, expect FAIL**
+- [x] **Step 2.2: Run test, expect FAIL**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -206,7 +206,7 @@ python3.12 -m pytest tests/test_verdict.py -v
 
 Expected: `ImportError: cannot import name 'Verdict' from 'nemotron_approve.verdict'`
 
-- [ ] **Step 2.3: Write minimal implementation**
+- [x] **Step 2.3: Write minimal implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/verdict.py`:
 
@@ -259,7 +259,7 @@ class Verdict:
         }
 ```
 
-- [ ] **Step 2.4: Run test, expect PASS**
+- [x] **Step 2.4: Run test, expect PASS**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -268,7 +268,7 @@ python3.12 -m pytest tests/test_verdict.py -v
 
 Expected: 6 passed.
 
-- [ ] **Step 2.5: Commit**
+- [x] **Step 2.5: Commit**
 
 ```bash
 cd ~/.claude
