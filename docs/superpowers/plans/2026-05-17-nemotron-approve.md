@@ -873,7 +873,7 @@ chained commands (echo foo; rm -rf /) trigger correctly."
 - Modify: `~/.claude/skills/nemotron-approve/nemotron_approve/patterns.py` (tune as needed)
 - Create: `~/.claude/skills/nemotron-approve/tests/test_patterns_adversarial.py`
 
-- [ ] **Step 6.1: Write adversarial failing tests**
+- [x] **Step 6.1: Write adversarial failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_patterns_adversarial.py`:
 
@@ -918,7 +918,7 @@ def test_quote_spliced_rm():
     assert lane_b_match("r''m -rf /") is not None
 ```
 
-- [ ] **Step 6.2: Run adversarial tests, observe results**
+- [x] **Step 6.2: Run adversarial tests, observe results**
 
 ```bash
 python3.12 -m pytest tests/test_patterns_adversarial.py -v
@@ -931,7 +931,7 @@ Common tuning iterations expected:
 - Trailing comment — `\b` boundaries shouldn't be affected by comments. Verify.
 - Comment-only commands — should still NOT match (no actual destructive verb).
 
-- [ ] **Step 6.3: Commit (with any tunings)**
+- [x] **Step 6.3: Commit (with any tunings)**
 
 ```bash
 cd ~/.claude
