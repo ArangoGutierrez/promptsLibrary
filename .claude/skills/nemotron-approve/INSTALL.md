@@ -10,8 +10,9 @@ at the shim.
 - Python 3.12 on `$PATH` (or whatever your shell finds via `python3.12` →
   `python3` fallback in the shim).
 - `jq` (already a Claude Code convention).
-- For Phase 2 only: `nvidia-nat` installed in the Python environment, plus
-  `NEMOTRON_APPROVE_API_KEY`, `_ENDPOINT`, `_MODEL` exported.
+- For Phase 2: a dedicated venv at `~/.claude/skills/nemotron-approve/.venv`
+  with `httpx` installed (Homebrew Python 3.12 blocks system-wide `pip install`
+  per PEP 668). The shim picks this venv up via `NEMOTRON_APPROVE_PYTHON`.
 
 ## Phase 1 — shadow mode (no auto-approval, just trace data)
 
@@ -117,20 +118,46 @@ export NEMOTRON_APPROVE_MODEL=nvidia/nvidia/nemotron-3-super-v3
 
 Reload.
 
-### 2. Install nvidia-nat in the Python environment
+### 2. Create the venv and install httpx
 
-The shim runs `python3.12 -m nemotron_approve`. That interpreter needs
-`nvidia-nat` importable:
+The shim runs `python -m nemotron_approve` from a Python that has `httpx`
+importable. Use a dedicated venv next to the skill so the shim can find it
+deterministically (Homebrew Python 3.12 blocks system-wide pip per PEP 668):
 
 ```bash
-python3.12 -m pip install --user nvidia-nat
+python3.12 -m venv ~/.claude/skills/nemotron-approve/.venv
+~/.claude/skills/nemotron-approve/.venv/bin/python -m pip install --upgrade pip
+~/.claude/skills/nemotron-approve/.venv/bin/python -m pip install httpx
 ```
 
-(Or whatever install path matches your Python install. The classifier
-catches import failures and degrades to Lane A/B silently, so a broken
-install just costs you Lane C, not the whole hook.)
+Then point the shim at the venv via an env var in `~/.zshrc`:
 
-### 3. Re-run the 25-command probe
+```bash
+export NEMOTRON_APPROVE_PYTHON="$HOME/.claude/skills/nemotron-approve/.venv/bin/python"
+```
+
+**Note on nvidia-nat**: the original design called for `nvidia-nat`, but
+the installed `nat` v1.6 is an async-workflow framework with no thin
+synchronous LLM-call client. `llm_client.py` instead does a direct
+OpenAI-style POST to the chat-completions endpoint via httpx — same pattern
+as `~/.claude/skills/validate-recommendation/dispatch-da.sh`. nvidia-nat
+remains an optional dependency for future Builder-pattern integrations.
+
+### 3. Tune the timeout if needed
+
+Reasoning models (e.g., `nemotron-3-super-v3`) can have cold-start latency
+in the 10-15s range. The design's default `NEMOTRON_APPROVE_TIMEOUT=10`
+will fail-safe to `ask` on those calls — correct per spec but a small
+papercut. If you see frequent `lane=C rationale=timeout` entries:
+
+```bash
+# In ~/.zshrc, bump the budget
+export NEMOTRON_APPROVE_TIMEOUT=30
+```
+
+Or pick a smaller/faster model in `NEMOTRON_APPROVE_MODEL`.
+
+### 4. Re-run the 25-command probe
 
 Run the same Bash commands from `~/.claude/hooks/probe-approve.sh`'s
 verification battery (kubectl/gh/git read commands). All should resolve in

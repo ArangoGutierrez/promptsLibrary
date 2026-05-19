@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "PreToolUse classifier — auto-approve non-destructive Claude Code tool calls via regex + Nemotron LLM"
 requires-python = ">=3.12"
 dependencies = [
-    "nvidia-nat>=0.1.0",
+    "httpx>=0.27",
 ]
 
 [project.optional-dependencies]

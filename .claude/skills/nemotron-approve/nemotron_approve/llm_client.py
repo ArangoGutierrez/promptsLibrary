@@ -1,12 +1,15 @@
-"""Nemotron classifier via nvidia-nat LLM client.
+"""Nemotron classifier via a direct OpenAI-style chat-completions POST.
 
-KNOWN: The exact NAT API surface evolves fast. The import path and class
-name below (`NIMClient`) is a placeholder; verify at deploy time against
-the installed nvidia-nat version and update.
+Original plan called for the nvidia-nat (NeMo Agent Toolkit) LLM client,
+but the installed `nat` package (v1.6) is an async workflow framework with
+a Builder pattern — there is no thin synchronous `NIMClient.chat(messages=...)`.
+Building a full Workflow per hook invocation would be heavy ceremony.
 
-The seam for testing is `self._client.chat(messages=...)`. As long as that
-interface stays stable, the classifier's behavior is mockable. If NAT's
-API changes, only this file (and its tests) need updating.
+Instead we POST directly to the chat-completions endpoint via httpx, the same
+pattern used by ~/.claude/skills/validate-recommendation/dispatch-da.sh
+(which posts via curl). The mock seam stays identical: tests still stub
+`self._client.chat(messages=..., timeout=..., max_tokens=..., temperature=...)`
+and the classifier's behavior is unaffected.
 """
 from __future__ import annotations
 import json
@@ -14,6 +17,47 @@ import re
 import urllib.error
 
 from .verdict import Verdict, Decision, Category, Lane
+
+
+class _HttpxChatClient:
+    """Direct httpx POST to an OpenAI-style /v1/chat/completions endpoint."""
+
+    def __init__(self, endpoint: str, api_key: str, model: str):
+        self._endpoint = endpoint
+        self._api_key = api_key
+        self._model = model
+
+    def chat(self, *, messages, timeout, max_tokens, temperature) -> str:
+        import httpx
+        try:
+            r = httpx.post(
+                self._endpoint,
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self._model,
+                    "messages": messages,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                },
+                timeout=timeout,
+            )
+        except httpx.TimeoutException as e:
+            # Translate so the classifier's existing TimeoutError except-path catches it
+            raise TimeoutError(str(e)) from e
+
+        if r.status_code >= 400:
+            raise urllib.error.HTTPError(
+                self._endpoint, r.status_code, r.reason_phrase, dict(r.headers), None)
+
+        body = r.json()
+        choices = body.get("choices") or []
+        if not choices:
+            return ""
+        msg = choices[0].get("message") or {}
+        return msg.get("content") or ""
 
 
 SYSTEM_PROMPT = """\
@@ -41,9 +85,7 @@ Examples:
 class NemotronClassifier:
     def __init__(self, *, endpoint: str, api_key: str, model: str,
                  timeout: int, max_tokens: int):
-        # VERIFY at deploy time — exact import path depends on nvidia-nat version
-        from aiq.llm import NIMClient  # type: ignore
-        self._client = NIMClient(endpoint=endpoint, api_key=api_key, model=model)
+        self._client = _HttpxChatClient(endpoint, api_key, model)
         self._timeout = timeout
         self._max_tokens = max_tokens
 
