@@ -288,7 +288,7 @@ serializes to the Claude Code PreToolUse hookSpecificOutput JSON shape."
 - Create: `~/.claude/skills/nemotron-approve/tests/test_sanitize.py`
 - Reference: `~/.claude/skills/validate-recommendation/panel/sanitize.py` (reuse patterns from existing module)
 
-- [ ] **Step 3.1: Write failing test**
+- [x] **Step 3.1: Write failing test**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_sanitize.py`:
 
@@ -341,7 +341,7 @@ def test_sanitize_handles_multiline():
     assert "XYZ" not in out
 ```
 
-- [ ] **Step 3.2: Run test, expect FAIL**
+- [x] **Step 3.2: Run test, expect FAIL**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -350,7 +350,7 @@ python3.12 -m pytest tests/test_sanitize.py -v
 
 Expected: `ImportError: cannot import name 'sanitize'`.
 
-- [ ] **Step 3.3: Write minimal implementation**
+- [x] **Step 3.3: Write minimal implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/sanitize.py`:
 
@@ -389,7 +389,7 @@ def sanitize(text: str) -> str:
     return text
 ```
 
-- [ ] **Step 3.4: Run test, expect PASS**
+- [x] **Step 3.4: Run test, expect PASS**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -398,7 +398,7 @@ python3.12 -m pytest tests/test_sanitize.py -v
 
 Expected: all tests pass.
 
-- [ ] **Step 3.5: Commit**
+- [x] **Step 3.5: Commit**
 
 ```bash
 cd ~/.claude
