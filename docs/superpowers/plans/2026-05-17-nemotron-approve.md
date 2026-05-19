@@ -1279,7 +1279,7 @@ the hook."
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/config.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_config.py`
 
-- [ ] **Step 9.1: Write failing tests**
+- [x] **Step 9.1: Write failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_config.py`:
 
@@ -1336,13 +1336,13 @@ def test_config_is_complete_when_all_required_set(monkeypatch):
     assert cfg.is_complete is True
 ```
 
-- [ ] **Step 9.2: Run test, expect FAIL**
+- [x] **Step 9.2: Run test, expect FAIL**
 
 ```bash
 python3.12 -m pytest tests/test_config.py -v
 ```
 
-- [ ] **Step 9.3: Write implementation**
+- [x] **Step 9.3: Write implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/config.py`:
 
@@ -1397,13 +1397,13 @@ def load_config() -> Config:
     )
 ```
 
-- [ ] **Step 9.4: Run test, expect PASS**
+- [x] **Step 9.4: Run test, expect PASS**
 
 ```bash
 python3.12 -m pytest tests/test_config.py -v
 ```
 
-- [ ] **Step 9.5: Commit**
+- [x] **Step 9.5: Commit**
 
 ```bash
 cd ~/.claude
