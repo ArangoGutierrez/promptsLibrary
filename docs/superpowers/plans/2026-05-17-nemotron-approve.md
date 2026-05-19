@@ -1128,7 +1128,7 @@ as CACHE so traces distinguish cache hits from fresh Lane C calls."
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/trace.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_trace.py`
 
-- [ ] **Step 8.1: Write failing tests**
+- [x] **Step 8.1: Write failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_trace.py`:
 
@@ -1201,7 +1201,7 @@ def test_trace_redacts_rationale_quotes(tracer, tmp_path):
     assert "\n" not in line.strip()
 ```
 
-- [ ] **Step 8.2: Run test, expect FAIL**
+- [x] **Step 8.2: Run test, expect FAIL**
 
 ```bash
 python3.12 -m pytest tests/test_trace.py -v
@@ -1209,7 +1209,7 @@ python3.12 -m pytest tests/test_trace.py -v
 
 Expected: ImportError.
 
-- [ ] **Step 8.3: Write implementation**
+- [x] **Step 8.3: Write implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/trace.py`:
 
@@ -1253,13 +1253,13 @@ class TraceLog:
             pass
 ```
 
-- [ ] **Step 8.4: Run test, expect PASS**
+- [x] **Step 8.4: Run test, expect PASS**
 
 ```bash
 python3.12 -m pytest tests/test_trace.py -v
 ```
 
-- [ ] **Step 8.5: Commit**
+- [x] **Step 8.5: Commit**
 
 ```bash
 cd ~/.claude
