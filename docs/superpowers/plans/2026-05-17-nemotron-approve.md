@@ -2253,7 +2253,7 @@ audit Lane A/B classification before enabling Lane C in next phase."
 **Files:**
 - Modify: (shell init) — unset `NEMOTRON_APPROVE_DISABLED` and ensure API_KEY/ENDPOINT/MODEL are set
 
-- [ ] **Step 15.1: Enable Lane C**
+- [x] **Step 15.1: Enable Lane C**
 
 In your shell init, change:
 ```bash
@@ -2285,7 +2285,7 @@ tail -30 ~/.claude/debug/nemotron-approve-trace.log | grep -c "lane=C"
 # Expected: 0 (no LLM consultation for these reads)
 ```
 
-- [ ] **Step 15.3: Run Lane C smoke test**
+- [x] **Step 15.3: Run Lane C smoke test**
 
 In a kind cluster or test repo, exercise commands that should hit Lane C:
 
