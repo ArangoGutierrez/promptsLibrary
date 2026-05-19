@@ -686,7 +686,7 @@ negative test case."
 - Modify: `~/.claude/skills/nemotron-approve/nemotron_approve/patterns.py` (append Lane B)
 - Create: `~/.claude/skills/nemotron-approve/tests/test_patterns_deny.py`
 
-- [ ] **Step 5.1: Write failing tests for Lane B**
+- [x] **Step 5.1: Write failing tests for Lane B**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_patterns_deny.py`:
 
@@ -777,7 +777,7 @@ def test_lane_b_rejects_safe(command):
     assert lane_b_match(command) is None, f"Lane B should NOT match: {command!r}"
 ```
 
-- [ ] **Step 5.2: Run test, expect FAIL**
+- [x] **Step 5.2: Run test, expect FAIL**
 
 ```bash
 python3.12 -m pytest tests/test_patterns_deny.py -v
@@ -785,7 +785,7 @@ python3.12 -m pytest tests/test_patterns_deny.py -v
 
 Expected: `ImportError: cannot import name 'lane_b_match'`.
 
-- [ ] **Step 5.3: Append Lane B to `patterns.py`**
+- [x] **Step 5.3: Append Lane B to `patterns.py`**
 
 Append to `~/.claude/skills/nemotron-approve/nemotron_approve/patterns.py`:
 
@@ -844,7 +844,7 @@ def lane_b_match(command: str) -> Optional[str]:
     return None
 ```
 
-- [ ] **Step 5.4: Run all pattern tests, expect PASS**
+- [x] **Step 5.4: Run all pattern tests, expect PASS**
 
 ```bash
 python3.12 -m pytest tests/test_patterns_allow.py tests/test_patterns_deny.py -v
@@ -852,7 +852,7 @@ python3.12 -m pytest tests/test_patterns_allow.py tests/test_patterns_deny.py -v
 
 Expected: all tests pass.
 
-- [ ] **Step 5.5: Commit**
+- [x] **Step 5.5: Commit**
 
 ```bash
 cd ~/.claude
