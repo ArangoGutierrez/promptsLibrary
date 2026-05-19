@@ -418,7 +418,7 @@ Idempotent + multiline-safe. Tested with positive and negative cases
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/patterns.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_patterns_allow.py`
 
-- [ ] **Step 4.1: Write failing tests for Lane A**
+- [x] **Step 4.1: Write failing tests for Lane A**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_patterns_allow.py`:
 
@@ -548,7 +548,7 @@ def test_lane_a_handles_whitespace_only():
     assert lane_a_match("   ") is None
 ```
 
-- [ ] **Step 4.2: Run test, expect FAIL**
+- [x] **Step 4.2: Run test, expect FAIL**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -557,7 +557,7 @@ python3.12 -m pytest tests/test_patterns_allow.py -v
 
 Expected: `ImportError: cannot import name 'lane_a_match' from 'nemotron_approve.patterns'`.
 
-- [ ] **Step 4.3: Write minimal implementation**
+- [x] **Step 4.3: Write minimal implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/patterns.py`:
 
@@ -657,7 +657,7 @@ def lane_a_match(command: str) -> Optional[str]:
     return None
 ```
 
-- [ ] **Step 4.4: Run test, expect PASS**
+- [x] **Step 4.4: Run test, expect PASS**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -666,7 +666,7 @@ python3.12 -m pytest tests/test_patterns_allow.py -v
 
 Expected: all positive cases match, all negative cases don't.
 
-- [ ] **Step 4.5: Commit**
+- [x] **Step 4.5: Commit**
 
 ```bash
 cd ~/.claude
