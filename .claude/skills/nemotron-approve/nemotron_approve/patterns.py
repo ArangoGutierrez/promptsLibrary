@@ -96,3 +96,60 @@ def lane_a_match(command: str) -> Optional[str]:
         if pattern.search(command):
             return name
     return None
+
+
+# ---------- Lane B — DENY (always ASK; applied before LLM AND re-checked after Lane C allow) ----------
+
+LANE_B_PATTERNS: list[tuple[str, re.Pattern]] = [
+    ("fs-destruction", re.compile(
+        r"\brm\s+-r[f]?\b|\bdd\s+if=|\bmkfs\.|:\(\)\{.*:.*\|.*:.*\};:"
+    )),
+    ("privilege-escalation", re.compile(r"\b(sudo|su|doas)\b")),
+    ("system-lifecycle", re.compile(r"\b(shutdown|reboot|halt|poweroff|init\s+[06])\b")),
+    ("ownership-system-paths", re.compile(
+        r"\bchown\s+(-R\s+)?\S+\s+/|\bchmod\s+(777|-R\s+777)\s+(/|\S*/)"
+    )),
+    ("git-destructive", re.compile(
+        r"\bgit\s+push\s+(--force|-f|\S+\s+\+)|"
+        r"\bgit\s+reset\s+--hard\b|"
+        r"\bgit\s+rebase\b|"
+        r"\bgit\s+clean\s+-[xdf]+"
+    )),
+    ("pipe-to-shell", re.compile(r"(curl|wget)\s+[^|]*\|\s*(sh|bash|zsh)\b")),
+    ("code-exec-env", re.compile(r'\beval\s+["\'$]')),
+    ("package-publish", re.compile(r"\b(npm|pnpm|yarn|cargo|gem|twine)\s+publish\b")),
+    # Fix vs plan: split dist-tag into two clauses. The plan's `dist-tag\s+(add\s+latest|set)`
+    # required `add latest` adjacent, but the canonical syntax is
+    # `npm dist-tag add <pkg>@<version> latest` — pkg sits BETWEEN add and latest.
+    # `add\b[^;&|]*\blatest\b` matches the package spec between, while staying
+    # within a single shell command.
+    ("package-credentials", re.compile(
+        r"^(npm|pnpm|yarn)\s+(deprecate|unpublish|owner|token|login|adduser|logout|"
+        r"dist-tag\s+set|dist-tag\s+add\b[^;&|]*\blatest)\b"
+    )),
+    ("helm-mutating", re.compile(r"^helm\s+(uninstall|delete|rollback)\b")),
+    ("docker-destructive", re.compile(
+        r"^docker\s+(rm\b|rmi|system\s+prune|volume\s+rm|network\s+rm|kill)\b"
+    )),
+    ("gh-destructive", re.compile(
+        r"^gh\s+(repo\s+(delete|archive)|secret\s+(set|delete|remove)|"
+        r"variable\s+(set|delete|remove)|ssh-key\s+(delete|remove)|release\s+delete)\b"
+    )),
+    ("mcp-delete", re.compile(
+        r"^mcp__\w+__\w+_(delete|destroy|remove|drop)(_\w+)?$"
+    )),
+]
+
+
+def lane_b_match(command: str) -> Optional[str]:
+    """Return the name of the first matching Lane B pattern, or None.
+
+    Lane B uses substring match (no `^` anchor on most patterns), so chained
+    commands like `echo foo; rm -rf /` still match.
+    """
+    if not command:
+        return None
+    for name, pattern in LANE_B_PATTERNS:
+        if pattern.search(command):
+            return name
+    return None
