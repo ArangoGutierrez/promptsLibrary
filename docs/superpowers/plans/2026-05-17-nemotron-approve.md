@@ -2177,7 +2177,7 @@ cases."
 **Files:**
 - Modify: `~/.claude/settings.json` (append PreToolUse hooks for Bash, WebFetch, mcp__.*)
 
-- [ ] **Step 14.1: Set shadow-mode env vars**
+- [x] **Step 14.1: Set shadow-mode env vars**
 
 Add to your shell init (`~/.zshrc` or equivalent):
 
@@ -2190,7 +2190,7 @@ export NEMOTRON_APPROVE_MODEL=nvidia/nvidia/nemotron-3-super-v3
 
 Reload: `source ~/.zshrc`.
 
-- [ ] **Step 14.2: Modify `~/.claude/settings.json`**
+- [x] **Step 14.2: Modify `~/.claude/settings.json`**
 
 Add to existing `PreToolUse` array:
 
@@ -2217,7 +2217,7 @@ Add to existing `PreToolUse` array:
 }
 ```
 
-- [ ] **Step 14.3: Verify in shadow mode**
+- [x] **Step 14.3: Verify in shadow mode**
 
 In your next Claude Code session, run a few read-only commands (kubectl get pods, gh pr list). Check:
 
@@ -2233,7 +2233,7 @@ Expected:
 
 If any Lane A command got classified as Lane B or vice versa, that's a misclassification — open `patterns.py`, tune the regex, add a test, re-run.
 
-- [ ] **Step 14.4: Commit settings + trace observations**
+- [x] **Step 14.4: Commit settings + trace observations**
 
 ```bash
 cd ~/.claude
