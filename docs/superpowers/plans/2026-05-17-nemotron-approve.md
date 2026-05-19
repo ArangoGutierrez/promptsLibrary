@@ -2273,7 +2273,7 @@ export NEMOTRON_APPROVE_MODEL=nvidia/nvidia/nemotron-3-super-v3
 
 Reload: `source ~/.zshrc`.
 
-- [ ] **Step 15.2: Run 25-command probe smoke test**
+- [x] **Step 15.2: Run 25-command probe smoke test**
 
 Re-run the same 25 read-only commands from the viability probe (in a Claude Code session). All should classify as `lane=A` in the trace log — zero LLM calls for the read-only set.
 
