@@ -954,7 +954,7 @@ as skipped test with rationale."
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/cache.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_cache.py`
 
-- [ ] **Step 7.1: Write failing tests**
+- [x] **Step 7.1: Write failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_cache.py`:
 
@@ -1024,7 +1024,7 @@ def test_cache_persists_across_instances(tmp_path, sample_verdict):
     assert got.decision == Decision.ALLOW
 ```
 
-- [ ] **Step 7.2: Run test, expect FAIL**
+- [x] **Step 7.2: Run test, expect FAIL**
 
 ```bash
 python3.12 -m pytest tests/test_cache.py -v
@@ -1032,7 +1032,7 @@ python3.12 -m pytest tests/test_cache.py -v
 
 Expected: ImportError.
 
-- [ ] **Step 7.3: Write implementation**
+- [x] **Step 7.3: Write implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/cache.py`:
 
@@ -1100,7 +1100,7 @@ class VerdictCache:
         self._save(data)
 ```
 
-- [ ] **Step 7.4: Run test, expect PASS**
+- [x] **Step 7.4: Run test, expect PASS**
 
 ```bash
 python3.12 -m pytest tests/test_cache.py -v
@@ -1108,7 +1108,7 @@ python3.12 -m pytest tests/test_cache.py -v
 
 Expected: all pass.
 
-- [ ] **Step 7.5: Commit**
+- [x] **Step 7.5: Commit**
 
 ```bash
 cd ~/.claude
