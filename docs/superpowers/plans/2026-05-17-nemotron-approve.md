@@ -1629,7 +1629,7 @@ so NAT API drift only requires updating one file."
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/classifier.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_classifier.py`
 
-- [ ] **Step 11.1: Write failing tests**
+- [x] **Step 11.1: Write failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_classifier.py`:
 
@@ -1728,9 +1728,9 @@ def test_no_llm_client_falls_back_to_ask_on_gray_zone(fake_cache):
     assert v.decision == Decision.ASK
 ```
 
-- [ ] **Step 11.2: Run test, expect FAIL**
+- [x] **Step 11.2: Run test, expect FAIL**
 
-- [ ] **Step 11.3: Write implementation**
+- [x] **Step 11.3: Write implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/classifier.py`:
 
@@ -1808,13 +1808,13 @@ class Classifier:
         return verdict
 ```
 
-- [ ] **Step 11.4: Run test, expect PASS**
+- [x] **Step 11.4: Run test, expect PASS**
 
 ```bash
 python3.12 -m pytest tests/test_classifier.py -v
 ```
 
-- [ ] **Step 11.5: Commit**
+- [x] **Step 11.5: Commit**
 
 ```bash
 cd ~/.claude
