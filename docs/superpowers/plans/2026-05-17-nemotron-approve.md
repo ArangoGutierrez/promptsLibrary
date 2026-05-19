@@ -1837,7 +1837,7 @@ the LLM."
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/__main__.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_cli.py`
 
-- [ ] **Step 12.1: Write failing tests**
+- [x] **Step 12.1: Write failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_cli.py`:
 
@@ -1893,9 +1893,9 @@ def test_cli_disabled_lane_c_falls_back_to_ask(monkeypatch, capsys):
     assert out["hookSpecificOutput"]["permissionDecision"] == "ask"
 ```
 
-- [ ] **Step 12.2: Run test, expect FAIL**
+- [x] **Step 12.2: Run test, expect FAIL**
 
-- [ ] **Step 12.3: Write implementation**
+- [x] **Step 12.3: Write implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/cli.py`:
 
@@ -2019,7 +2019,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 12.4: Run all tests, expect PASS**
+- [x] **Step 12.4: Run all tests, expect PASS**
 
 ```bash
 cd ~/.claude/skills/nemotron-approve
@@ -2028,7 +2028,7 @@ python3.12 -m pytest tests/ -v
 
 Expected: all tests pass across all modules.
 
-- [ ] **Step 12.5: Commit**
+- [x] **Step 12.5: Commit**
 
 ```bash
 cd ~/.claude
