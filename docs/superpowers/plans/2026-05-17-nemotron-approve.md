@@ -2051,7 +2051,7 @@ lazily so Lane A/B work even when nvidia-nat is not installed."
 - Create: `~/.claude/hooks/nemotron-approve.sh`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_hook_shim.sh`
 
-- [ ] **Step 13.1: Write hook shim**
+- [x] **Step 13.1: Write hook shim**
 
 Create `~/.claude/hooks/nemotron-approve.sh`:
 
@@ -2086,7 +2086,7 @@ Make executable:
 chmod +x ~/.claude/hooks/nemotron-approve.sh
 ```
 
-- [ ] **Step 13.2: Write integration test**
+- [x] **Step 13.2: Write integration test**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_hook_shim.sh`:
 
@@ -2149,7 +2149,7 @@ Make executable:
 chmod +x ~/.claude/skills/nemotron-approve/tests/test_hook_shim.sh
 ```
 
-- [ ] **Step 13.3: Run hook shim tests**
+- [x] **Step 13.3: Run hook shim tests**
 
 ```bash
 ~/.claude/skills/nemotron-approve/tests/test_hook_shim.sh
@@ -2157,7 +2157,7 @@ chmod +x ~/.claude/skills/nemotron-approve/tests/test_hook_shim.sh
 
 Expected: All 4 tests pass.
 
-- [ ] **Step 13.4: Commit**
+- [x] **Step 13.4: Commit**
 
 ```bash
 cd ~/.claude
