@@ -1421,7 +1421,7 @@ git commit -s -S -m "feat(nemotron-approve): env-var loaded Config with is_compl
 - Create: `~/.claude/skills/nemotron-approve/nemotron_approve/llm_client.py`
 - Create: `~/.claude/skills/nemotron-approve/tests/test_llm_client.py`
 
-- [ ] **Step 10.1: Write failing tests**
+- [x] **Step 10.1: Write failing tests**
 
 Create `~/.claude/skills/nemotron-approve/tests/test_llm_client.py`:
 
@@ -1494,13 +1494,13 @@ def test_classify_http_error_falls_back_to_ask():
     assert "http" in v.rationale.lower() or "error" in v.rationale.lower()
 ```
 
-- [ ] **Step 10.2: Run test, expect FAIL**
+- [x] **Step 10.2: Run test, expect FAIL**
 
 ```bash
 python3.12 -m pytest tests/test_llm_client.py -v
 ```
 
-- [ ] **Step 10.3: Write implementation**
+- [x] **Step 10.3: Write implementation**
 
 Create `~/.claude/skills/nemotron-approve/nemotron_approve/llm_client.py`:
 
@@ -1600,7 +1600,7 @@ class NemotronClassifier:
         return Verdict(decision, category, rationale, Lane.C)
 ```
 
-- [ ] **Step 10.4: Run test, expect PASS**
+- [x] **Step 10.4: Run test, expect PASS**
 
 ```bash
 python3.12 -m pytest tests/test_llm_client.py -v
@@ -1608,7 +1608,7 @@ python3.12 -m pytest tests/test_llm_client.py -v
 
 Note: tests use `__new__` to bypass `__init__` (which would import nvidia-nat). This keeps tests independent of the real NAT install.
 
-- [ ] **Step 10.5: Commit**
+- [x] **Step 10.5: Commit**
 
 ```bash
 cd ~/.claude
