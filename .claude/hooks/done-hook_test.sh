@@ -189,6 +189,37 @@ else
   echo "PASS: scenario 5 — debounce holds entries at $COUNT1"; PASS=$((PASS+1))
 fi
 
+# Scenario 6: stderr evidence block on a state change
+UUID6="66666666-aaaa-bbbb-cccc-000000000006"
+HOME6="$TMP/home6"
+setup_fake_home "$HOME6" "$UUID6"
+TRANSCRIPT6=$(fake_transcript_path "$HOME6" "$UUID6")
+mkdir -p "$(dirname "$TRANSCRIPT6")"; touch "$TRANSCRIPT6"
+cat > "$HOME6/.claude/audit/session-goals/$UUID6.md" <<'GOAL'
+## Initial 2026-05-18T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+GOAL
+mkdir -p "$HOME6/.claude/audit"
+cat > "$HOME6/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
+2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+LOG
+STDERR6=$(echo "{\"transcript_path\":\"$TRANSCRIPT6\"}" | HOME="$HOME6" bash "$HOOK" 2>&1 >/dev/null)
+
+# Must surface evidence; must NOT claim "accomplished"
+if ! echo "$STDERR6" | grep -q "Heuristic: LIKELY_MET"; then
+  echo "FAIL: scenario 6 — missing 'Heuristic: LIKELY_MET' in stderr"; FAIL=$((FAIL+1))
+elif echo "$STDERR6" | grep -qi "session goal accomplished"; then
+  echo "FAIL: scenario 6 — hook claimed 'Session goal accomplished' (theater)"; FAIL=$((FAIL+1))
+elif ! echo "$STDERR6" | grep -q "${UUID6:0:8}"; then
+  echo "FAIL: scenario 6 — UUID prefix missing from header"; FAIL=$((FAIL+1))
+elif ! echo "$STDERR6" | grep -q "ship done-hook v1"; then
+  echo "FAIL: scenario 6 — goal name missing from header"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 6 — evidence block surfaced; no completion claim"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
