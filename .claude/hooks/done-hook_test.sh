@@ -155,6 +155,40 @@ else
   echo "PASS: scenario 4 — 0/3 matched -> NO_EVIDENCE"; PASS=$((PASS+1))
 fi
 
+# Scenario 5: state-change debounce
+# Fire twice with same goal + same bash log → only one new entry (besides any NO_GOAL/etc)
+UUID5="55555555-aaaa-bbbb-cccc-000000000005"
+HOME5="$TMP/home5"
+setup_fake_home "$HOME5" "$UUID5"
+TRANSCRIPT5=$(fake_transcript_path "$HOME5" "$UUID5")
+mkdir -p "$(dirname "$TRANSCRIPT5")"; touch "$TRANSCRIPT5"
+cat > "$HOME5/.claude/audit/session-goals/$UUID5.md" <<'GOAL'
+## Initial 2026-05-18T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+GOAL
+mkdir -p "$HOME5/.claude/audit"
+cat > "$HOME5/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
+2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+LOG
+
+# First fire
+echo "{\"transcript_path\":\"$TRANSCRIPT5\"}" | HOME="$HOME5" bash "$HOOK" 2>/dev/null
+COUNT1=$(grep -c "\"session\":\"$UUID5\"" "$HOME5/.claude/audit/session-outcomes-"*.log 2>/dev/null || echo 0)
+
+# Second fire with identical state
+echo "{\"transcript_path\":\"$TRANSCRIPT5\"}" | HOME="$HOME5" bash "$HOOK" 2>/dev/null
+COUNT2=$(grep -c "\"session\":\"$UUID5\"" "$HOME5/.claude/audit/session-outcomes-"*.log 2>/dev/null || echo 0)
+
+if [ "$COUNT1" -ne "$COUNT2" ]; then
+  echo "FAIL: scenario 5 — debounce broken; entries grew $COUNT1 -> $COUNT2"; FAIL=$((FAIL+1))
+elif [ "$COUNT1" -eq 0 ]; then
+  echo "FAIL: scenario 5 — no entries written at all"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 5 — debounce holds entries at $COUNT1"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
