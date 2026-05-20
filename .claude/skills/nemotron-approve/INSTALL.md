@@ -112,8 +112,8 @@ In your shell init:
 ```bash
 export NEMOTRON_APPROVE_DISABLED=0
 export NEMOTRON_APPROVE_API_KEY=<your-nvidia-inference-key>
-export NEMOTRON_APPROVE_ENDPOINT=https://inference-api.nvidia.com/v1/chat/completions
-export NEMOTRON_APPROVE_MODEL=nvidia/nvidia/nemotron-3-super-v3
+export NEMOTRON_APPROVE_ENDPOINT=<your-inference-endpoint>
+export NEMOTRON_APPROVE_MODEL=<your-model-id>
 ```
 
 Reload.
@@ -145,8 +145,7 @@ remains an optional dependency for future Builder-pattern integrations.
 
 ### 3. Tune the timeout if needed
 
-Reasoning models (e.g., `nemotron-3-super-v3`) can have cold-start latency
-in the 10-15s range. The design's default `NEMOTRON_APPROVE_TIMEOUT=10`
+Reasoning models can have cold-start latency in the 10-15s range. The design's default `NEMOTRON_APPROVE_TIMEOUT=10`
 will fail-safe to `ask` on those calls — correct per spec but a small
 papercut. If you see frequent `lane=C rationale=timeout` entries:
 
