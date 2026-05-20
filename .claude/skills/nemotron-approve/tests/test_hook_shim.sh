@@ -57,5 +57,36 @@ if [ "$DECISION" != "ask" ]; then
 fi
 echo "PASS Test 4 (disabled gray-zone falls back to ask)"
 
+# Test 5: env.sh is sourced by the shim. Regression contract for the bug
+# where Cursor IDE / non-interactive launches did not see env vars because
+# ~/.zshrc was never sourced. We prove env.sh actually reaches the
+# subprocess by routing NEMOTRON_APPROVE_PYTHON through env.sh to a marker
+# script: if the shim sources env.sh, the marker runs and prints a known
+# rationale; otherwise the shim falls back to system python3.12 and the
+# marker is never observed.
+TMP5=$(mktemp -d)
+trap 'rm -rf "$TMP5"' EXIT
+cat > "$TMP5/fake-python.sh" <<'FAKE_EOF'
+#!/bin/bash
+# Discard the JSON on stdin; the marker is the rationale we emit.
+cat >/dev/null
+printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"nemotron: A:read:env_sh_sourced_marker"}}\n'
+FAKE_EOF
+chmod +x "$TMP5/fake-python.sh"
+cat > "$TMP5/env.sh" <<EOF
+export NEMOTRON_APPROVE_PYTHON="$TMP5/fake-python.sh"
+EOF
+INPUT='{"tool_name":"Bash","tool_input":{"command":"kubectl apply -f x.yaml"}}'
+OUT=$(echo "$INPUT" | env -i HOME="$HOME" PATH="$PATH" NEMOTRON_APPROVE_SKILL_DIR="$TMP5" bash "$HOOK")
+case "$OUT" in
+    *env_sh_sourced_marker*)
+        echo "PASS Test 5 (env.sh sourcing reaches python subprocess)"
+        ;;
+    *)
+        echo "FAIL Test 5 (env.sh not sourced): expected output containing 'env_sh_sourced_marker', got: $OUT"
+        exit 1
+        ;;
+esac
+
 echo "---"
 echo "ALL HOOK SHIM TESTS PASSED"
