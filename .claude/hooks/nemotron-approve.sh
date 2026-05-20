@@ -9,6 +9,14 @@ set -o pipefail
 # worktree without deploying to $HOME first.
 SKILL_DIR="${NEMOTRON_APPROVE_SKILL_DIR:-$HOME/.claude/skills/nemotron-approve}"
 
+# Load env from env.sh so the hook works when Claude Code is launched outside
+# an interactive shell (Cursor IDE Claude integration, system launches, etc.)
+# and ~/.zshrc was never sourced.
+if [ -f "$SKILL_DIR/env.sh" ]; then
+    # shellcheck source=/dev/null
+    . "$SKILL_DIR/env.sh"
+fi
+
 PYTHON="${NEMOTRON_APPROVE_PYTHON:-python3.12}"
 if ! command -v "$PYTHON" >/dev/null 2>&1; then
     PYTHON=python3
