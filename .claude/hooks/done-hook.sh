@@ -5,6 +5,67 @@
 # Spec: docs/superpowers/specs/2026-05-18-done-hook-design.md §Component 3
 set -o pipefail
 
+# --- Helpers ---
+
+# Extract the LAST stanza (## ...) body from the goal file.
+extract_last_stanza() {
+  local file="$1"
+  awk '/^## /{buf=""} {buf=buf $0 "\n"} END{printf "%s", buf}' "$file"
+}
+
+# Extract the Goal: line (one-line summary).
+extract_goal_name() {
+  local stanza="$1"
+  local raw
+  raw=$(echo "$stanza" | grep -m1 '^Goal: ' | sed 's/^Goal: //; s/[[:space:]]*$//')
+  [ -z "$raw" ] && raw="<unnamed>"
+  if [ "${#raw}" -gt 60 ]; then
+    raw="${raw:0:60}…"
+  fi
+  echo "$raw"
+}
+
+# Extract acceptance bullets (lines starting with "- " under "Acceptance:").
+extract_bullets() {
+  local stanza="$1"
+  echo "$stanza" | awk '
+    /^Acceptance:/ { in_acc=1; next }
+    /^## / { in_acc=0 }
+    in_acc && /^- / { sub(/^- /, ""); print }
+  '
+}
+
+# Given a bullet, return matched evidence records (or empty).
+# Looks for any token in the bullet that appears in the recent bash audit log.
+match_bullet_evidence() {
+  local bullet="$1" bash_log="$2"
+  [ ! -f "$bash_log" ] && return 1
+  # Anchors: paths, test-script names, command-like tokens.
+  local anchors
+  anchors=$(echo "$bullet" | grep -oE '(\.?\.?/[a-zA-Z0-9_/.-]+|[a-z][a-z0-9_-]{2,}_test\.sh|[a-z][a-z0-9_-]{2,}\.sh|docs/[a-zA-Z0-9_/.-]+|[a-z][a-z0-9_-]{2,})' | sort -u)
+  local last_chunk
+  last_chunk=$(tail -c 200000 "$bash_log" 2>/dev/null)
+  while read -r anchor; do
+    [ -z "$anchor" ] && continue
+    # Skip noise words shorter than 3 chars (already filtered by regex but defensive)
+    [ "${#anchor}" -lt 3 ] && continue
+    if echo "$last_chunk" | grep -qF "$anchor"; then
+      # Capture the matching line for evidence
+      local line
+      line=$(echo "$last_chunk" | grep -F "$anchor" | tail -1)
+      printf '%s' "$line"
+      return 0
+    fi
+  done <<< "$anchors"
+  return 1
+}
+
+# JSON-escape a string (minimal: backslash, quote, control chars).
+json_escape() {
+  # shellcheck disable=SC2016
+  python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().rstrip("\n"))[1:-1])' <<< "$1"
+}
+
 INPUT=$(cat)
 TRANSCRIPT=$(echo "$INPUT" | jq -r '.transcript_path // empty' 2>/dev/null)
 [ -z "$TRANSCRIPT" ] && exit 0
@@ -25,5 +86,62 @@ if [ ! -f "$GOAL_FILE" ]; then
   exit 0
 fi
 
-# GOAL_PRESENT path: implemented in Task 5+ — for now, exit 0.
+# --- Main GOAL_PRESENT path ---
+# (replaces the previous `exit 0` stub)
+
+STANZA=$(extract_last_stanza "$GOAL_FILE")
+GOAL_NAME=$(extract_goal_name "$STANZA")
+BULLETS=$(extract_bullets "$STANZA")
+TOTAL=$(echo "$BULLETS" | sed '/^$/d' | wc -l | tr -d ' ')
+
+BASH_LOG="${HOME}/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log"
+MATCHED=0
+EVIDENCE_RECORDS="["
+FIRST_REC=1
+
+while IFS= read -r bullet; do
+  [ -z "$bullet" ] && continue
+  evidence=$(match_bullet_evidence "$bullet" "$BASH_LOG")
+  if [ -n "$evidence" ]; then
+    MATCHED=$((MATCHED + 1))
+    bullet_esc=$(json_escape "$bullet")
+    evidence_esc=$(json_escape "$evidence")
+    if [ "$FIRST_REC" -eq 1 ]; then
+      FIRST_REC=0
+    else
+      EVIDENCE_RECORDS+=","
+    fi
+    EVIDENCE_RECORDS+="{\"bullet\":\"${bullet_esc}\",\"raw\":\"${evidence_esc}\"}"
+  fi
+done <<< "$BULLETS"
+EVIDENCE_RECORDS+="]"
+
+if [ "$TOTAL" -gt 0 ] && [ "$MATCHED" -ge "$((TOTAL - 1))" ]; then
+  HEURISTIC="LIKELY_MET"
+elif [ "$MATCHED" -gt 0 ]; then
+  HEURISTIC="PARTIAL"
+else
+  HEURISTIC="NO_EVIDENCE"
+fi
+
+# Compute next seq for this session
+SEQ=1
+if [ -f "$OUTCOMES_LOG" ]; then
+  PREV_SEQ=$(grep "\"session\":\"$UUID\"" "$OUTCOMES_LOG" 2>/dev/null | \
+             grep -oE '"seq":[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1)
+  [ -n "$PREV_SEQ" ] && SEQ=$((PREV_SEQ + 1))
+fi
+
+# State-change-hash debounce (Task 7 will refine this; v1 = always emit)
+STATE_HASH="$(date -u +%s%N | shasum | cut -c1-12)"
+
+TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+GOAL_REL_PATH="session-goals/${UUID}.md"
+printf '{"schema":1,"session":"%s","seq":%d,"ts":"%s","goal_file":"%s","heuristic":{"verdict":"%s","matched":%d,"total":%d},"evidence":%s,"state_hash":"%s","user":null}\n' \
+  "$UUID" "$SEQ" "$TS" "$GOAL_REL_PATH" "$HEURISTIC" "$MATCHED" "$TOTAL" "$EVIDENCE_RECORDS" "$STATE_HASH" \
+  >> "$OUTCOMES_LOG"
+
+# suppress unused variable warning; GOAL_NAME is informational for future use
+: "$GOAL_NAME"
+
 exit 0
