@@ -132,8 +132,19 @@ if [ -f "$OUTCOMES_LOG" ]; then
   [ -n "$PREV_SEQ" ] && SEQ=$((PREV_SEQ + 1))
 fi
 
-# State-change-hash debounce (Task 7 will refine this; v1 = always emit)
-STATE_HASH="$(date -u +%s%N | shasum | cut -c1-12)"
+# State-change-hash debounce: hash of (goal-mtime, sorted evidence raws).
+GOAL_MTIME=$(stat -f %m "$GOAL_FILE" 2>/dev/null || stat -c %Y "$GOAL_FILE" 2>/dev/null || echo 0)
+STATE_HASH=$(printf '%s|%s' "$GOAL_MTIME" "$EVIDENCE_RECORDS" | shasum | cut -c1-12)
+
+# Compare to last entry's state_hash for this session
+LAST_HASH=""
+if [ -f "$OUTCOMES_LOG" ]; then
+  LAST_HASH=$(grep "\"session\":\"$UUID\"" "$OUTCOMES_LOG" | tail -1 | \
+              grep -oE '"state_hash":"[^"]*"' | sed 's/"state_hash":"\(.*\)"/\1/')
+fi
+if [ -n "$LAST_HASH" ] && [ "$STATE_HASH" = "$LAST_HASH" ]; then
+  exit 0  # no state change since last entry
+fi
 
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 GOAL_REL_PATH="session-goals/${UUID}.md"
