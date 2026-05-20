@@ -605,7 +605,7 @@ After Phase 1 + Phase 2 shipped (foundation bug fixes + Python aggregator port),
 
 ### Why NAT
 
-- **Org alignment**: NAT is the NVIDIA-internal agent toolkit. Building personal tooling on top aligns with how teammates will likely build agent systems.
+- **Org alignment**: NAT is the public NVIDIA NeMo Agent Toolkit (PyPI: `nvidia-nat`). Building personal tooling on top aligns with how teammates will likely build agent systems.
 - **Multi-LLM coordination native**: NAT abstracts over LLM providers (NIM, OpenAI, Anthropic, etc.) with a single Python API. Adding a new panelist backend becomes a config change, not a new shell script.
 - **Observability**: optional OpenTelemetry / Phoenix / LangSmith integration replaces hand-rolled telemetry for production-grade tracing when wanted.
 
