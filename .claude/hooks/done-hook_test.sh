@@ -104,6 +104,57 @@ else
   echo "PASS: scenario 2 — 3/3 matched -> LIKELY_MET"; PASS=$((PASS+1))
 fi
 
+# Scenario 3: 1/3 bullets match → PARTIAL
+UUID3="33333333-aaaa-bbbb-cccc-000000000003"
+HOME3="$TMP/home3"
+setup_fake_home "$HOME3" "$UUID3"
+TRANSCRIPT3=$(fake_transcript_path "$HOME3" "$UUID3")
+mkdir -p "$(dirname "$TRANSCRIPT3")"; touch "$TRANSCRIPT3"
+cat > "$HOME3/.claude/audit/session-goals/$UUID3.md" <<'GOAL'
+## Initial 2026-05-18T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+- shellcheck clean
+- spec committed to docs/superpowers/specs/
+GOAL
+mkdir -p "$HOME3/.claude/audit"
+cat > "$HOME3/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
+2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+LOG
+echo "{\"transcript_path\":\"$TRANSCRIPT3\"}" | HOME="$HOME3" bash "$HOOK" 2>/dev/null
+if ! assert_outcomes_entry "$HOME3" "$UUID3" "verdict" "PARTIAL"; then
+  echo "FAIL: scenario 3 — verdict != PARTIAL"; FAIL=$((FAIL+1))
+elif ! grep -q "\"matched\":1" "$HOME3/.claude/audit/session-outcomes-"*.log; then
+  echo "FAIL: scenario 3 — matched != 1"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 3 — 1/3 matched -> PARTIAL"; PASS=$((PASS+1))
+fi
+
+# Scenario 4: 0/3 bullets match → NO_EVIDENCE
+UUID4="44444444-aaaa-bbbb-cccc-000000000004"
+HOME4="$TMP/home4"
+setup_fake_home "$HOME4" "$UUID4"
+TRANSCRIPT4=$(fake_transcript_path "$HOME4" "$UUID4")
+mkdir -p "$(dirname "$TRANSCRIPT4")"; touch "$TRANSCRIPT4"
+cat > "$HOME4/.claude/audit/session-goals/$UUID4.md" <<'GOAL'
+## Initial 2026-05-18T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+- shellcheck clean
+- spec committed to docs/superpowers/specs/
+GOAL
+mkdir -p "$HOME4/.claude/audit"
+# Empty bash log
+: > "$HOME4/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log"
+echo "{\"transcript_path\":\"$TRANSCRIPT4\"}" | HOME="$HOME4" bash "$HOOK" 2>/dev/null
+if ! assert_outcomes_entry "$HOME4" "$UUID4" "verdict" "NO_EVIDENCE"; then
+  echo "FAIL: scenario 4 — verdict != NO_EVIDENCE"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 4 — 0/3 matched -> NO_EVIDENCE"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
