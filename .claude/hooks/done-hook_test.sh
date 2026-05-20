@@ -64,7 +64,45 @@ else
   echo "PASS: scenario 1b — debounce keeps NO_GOAL to one entry"; PASS=$((PASS+1))
 fi
 
-# More scenarios added in later tasks (2 - 6)
+# Scenario 2: goal file present, 3/3 acceptance bullets match recent bash log → LIKELY_MET
+UUID2="22222222-aaaa-bbbb-cccc-000000000002"
+HOME2="$TMP/home2"
+setup_fake_home "$HOME2" "$UUID2"
+TRANSCRIPT2=$(fake_transcript_path "$HOME2" "$UUID2")
+mkdir -p "$(dirname "$TRANSCRIPT2")"; touch "$TRANSCRIPT2"
+
+# Synthesize a goal file with 3 bullets
+cat > "$HOME2/.claude/audit/session-goals/$UUID2.md" <<'GOAL'
+## Initial 2026-05-18T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+- shellcheck clean
+- spec committed to docs/superpowers/specs/
+GOAL
+
+# Synthesize a bash audit log with 3 matching commands
+BASH_LOG="$HOME2/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log"
+mkdir -p "$(dirname "$BASH_LOG")"
+cat > "$BASH_LOG" <<'LOG'
+2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+2026-05-18T14:31:00Z	shellcheck ~/.claude/hooks/done-hook.sh	exit=0
+2026-05-18T14:32:00Z	git commit -s -m "docs(specs): add design"	exit=0
+LOG
+
+# Fire the hook
+echo "{\"transcript_path\":\"$TRANSCRIPT2\"}" | HOME="$HOME2" bash "$HOOK" 2>/dev/null
+
+# Assert outcomes entry has LIKELY_MET + matched=3 + total=3
+if ! assert_outcomes_entry "$HOME2" "$UUID2" "verdict" "LIKELY_MET"; then
+  echo "FAIL: scenario 2 — heuristic.verdict != LIKELY_MET"; FAIL=$((FAIL+1))
+elif ! grep -q "\"matched\":3" "$HOME2/.claude/audit/session-outcomes-"*.log; then
+  echo "FAIL: scenario 2 — matched != 3"; FAIL=$((FAIL+1))
+elif ! grep -q "\"total\":3" "$HOME2/.claude/audit/session-outcomes-"*.log; then
+  echo "FAIL: scenario 2 — total != 3"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 2 — 3/3 matched -> LIKELY_MET"; PASS=$((PASS+1))
+fi
 
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
