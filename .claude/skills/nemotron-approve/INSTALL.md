@@ -124,10 +124,14 @@ The shim runs `python -m nemotron_approve` from a Python that has `httpx`
 importable. Use a dedicated venv next to the skill so the shim can find it
 deterministically (Homebrew Python 3.12 blocks system-wide pip per PEP 668):
 
+> Use the `[socks]` extra. macOS users frequently have `ALL_PROXY=socks5h://...`
+> set by VPN/proxy clients; plain `httpx` fails with `ImportError` when it
+> auto-detects SOCKS at request time.
+
 ```bash
 python3.12 -m venv ~/.claude/skills/nemotron-approve/.venv
 ~/.claude/skills/nemotron-approve/.venv/bin/python -m pip install --upgrade pip
-~/.claude/skills/nemotron-approve/.venv/bin/python -m pip install httpx
+~/.claude/skills/nemotron-approve/.venv/bin/python -m pip install 'httpx[socks]'
 ```
 
 Then point the shim at the venv via an env var in `~/.zshrc`:
