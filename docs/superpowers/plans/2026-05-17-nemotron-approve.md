@@ -2363,7 +2363,7 @@ If any test fails these checks, rewrite or delete.
 
 ## Rollback procedure
 
-If something goes wrong in Phase 2 (excessive false-positive ALLOWs auto-approving things they shouldn't):
+If something goes wrong in Phase 2 (excessive false-positive ALLOW verdicts auto-approving things they shouldn't):
 
 ```bash
 # 1. Quick disable — flip the kill switch

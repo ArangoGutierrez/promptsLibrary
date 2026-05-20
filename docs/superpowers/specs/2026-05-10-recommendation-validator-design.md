@@ -102,7 +102,7 @@ acceptable input.
 - Any `VERDICT: OVERTURN` → `PANEL_VERDICT: DISSENT` + augmented question JSON
   (original text + appended `**Panel review:** <DA rationale> / <PE rationale>`,
   marker swapped to `Panel-flagged`)
-- Either verdict file unparseable / empty → `PANEL_VERDICT: ERROR`
+- Either verdict file unparsable / empty → `PANEL_VERDICT: ERROR`
 - Both panelists OVERTURN with different alternatives → DISSENT, both
   alternatives included in the summary
 
