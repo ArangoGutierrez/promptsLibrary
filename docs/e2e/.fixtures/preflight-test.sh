@@ -23,9 +23,11 @@ awk '/^# === preflight ===$/,/^# === end preflight ===$/' "$PROMPT" \
 TRACE="$TMPDIR_TEST/panel-trace.log"
 OUTPUT=$(
   TMPDIR="$TMPDIR_TEST" \
+  HOME="$TMPDIR_TEST" \
   CLAUDE_PANEL_TRACE_LOG="$TRACE" \
-  CLAUDE_PANEL=unset_at_start \
+  CLAUDE_PANEL=off \
   PANEL_DA_API_KEY="" \
+  NVIDIA_API_KEY="" \
   bash "$TMPDIR_TEST/preflight.sh"
 )
 
