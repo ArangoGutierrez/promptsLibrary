@@ -136,4 +136,74 @@ Expected trace delta: exactly 1 new `event=verdict` line.
 
 ## Phase 3 — Verifier
 
-<!-- VERIFIER_BLOCK -->
+Run this final bash block. It reads `BEFORE`, `INODE_BEFORE`, `TRACE`, and the four `AFTER_S*` snapshots from your environment, classifies the new trace entries, and prints the PASS/FAIL gate.
+
+```bash
+# === verifier ===
+set -uo pipefail
+
+# Inode rotation check — if the file rotated mid-test, deltas are bogus.
+INODE_NOW=$(stat -f '%i' "$TRACE" 2>/dev/null || stat -c '%i' "$TRACE")
+if [ "$INODE_NOW" != "$INODE_BEFORE" ]; then
+  echo "ERROR: panel-trace.log rotated mid-test (inode changed $INODE_BEFORE -> $INODE_NOW)."
+  echo "Snapshot counts cannot be trusted. Gate result: ERROR."
+  exit 1
+fi
+
+delta_s1=$(( AFTER_S1 - BEFORE ))
+delta_s2=$(( AFTER_S2 - AFTER_S1 ))
+delta_s3=$(( AFTER_S3 - AFTER_S2 ))
+delta_s4=$(( AFTER_S4 - AFTER_S3 ))
+
+verdict_re='event=verdict.*outcome=(HOLD|SOFT-DISSENT|HARD-DISSENT|ERROR)'
+
+# Extract by absolute line range — by verifier-run time TRACE contains both
+# S3 and S4 entries, so `tail -n 1` would grab S4 not S3.
+new_s3=$(sed -n "$((AFTER_S2+1)),${AFTER_S3}p" "$TRACE")
+new_s4=$(sed -n "$((AFTER_S3+1)),${AFTER_S4}p" "$TRACE")
+
+outcome_s3=$(echo "$new_s3" | grep -oE 'outcome=[A-Z-]+' | head -1 | sed 's/outcome=//')
+outcome_s4=$(echo "$new_s4" | grep -oE 'outcome=[A-Z-]+' | head -1 | sed 's/outcome=//')
+
+pass_s1="FAIL"; [ "$delta_s1" -eq 0 ] && pass_s1="OK"
+pass_s2="FAIL"; [ "$delta_s2" -eq 0 ] && pass_s2="OK"
+pass_s3="FAIL"; [ "$delta_s3" -eq 1 ] && [[ "$new_s3" =~ $verdict_re ]] && pass_s3="OK"
+pass_s4="FAIL"; [ "$delta_s4" -eq 1 ] && [[ "$new_s4" =~ $verdict_re ]] && pass_s4="OK"
+
+oks=0
+for v in "$pass_s1" "$pass_s2" "$pass_s3" "$pass_s4"; do
+  [ "$v" = "OK" ] && oks=$((oks+1))
+done
+gate="FAIL"; [ "$oks" -eq 4 ] && gate="PASS"
+
+cat <<EOF
+## Validate-Recommendation E2E Gate
+
+Trace baseline: $BEFORE lines  ($TRACE)
+
+| #  | Scenario              | Expected         | Observed                            | Pass |
+|----|------------------------|------------------|-------------------------------------|------|
+| S1 | No-Recommended         | 0 new entries    | $delta_s1 new entries               | $pass_s1 |
+| S2 | Panel-flagged dedup    | 0 new entries    | $delta_s2 new entries               | $pass_s2 |
+| S3 | Clear-correct          | 1 verdict, any   | $delta_s3 verdict, outcome=${outcome_s3:-<none>} | $pass_s3 |
+| S4 | Clearly-bad            | 1 verdict, any   | $delta_s4 verdict, outcome=${outcome_s4:-<none>} | $pass_s4 |
+
+**Gate: $gate ($oks/4)**
+
+Visual check (confirm from your screen):
+  S1/S2 → original question shown (no annotation)
+  S3 → outcome=${outcome_s3:-?}: if HOLD, auto-taken (no prompt); else re-issued with annotation
+  S4 → outcome=${outcome_s4:-?}: if HARD-DISSENT, re-issued with "Panel HARD-DISSENT: ..." prefix
+EOF
+
+if [ "$gate" != "PASS" ]; then
+  echo ""
+  echo "## Diagnostic dump"
+  echo ""
+  echo "Last 5 lines of $TRACE:"
+  tail -n 5 "$TRACE"
+  echo ""
+  echo "Snapshots: BEFORE=$BEFORE AFTER_S1=$AFTER_S1 AFTER_S2=$AFTER_S2 AFTER_S3=$AFTER_S3 AFTER_S4=$AFTER_S4"
+fi
+# === end verifier ===
+```
