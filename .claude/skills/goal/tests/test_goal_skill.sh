@@ -38,6 +38,45 @@ else
   echo "PASS: scenario 1 — Initial stanza written"; PASS=$((PASS+1))
 fi
 
+# Scenario 2: existing file → /goal appends Amendment stanza
+INPUT2=$'Goal: ship Y\nAcceptance:\n- three'
+run_goal "$HOME1" "$UUID1" "$INPUT2" >/dev/null 2>&1
+if ! grep -q "^## Amendment " "$FILE1"; then
+  echo "FAIL: scenario 2 — Amendment header missing"; FAIL=$((FAIL+1))
+elif [ "$(grep -c '^## ' "$FILE1")" -ne 2 ]; then
+  echo "FAIL: scenario 2 — expected exactly 2 stanzas, got $(grep -c '^## ' "$FILE1")"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 2 — Amendment stanza appended"; PASS=$((PASS+1))
+fi
+
+# Scenario 3: malformed input (no Goal: line) → warning but written
+UUID3="goalt003-aaaa-bbbb-cccc-000000000003"
+HOME3="$TMP/h3"
+INPUT3="not-a-goal-format"
+STDERR3=$(run_goal "$HOME3" "$UUID3" "$INPUT3" 2>&1 >/dev/null)
+FILE3="$HOME3/.claude/audit/session-goals/$UUID3.md"
+if ! echo "$STDERR3" | grep -q "missing 'Goal: '"; then
+  echo "FAIL: scenario 3 — no warning emitted"; FAIL=$((FAIL+1))
+elif [ ! -f "$FILE3" ]; then
+  echo "FAIL: scenario 3 — file not written despite warning"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 3 — malformed input warns but writes"; PASS=$((PASS+1))
+fi
+
+# Scenario 4: 'amend' keyword stripped, behavior unchanged
+UUID4="goalt004-aaaa-bbbb-cccc-000000000004"
+HOME4="$TMP/h4"
+INPUT4=$'amend Goal: stripped X\nAcceptance:\n- one'
+run_goal "$HOME4" "$UUID4" "$INPUT4" >/dev/null 2>&1
+FILE4="$HOME4/.claude/audit/session-goals/$UUID4.md"
+if grep -q "^amend Goal:" "$FILE4"; then
+  echo "FAIL: scenario 4 — 'amend' keyword leaked into stanza"; FAIL=$((FAIL+1))
+elif ! grep -q "Goal: stripped X" "$FILE4"; then
+  echo "FAIL: scenario 4 — Goal line missing after strip"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 4 — 'amend' keyword stripped"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
