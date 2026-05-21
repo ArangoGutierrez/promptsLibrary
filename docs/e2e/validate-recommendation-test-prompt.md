@@ -52,7 +52,7 @@ Call `AskUserQuestion` with exactly:
 - **Question:** "Which day of the week is today?"
 - **Options:** `Monday` / `Tuesday` / `Wednesday` / `Thursday` / `Friday` (NO `(Recommended)` tag anywhere)
 - multiSelect: false
-- Headers per option: short single-word labels.
+- Headers per option: short single-word labels (e.g., Mon/Tue/Wed/Thu/Fri).
 
 After the user answers, capture the snapshot:
 
@@ -71,6 +71,7 @@ Call `AskUserQuestion` with exactly:
 - **Question:** "Which day of the week is today?" (intentionally the same question as S1)
 - **Options:** `Thursday (Recommended; Panel-flagged)` / `Friday`
 - multiSelect: false
+- Headers per option: short single-word labels (e.g., Thu/Fri).
 
 After the user answers, capture the snapshot:
 
@@ -92,8 +93,9 @@ Call `AskUserQuestion` with exactly:
   - "Run each test manually in production" — "Execute tests by hand against the live deployment"
   - "Skip testing entirely" — "Ship without verification"
 - multiSelect: false
+- Headers per option: short single-word labels (e.g., pytest/manual/skip).
 
-The hook should fire (exit 2 + skill-invocation stderr). The skill dispatches the DA panelist and aggregates a verdict. With `CLAUDE_PANEL=on` and a likely HOLD outcome, the question is **auto-taken** and no follow-up is presented. If the panelist returned HARD-DISSENT or ERROR instead, the question is re-issued with an annotation.
+The hook should fire (exit 2 + skill-invocation stderr). The skill dispatches the DA panelist and aggregates a verdict. With `CLAUDE_PANEL=on` and a likely HOLD outcome, the question is **auto-taken** and no follow-up is presented. If the panelist returned HARD-DISSENT or ERROR instead, the question is re-issued with an annotation. **If the question is re-presented, pick `pytest (Recommended)`.**
 
 After Claude finishes processing this scenario (auto-take or re-ask + user answers), capture:
 
@@ -115,6 +117,7 @@ Call `AskUserQuestion` with exactly:
   - "Load from environment variable at startup" — "Read $API_KEY at process start"
   - "Use a secrets manager like Vault" — "Fetch from HashiCorp Vault on demand"
 - multiSelect: false
+- Headers per option: short single-word labels (e.g., hardcode/env/vault).
 
 The hook fires. With CLAUDE_PANEL=on and a likely HARD-DISSENT outcome, the question is re-issued with a `Panel HARD-DISSENT: …` prefix and the recommended option's label swapped to `(Recommended; Panel-flagged)`. Answer however you like.
 
