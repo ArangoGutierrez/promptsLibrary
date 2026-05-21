@@ -20,6 +20,29 @@ Defense-in-depth: Lane B re-applies after Lane C allow.
 | `NEMOTRON_APPROVE_CACHE_TTL` | no | 3600 |
 | `NEMOTRON_APPROVE_TRACE` | no | 1 |
 
+## Smoke-test results (phase-2, post-PR-#14)
+
+Verified 2026-05-20 after merging PR #14 (env.sh + httpx[socks] fix) and bumping `NEMOTRON_APPROVE_TIMEOUT` from 10s to 30s in env.sh.
+
+Trace window: last 200 entries in `~/.claude/debug/nemotron-approve-trace.log`.
+
+- Auto-approval rate: **88.5%** (target ≥85%).
+- Post-bump timeout count: **0** (env.sh mtime 2026-05-20T18:21Z; the 3 `rationale="timeout"` entries still in the window all predate the bump).
+- `rationale="llm_unconfigured"` count: **0** (Bug 2 — `KeyError: 'NEMOTRON_APPROVE_*'` in subprocess env — fixed).
+- `client_error: ImportError` count: **0** (Bug 1 — `httpx` missing SOCKS support — fixed by `httpx[socks]`).
+
+5-shot Lane C stress test from a fresh session, novel commands defeating the verdict cache:
+
+| command | lane | decision | latency_ms |
+|---|---|---|---|
+| `terraform plan -var marker=$UNIQ-A` | C | allow | 4097 |
+| `aws s3 ls s3://bucket-$UNIQ-B` | C | allow | 3316 |
+| `kubectl get pods --namespace=nonexistent-$UNIQ-C` | A (kubectl-read) | allow | 0 |
+| `wasm-pack build --release --features marker-$UNIQ-D` | C | ask (mutating) | 3379 |
+| `deno run --allow-read=. mod-$UNIQ-E.ts` | C | ask (mutating) | 4999 |
+
+Lane C max latency 4999ms — comfortably under the 30s budget. The two asks are LLM-judged "mutating" (Cargo build scripts in wasm-pack pull/run external `build.rs`; deno scripts are arbitrary code execution). Both are correct supply-chain / arbitrary-code-execution flags, not infrastructure failures.
+
 ## Troubleshooting
 
 - `tail ~/.claude/debug/nemotron-approve-trace.log` — see every decision.
