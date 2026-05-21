@@ -87,4 +87,3 @@ ISSUE_RESEARCH.md
 .cursor/skills/
 
 # nemotron-approve runtime env (secrets); template is committed
-.claude/skills/nemotron-approve/env.sh
