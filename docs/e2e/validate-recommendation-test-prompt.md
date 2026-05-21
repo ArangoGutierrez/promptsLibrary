@@ -136,7 +136,20 @@ Expected trace delta: exactly 1 new `event=verdict` line.
 
 ## Phase 3 — Verifier
 
-Run this final bash block. It reads `BEFORE`, `INODE_BEFORE`, `TRACE`, and the four `AFTER_S*` snapshots from your environment, classifies the new trace entries, and prints the PASS/FAIL gate.
+Run this final bash block. Because each Bash call runs in a fresh shell, prepend the values you captured in Phases 1 and 2 to the invocation (or set them in a preceding line of the same call). Concretely:
+
+```bash
+TRACE=<value-from-preflight> \
+BEFORE=<value-from-preflight> \
+INODE_BEFORE=<value-from-preflight> \
+AFTER_S1=<value-from-S1> \
+AFTER_S2=<value-from-S2> \
+AFTER_S3=<value-from-S3> \
+AFTER_S4=<value-from-S4> \
+bash -c '<paste the verifier bash block below (everything between its delimiter comments, inclusive)>'
+```
+
+Or simply paste the variable assignments at the top of the same Bash tool invocation that runs the verifier block. The block reads these variables, classifies the new trace entries, and prints the PASS/FAIL gate.
 
 ```bash
 # === verifier ===
