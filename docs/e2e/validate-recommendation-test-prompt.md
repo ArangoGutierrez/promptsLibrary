@@ -29,7 +29,10 @@ if [ ! -w "$TRACE" ]; then
 fi
 
 # Clean any stale state files from prior crashes.
-rm -f "${TMPDIR:-/tmp}"/claude-*/claude-panel-*.json 2>/dev/null || true
+# Hook writes to "$TMPDIR/claude-panel-${SID}.json" (no subdirectory) — the
+# glob must match that exact path; a "${TMPDIR}/claude-*/claude-panel-*.json"
+# variant would miss every state file the hook actually writes.
+rm -f "${TMPDIR:-/tmp}"/claude-panel-*.json 2>/dev/null || true
 
 BEFORE=$(wc -l < "$TRACE" | tr -d ' ')
 INODE_BEFORE=$(stat -f '%i' "$TRACE" 2>/dev/null || stat -c '%i' "$TRACE")
