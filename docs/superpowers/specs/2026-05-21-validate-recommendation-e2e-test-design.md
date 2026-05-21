@@ -125,10 +125,12 @@ delta_s4=$(( after_s4 - after_s3 ))
 pass_s1=$([ "$delta_s1" -eq 0 ] && echo OK || echo FAIL)
 pass_s2=$([ "$delta_s2" -eq 0 ] && echo OK || echo FAIL)
 
-# S3 + S4: require exactly 1 new verdict entry with known-good outcome
+# S3 + S4: require exactly 1 new verdict entry with known-good outcome.
+# Extract by absolute line range — TRACE has both S3 and S4 entries by the
+# time we run verification, so `tail -n 1` would return S4's entry, not S3's.
 verdict_re='event=verdict.*outcome=(HOLD|SOFT-DISSENT|HARD-DISSENT|ERROR)'
-new_s3=$(tail -n "$delta_s3" "$TRACE" | head -n "$delta_s3")
-new_s4=$(tail -n "$delta_s4" "$TRACE")
+new_s3=$(sed -n "$((after_s2+1)),${after_s3}p" "$TRACE")
+new_s4=$(sed -n "$((after_s3+1)),${after_s4}p" "$TRACE")
 pass_s3=$([ "$delta_s3" -eq 1 ] && [[ "$new_s3" =~ $verdict_re ]] && echo OK || echo FAIL)
 pass_s4=$([ "$delta_s4" -eq 1 ] && [[ "$new_s4" =~ $verdict_re ]] && echo OK || echo FAIL)
 ```
