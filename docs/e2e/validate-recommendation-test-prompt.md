@@ -155,7 +155,7 @@ delta_s2=$(( AFTER_S2 - AFTER_S1 ))
 delta_s3=$(( AFTER_S3 - AFTER_S2 ))
 delta_s4=$(( AFTER_S4 - AFTER_S3 ))
 
-verdict_re='event=verdict.*outcome=(HOLD|SOFT-DISSENT|HARD-DISSENT|ERROR)'
+verdict_re='(^|[[:space:]])event=verdict[[:space:]].*outcome=(HOLD|SOFT-DISSENT|HARD-DISSENT|ERROR)'
 
 # Extract by absolute line range — by verifier-run time TRACE contains both
 # S3 and S4 entries, so `tail -n 1` would grab S4 not S3.

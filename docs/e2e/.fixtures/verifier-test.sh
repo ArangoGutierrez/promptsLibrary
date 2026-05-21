@@ -58,3 +58,21 @@ echo "$OUT_FAIL" | grep -qE "Gate: FAIL \([0-3]/4\)"   || { echo "FAIL (fail-cas
 echo "$OUT_FAIL" | grep -q "Diagnostic dump"           || { echo "FAIL (fail-case): missing diagnostic dump"; echo "$OUT_FAIL"; exit 1; }
 
 echo "PASS (fail-case)"
+
+# --- Second fail-case: S3 delta=0 (hook never fired) should also FAIL the row ---
+OUT_NOFIRE=$(
+  TRACE="$TRACE" \
+  BEFORE=12 \
+  AFTER_S1=12 \
+  AFTER_S2=12 \
+  AFTER_S3=12 \
+  AFTER_S4=12 \
+  INODE_BEFORE="$INODE_NOW" \
+  bash "$TMPDIR_TEST/verifier.sh"
+)
+
+echo "$OUT_NOFIRE" | grep -qE "S3.*0 verdict.*FAIL"   || { echo "FAIL (no-fire): S3 row should be FAIL with delta=0"; echo "$OUT_NOFIRE"; exit 1; }
+echo "$OUT_NOFIRE" | grep -qE "S4.*0 verdict.*FAIL"   || { echo "FAIL (no-fire): S4 row should be FAIL with delta=0"; echo "$OUT_NOFIRE"; exit 1; }
+echo "$OUT_NOFIRE" | grep -qE "Gate: FAIL \(2/4\)"    || { echo "FAIL (no-fire): gate should be FAIL (2/4)"; echo "$OUT_NOFIRE"; exit 1; }
+
+echo "PASS (no-fire-case)"
