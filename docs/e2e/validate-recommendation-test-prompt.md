@@ -4,6 +4,25 @@ Paste this entire message into a sibling Claude Code session. The instructions b
 
 **Important:** do not run while another Claude Code session is active in the same user account — concurrent writes to `panel-trace.log` will pollute the snapshot diffs.
 
+**SCOPE LOCK — this prompt is a validation gate, NOT an implementation task.**
+
+While running this prompt, you may ONLY perform:
+
+1. The Bash blocks shown in each Phase (preflight, the four `AFTER_S<N>` snapshots, the final verifier).
+2. Exactly 4 `AskUserQuestion` calls per Phase 2 (no more, no fewer).
+3. The `validate-recommendation` skill if the hook directs you to invoke it (it will, on the (Recommended) options in S3/S4).
+
+**Do NOT, under any circumstances during this run:**
+
+- `git commit`, `git push`, or `git` anything that mutates state.
+- Edit, Write, or otherwise modify any file (including this prompt or the hook).
+- Read files outside this prompt's instructions (you don't need to "understand the codebase" — the prompt is self-contained).
+- Invoke any skill except `validate-recommendation` when the hook directs you to.
+- Attempt to fix any bug you notice in the prompt, the hook, the panel CLI, or anything else. Note the observation in your final report; do not act on it.
+- Issue any `AskUserQuestion` beyond the 4 specified — even one to "clarify" something.
+
+If a scenario cannot run (sandbox denial, ambiguous instruction, missing file), STOP and report. Any unexpected tool call invalidates the gate's trace-counting logic — the verifier's pass criteria assume exactly the prescribed event sequence.
+
 ---
 
 ## Phase 1 — Pre-flight
