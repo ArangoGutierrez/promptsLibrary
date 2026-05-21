@@ -152,7 +152,20 @@ printf '{"schema":1,"session":"%s","seq":%d,"ts":"%s","goal_file":"%s","heuristi
   "$UUID" "$SEQ" "$TS" "$GOAL_REL_PATH" "$HEURISTIC" "$MATCHED" "$TOTAL" "$EVIDENCE_RECORDS" "$STATE_HASH" \
   >> "$OUTCOMES_LOG"
 
-# suppress unused variable warning; GOAL_NAME is informational for future use
-: "$GOAL_NAME"
+# Stderr evidence block (informational; never claims completion).
+echo "" >&2
+echo "[done-hook] Session ${UUID:0:8} vs goal '${GOAL_NAME}':" >&2
+echo "  Acceptance bullets: ${MATCHED}/${TOTAL} matched" >&2
+while IFS= read -r bullet; do
+  [ -z "$bullet" ] && continue
+  ev=$(match_bullet_evidence "$bullet" "$BASH_LOG")
+  if [ -n "$ev" ]; then
+    short_ev=$(echo "$ev" | head -c 80)
+    echo "    [✓] ${bullet:0:50}: ${short_ev}" >&2
+  else
+    echo "    [ ] ${bullet:0:50}: no matching evidence" >&2
+  fi
+done <<< "$BULLETS"
+echo "  Heuristic: ${HEURISTIC} (${MATCHED}/${TOTAL}). Run /done to confirm or amend." >&2
 
 exit 0
