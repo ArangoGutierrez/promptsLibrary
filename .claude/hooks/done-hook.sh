@@ -35,34 +35,36 @@ extract_bullets() {
   '
 }
 
-# Given a bullet, return matched evidence records (or empty).
-# Looks for any token in the bullet that appears in the recent bash audit log.
+# Given a bullet and path to the cached bash log tail, return the matching line (or empty).
+# Collects all anchors into a single `grep -F -e ...` invocation to keep subprocess
+# count down per spec §15 perf budget.
 match_bullet_evidence() {
-  local bullet="$1" bash_log="$2"
-  [ ! -f "$bash_log" ] && return 1
+  local bullet="$1" tail_file="$2"
+  [ ! -f "$tail_file" ] && return 1
   # Anchors: paths, test-script names, command-like tokens.
-  local anchors
-  anchors=$(echo "$bullet" | grep -oE '(\.?\.?/[a-zA-Z0-9_/.-]+|[a-z][a-z0-9_-]{2,}_test\.sh|[a-z][a-z0-9_-]{2,}\.sh|docs/[a-zA-Z0-9_/.-]+|[a-z][a-z0-9_-]{2,})' | sort -u)
-  local last_chunk
-  last_chunk=$(tail -c 200000 "$bash_log" 2>/dev/null)
+  local grep_args=()
+  local anchor
   while read -r anchor; do
     [ -z "$anchor" ] && continue
     # Skip noise words shorter than 3 chars (already filtered by regex but defensive)
     [ "${#anchor}" -lt 3 ] && continue
-    if echo "$last_chunk" | grep -qF "$anchor"; then
-      # Capture the matching line for evidence
-      local line
-      line=$(echo "$last_chunk" | grep -F "$anchor" | tail -1)
-      printf '%s' "$line"
-      return 0
-    fi
-  done <<< "$anchors"
+    grep_args+=(-e "$anchor")
+  done < <(echo "$bullet" | grep -oE '(\.?\.?/[a-zA-Z0-9_/.-]+|[a-z][a-z0-9_-]{2,}_test\.sh|[a-z][a-z0-9_-]{2,}\.sh|docs/[a-zA-Z0-9_/.-]+|[a-z][a-z0-9_-]{2,})' | sort -u)
+  [ "${#grep_args[@]}" -eq 0 ] && return 1
+  local line
+  line=$(grep -F "${grep_args[@]}" "$tail_file" 2>/dev/null | tail -1)
+  if [ -n "$line" ]; then
+    printf '%s' "$line"
+    return 0
+  fi
   return 1
 }
 
-# JSON-escape a string (minimal: backslash, quote, control chars).
+# JSON-escape a string. Delegates to python3 for full RFC 7159 compliance
+# (all control chars 0x00-0x1F, UTF-8 surrogates). A pure-bash version was
+# tried for perf but only covered a subset of escapes — see Task 10 review.
+# shellcheck disable=SC2016
 json_escape() {
-  # shellcheck disable=SC2016
   python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().rstrip("\n"))[1:-1])' <<< "$1"
 }
 
@@ -99,9 +101,22 @@ MATCHED=0
 EVIDENCE_RECORDS="["
 FIRST_REC=1
 
+# Pre-compute the tail chunk once to a tempfile. Both the matching loop and the
+# stderr loop reuse it via match_bullet_evidence (which runs one multi-pattern
+# grep per bullet, not one per anchor).
+BASH_TAIL_FILE=$(mktemp)
+trap 'rm -f "$BASH_TAIL_FILE"' EXIT
+tail -c 200000 "$BASH_LOG" 2>/dev/null > "$BASH_TAIL_FILE"
+
+# Cache bullet→evidence in parallel arrays so the stderr loop below can reuse
+# results without a second pass through match_bullet_evidence (halves grep spawns).
+BULLET_LIST=()
+EVIDENCE_LIST=()
 while IFS= read -r bullet; do
   [ -z "$bullet" ] && continue
-  evidence=$(match_bullet_evidence "$bullet" "$BASH_LOG")
+  evidence=$(match_bullet_evidence "$bullet" "$BASH_TAIL_FILE")
+  BULLET_LIST+=("$bullet")
+  EVIDENCE_LIST+=("$evidence")
   if [ -n "$evidence" ]; then
     MATCHED=$((MATCHED + 1))
     bullet_esc=$(json_escape "$bullet")
@@ -153,19 +168,20 @@ printf '{"schema":1,"session":"%s","seq":%d,"ts":"%s","goal_file":"%s","heuristi
   >> "$OUTCOMES_LOG"
 
 # Stderr evidence block (informational; never claims completion).
+# Reuses the BULLET_LIST/EVIDENCE_LIST cache populated above — no re-grep.
 echo "" >&2
 echo "[done-hook] Session ${UUID:0:8} vs goal '${GOAL_NAME}':" >&2
 echo "  Acceptance bullets: ${MATCHED}/${TOTAL} matched" >&2
-while IFS= read -r bullet; do
-  [ -z "$bullet" ] && continue
-  ev=$(match_bullet_evidence "$bullet" "$BASH_LOG")
+for i in "${!BULLET_LIST[@]}"; do
+  bullet="${BULLET_LIST[$i]}"
+  ev="${EVIDENCE_LIST[$i]}"
   if [ -n "$ev" ]; then
-    short_ev=$(echo "$ev" | head -c 80)
+    short_ev="${ev:0:80}"
     echo "    [✓] ${bullet:0:50}: ${short_ev}" >&2
   else
     echo "    [ ] ${bullet:0:50}: no matching evidence" >&2
   fi
-done <<< "$BULLETS"
+done
 echo "  Heuristic: ${HEURISTIC} (${MATCHED}/${TOTAL}). Run /done to confirm or amend." >&2
 
 exit 0
