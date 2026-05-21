@@ -220,6 +220,44 @@ else
   echo "PASS: scenario 6 — evidence block surfaced; no completion claim"; PASS=$((PASS+1))
 fi
 
+# Scenario 7: performance gate — <300ms on a 1.5 MB synthetic bash log
+UUID7="77777777-aaaa-bbbb-cccc-000000000007"
+HOME7="$TMP/home7"
+setup_fake_home "$HOME7" "$UUID7"
+TRANSCRIPT7=$(fake_transcript_path "$HOME7" "$UUID7")
+mkdir -p "$(dirname "$TRANSCRIPT7")"; touch "$TRANSCRIPT7"
+cat > "$HOME7/.claude/audit/session-goals/$UUID7.md" <<'GOAL'
+## Initial 2026-05-18T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+- shellcheck clean
+- spec committed to docs/superpowers/specs/
+- plan committed to docs/superpowers/plans/
+GOAL
+mkdir -p "$HOME7/.claude/audit"
+
+# Generate 1.5 MB of synthetic bash log entries
+{
+  for i in $(seq 1 30000); do
+    printf '2026-05-18T14:30:%02d.%03dZ\tsome_command_%d arg1 arg2\texit=0\n' $((i % 60)) $((i % 1000)) "$i"
+  done
+} > "$HOME7/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log"
+LOG_SIZE=$(wc -c < "$HOME7/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log")
+echo "  (perf scenario: log size = $LOG_SIZE bytes)"
+
+START=$(date +%s%N)
+echo "{\"transcript_path\":\"$TRANSCRIPT7\"}" | HOME="$HOME7" bash "$HOOK" 2>/dev/null
+END=$(date +%s%N)
+ELAPSED_MS=$(( (END - START) / 1000000 ))
+echo "  (perf scenario: elapsed = ${ELAPSED_MS} ms)"
+
+if [ "$ELAPSED_MS" -ge 300 ]; then
+  echo "FAIL: scenario 7 — perf budget exceeded: ${ELAPSED_MS}ms (limit 300ms)"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 7 — perf ${ELAPSED_MS}ms < 300ms"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
