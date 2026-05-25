@@ -45,3 +45,47 @@ def test_agree_path_returns_met():
     assert result["verdict"] == "AGREE"
     assert "All three bullets" in result["rationale"]
     assert result["gaps"] == []
+
+
+def test_disagree_path_returns_disagree_with_gaps():
+    """When NAT returns DISAGREE, evaluate() yields verdict=DISAGREE + GAPS list."""
+    fake_response = (
+        "VERDICT: DISAGREE\n"
+        "RATIONALE: Spec committed but no evidence for shellcheck run.\n"
+        "GAPS: shellcheck clean"
+    )
+    with patch.object(done_eval, "_invoke_nat", return_value=fake_response):
+        result = done_eval.evaluate(_make_goal(), _make_evidence(complete=False), "MET")
+    assert result["verdict"] == "DISAGREE"
+    assert "shellcheck clean" in result["gaps"]
+
+
+def test_insufficient_path_returns_insufficient():
+    """When NAT returns INSUFFICIENT_EVIDENCE, evaluate() preserves that label."""
+    fake_response = (
+        "VERDICT: INSUFFICIENT_EVIDENCE\n"
+        "RATIONALE: Bullets are vague; cannot judge.\n"
+        "GAPS: n/a"
+    )
+    with patch.object(done_eval, "_invoke_nat", return_value=fake_response):
+        result = done_eval.evaluate(_make_goal(), [], "MET")
+    assert result["verdict"] == "INSUFFICIENT_EVIDENCE"
+
+
+def test_error_fallback_when_nat_raises():
+    """When _invoke_nat raises any exception, evaluate() returns verdict=ERROR."""
+    def boom(*args, **kwargs):
+        raise RuntimeError("NIM endpoint unreachable")
+    with patch.object(done_eval, "_invoke_nat", side_effect=boom):
+        result = done_eval.evaluate(_make_goal(), _make_evidence(complete=True), "MET")
+    assert result["verdict"] == "ERROR"
+    assert "NIM endpoint unreachable" in result["rationale"]
+
+
+def test_error_fallback_when_response_lacks_verdict_line():
+    """Malformed NAT response (no VERDICT line) → verdict=ERROR with parse-failed reason."""
+    fake_response = "I think the goal might be met but I'm not sure."  # no strict format
+    with patch.object(done_eval, "_invoke_nat", return_value=fake_response):
+        result = done_eval.evaluate(_make_goal(), _make_evidence(complete=True), "MET")
+    assert result["verdict"] == "ERROR"
+    assert "parse failed" in result["rationale"]
