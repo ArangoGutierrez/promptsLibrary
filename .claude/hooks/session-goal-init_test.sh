@@ -11,29 +11,29 @@ PASS=0
 FAIL=0
 
 run_case() {
-  local name="$1" input="$2" expected_exit="$3" expected_stderr_pattern="$4"
+  local name="$1" input="$2" expected_exit="$3" expected_stdout_pattern="$4"
   shift 4
-  local got_stderr
-  got_stderr=$(echo "$input" | env "$@" bash "$HOOK" 2>&1 >/dev/null)
+  local got_stdout
+  got_stdout=$(echo "$input" | env "$@" bash "$HOOK" 2>/dev/null)
   local got_exit=$?
   if [ "$got_exit" -ne "$expected_exit" ]; then
     echo "FAIL: $name — expected exit $expected_exit, got $got_exit"
     FAIL=$((FAIL + 1)); return
   fi
-  if [ -n "$expected_stderr_pattern" ] && ! echo "$got_stderr" | grep -q "$expected_stderr_pattern"; then
-    echo "FAIL: $name — stderr did not match /$expected_stderr_pattern/"
-    echo "  got: $got_stderr"
+  if [ -n "$expected_stdout_pattern" ] && ! echo "$got_stdout" | grep -q "$expected_stdout_pattern"; then
+    echo "FAIL: $name — stdout did not match /$expected_stdout_pattern/"
+    echo "  got: $got_stdout"
     FAIL=$((FAIL + 1)); return
   fi
-  if [ -z "$expected_stderr_pattern" ] && [ -n "$got_stderr" ]; then
-    echo "FAIL: $name — expected silent stderr, got: $got_stderr"
+  if [ -z "$expected_stdout_pattern" ] && [ -n "$got_stdout" ]; then
+    echo "FAIL: $name — expected silent stdout, got: $got_stdout"
     FAIL=$((FAIL + 1)); return
   fi
   echo "PASS: $name"
   PASS=$((PASS + 1))
 }
 
-# Scenario 1: no goal file → prints nudge to stderr
+# Scenario 1: no goal file → prints nudge to stdout
 FAKE_TRANSCRIPT="$TMP/abc12345-deadbeef.jsonl"
 touch "$FAKE_TRANSCRIPT"
 run_case "no goal file -> nudge" \
