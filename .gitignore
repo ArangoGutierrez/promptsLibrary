@@ -29,6 +29,11 @@ secrets.yaml
 *.log
 logs/
 
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # Temporary files
 tmp/
 temp/
