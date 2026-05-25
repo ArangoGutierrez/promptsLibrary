@@ -89,3 +89,24 @@ def test_error_fallback_when_response_lacks_verdict_line():
         result = done_eval.evaluate(_make_goal(), _make_evidence(complete=True), "MET")
     assert result["verdict"] == "ERROR"
     assert "parse failed" in result["rationale"]
+
+
+def test_lazy_import_langchain_not_required_when_mocked():
+    """If a test mocks _invoke_nat, the langchain package need not be installed.
+
+    Protects against accidental top-level imports of langchain_nvidia_ai_endpoints
+    that would make tests fragile or slow.
+    """
+    fake_response = "VERDICT: AGREE\nRATIONALE: ok\nGAPS: n/a"
+    # Save and clear any cached langchain import
+    saved = sys.modules.pop("langchain_nvidia_ai_endpoints", None)
+    try:
+        with patch.object(done_eval, "_invoke_nat", return_value=fake_response):
+            result = done_eval.evaluate(_make_goal(), _make_evidence(complete=True), "MET")
+        assert result["verdict"] == "AGREE"
+        assert "langchain_nvidia_ai_endpoints" not in sys.modules, (
+            "evaluate() pulled in langchain even though _invoke_nat was mocked"
+        )
+    finally:
+        if saved is not None:
+            sys.modules["langchain_nvidia_ai_endpoints"] = saved
