@@ -77,6 +77,11 @@ ISSUE_RESEARCH.md
 .claude/plugins/known_marketplaces.json
 .claude/settings.local.json
 
+# Done-hook runtime data (per-session goal files + daily outcomes log)
+.claude/audit/session-goals/
+.claude/audit/session-outcomes-*.log
+.claude/audit/otel-spans-*.jsonl
+
 # ── Cursor runtime (never tracked) ──
 .cursor/extensions/
 .cursor/projects/
