@@ -2220,6 +2220,243 @@ If no changes were needed, skip this step.
 
 ---
 
+## Task 23: Statusline goal + token integration
+
+**Goal:** Add session-goal display and context-window-token consumption to the existing `.claude/statusline.sh` so the current goal is visible on every prompt render. Per spec `docs/superpowers/specs/2026-05-25-statusline-goal-design.md`.
+
+**Files:** Modify `.claude/statusline.sh` (project-level only; Task 20's deploy step syncs to `~/.claude/statusline.sh`).
+
+- [ ] **Step 1: Verify baseline statusline.sh**
+
+```bash
+shellcheck /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+wc -l /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+```
+
+Expected: shellcheck exit 0; ~37 lines (model/branch/worktree/rate-limit segments only — no goal or token segments yet).
+
+- [ ] **Step 2: Insert goal extraction + token formatting before the rate-limit block**
+
+Use Edit on `.claude/statusline.sh`. Find this block:
+
+```bash
+# git worktree name (present only inside a linked worktree)
+GIT_WORKTREE=$(echo "$input" | jq -r '.workspace.git_worktree // empty')
+
+# rate limits (Pro/Max only; absent otherwise)
+```
+
+Replace with:
+
+```bash
+# git worktree name (present only inside a linked worktree)
+GIT_WORKTREE=$(echo "$input" | jq -r '.workspace.git_worktree // empty')
+
+# Session goal (from done-hook protocol — ~/.claude/audit/session-goals/<id>.md)
+GOAL="(no goal)"
+SESSION_ID=$(echo "$input" | jq -r '.session_id // empty')
+if [ -n "$SESSION_ID" ]; then
+    GOAL_FILE="${HOME}/.claude/audit/session-goals/${SESSION_ID}.md"
+    if [ -f "$GOAL_FILE" ]; then
+        # Extract last stanza's "Goal: " line via awk + grep + sed
+        RAW=$(awk '/^## /{buf=""} {buf=buf $0 "\n"} END{printf "%s", buf}' "$GOAL_FILE" \
+              | grep -m1 '^Goal: ' | sed 's/^Goal: //; s/[[:space:]]*$//')
+        if [ -n "$RAW" ]; then
+            if [ "${#RAW}" -gt 40 ]; then RAW="${RAW:0:39}…"; fi
+            GOAL="$RAW"
+        fi
+    fi
+fi
+
+# Context-window token consumption (post-v2.1.132 these are current-context tokens)
+IN_TOKENS=$(echo "$input" | jq -r '.context_window.total_input_tokens // 0')
+OUT_TOKENS=$(echo "$input" | jq -r '.context_window.total_output_tokens // 0')
+TOTAL_TOKENS=$((IN_TOKENS + OUT_TOKENS))
+PCT=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
+if [ "$TOTAL_TOKENS" -ge 1000 ]; then
+    TOKENS=$(awk -v n="$TOTAL_TOKENS" 'BEGIN{ printf "%.1fk", n/1000 }')
+else
+    TOKENS="$TOTAL_TOKENS"
+fi
+TOK_SEG="${TOKENS} tok (${PCT}%)"
+
+# rate limits (Pro/Max only; absent otherwise)
+```
+
+- [ ] **Step 3: Append the goal + token segments to the output**
+
+Find this block:
+
+```bash
+[ -n "$BRANCH" ] && PARTS="$PARTS  $BRANCH"
+[ -n "$GIT_WORKTREE" ] && PARTS="$PARTS (wt:$GIT_WORKTREE)"
+
+LIMITS=""
+```
+
+Replace with:
+
+```bash
+[ -n "$BRANCH" ] && PARTS="$PARTS  $BRANCH"
+[ -n "$GIT_WORKTREE" ] && PARTS="$PARTS (wt:$GIT_WORKTREE)"
+
+PARTS="$PARTS | 🎯 $GOAL"
+PARTS="$PARTS | $TOK_SEG"
+
+LIMITS=""
+```
+
+- [ ] **Step 4: Re-run shellcheck**
+
+```bash
+shellcheck /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+echo "exit=$?"
+```
+
+Expected: exit 0, no output.
+
+- [ ] **Step 5: Manual verify — goal-set scenario**
+
+```bash
+TMP=$(mktemp -d)
+UUID="test-session-uuid-001"
+mkdir -p "$TMP/.claude/audit/session-goals"
+cat > "$TMP/.claude/audit/session-goals/$UUID.md" <<'GOAL'
+## Initial 2026-05-25T10:00:00Z
+Goal: ship done-hook v1
+Acceptance:
+- ./done-hook_test.sh passes
+GOAL
+
+JSON='{"model":{"display_name":"Opus"},"session_id":"'"$UUID"'","worktree":{"branch":"feat/done-hook"},"workspace":{"git_worktree":"done-hook"},"context_window":{"total_input_tokens":45000,"total_output_tokens":2300,"used_percentage":23.65},"rate_limits":{"five_hour":{"used_percentage":23.0}}}'
+
+echo "$JSON" | HOME="$TMP" bash /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+rm -rf "$TMP"
+```
+
+Expected output (exact):
+
+```
+[Opus]  feat/done-hook (wt:done-hook) | 🎯 ship done-hook v1 | 47.3k tok (23%) | 5h:23%
+```
+
+- [ ] **Step 6: Manual verify — no-goal scenario**
+
+```bash
+TMP=$(mktemp -d)
+mkdir -p "$TMP/.claude/audit/session-goals"
+
+JSON='{"model":{"display_name":"Opus"},"session_id":"no-goal-uuid","worktree":{"branch":"feat/done-hook"},"workspace":{"git_worktree":"done-hook"},"context_window":{"total_input_tokens":12000,"total_output_tokens":100,"used_percentage":6}}'
+
+echo "$JSON" | HOME="$TMP" bash /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+rm -rf "$TMP"
+```
+
+Expected output:
+
+```
+[Opus]  feat/done-hook (wt:done-hook) | 🎯 (no goal) | 12.1k tok (6%)
+```
+
+(No rate-limit segment because `rate_limits` is absent in the JSON.)
+
+- [ ] **Step 7: Manual verify — pre-first-API scenario (no `context_window`)**
+
+```bash
+TMP=$(mktemp -d)
+JSON='{"model":{"display_name":"Opus"},"session_id":"pre-api-uuid","worktree":{"branch":"feat/done-hook"},"workspace":{"git_worktree":"done-hook"}}'
+echo "$JSON" | HOME="$TMP" bash /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+rm -rf "$TMP"
+```
+
+Expected output (tokens default to `0`):
+
+```
+[Opus]  feat/done-hook (wt:done-hook) | 🎯 (no goal) | 0 tok (0%)
+```
+
+- [ ] **Step 8: Manual verify — long goal triggers truncation**
+
+```bash
+TMP=$(mktemp -d)
+UUID="long-goal-uuid"
+mkdir -p "$TMP/.claude/audit/session-goals"
+cat > "$TMP/.claude/audit/session-goals/$UUID.md" <<'GOAL'
+## Initial 2026-05-25T10:00:00Z
+Goal: this is a deliberately very long goal text that exceeds forty characters so we can verify truncation
+Acceptance:
+- foo
+GOAL
+
+JSON='{"model":{"display_name":"Opus"},"session_id":"'"$UUID"'","worktree":{"branch":"feat/done-hook"},"workspace":{"git_worktree":"done-hook"},"context_window":{"total_input_tokens":1000,"total_output_tokens":0,"used_percentage":0}}'
+
+echo "$JSON" | HOME="$TMP" bash /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh
+rm -rf "$TMP"
+```
+
+Expected output (goal truncated to 39 chars + `…`):
+
+```
+[Opus]  feat/done-hook (wt:done-hook) | 🎯 this is a deliberately very long goal … | 1.0k tok (0%)
+```
+
+- [ ] **Step 9: Perf verify — 10 runs, target <50ms**
+
+```bash
+TMP=$(mktemp -d)
+UUID="perf-uuid"
+mkdir -p "$TMP/.claude/audit/session-goals"
+cat > "$TMP/.claude/audit/session-goals/$UUID.md" <<'GOAL'
+## Initial 2026-05-25T10:00:00Z
+Goal: perf test
+Acceptance:
+- one
+GOAL
+
+JSON='{"model":{"display_name":"Opus"},"session_id":"'"$UUID"'","worktree":{"branch":"feat/done-hook"},"workspace":{"git_worktree":"done-hook"},"context_window":{"total_input_tokens":45000,"total_output_tokens":2300,"used_percentage":23}}'
+
+for i in 1 2 3 4 5 6 7 8 9 10; do
+    START=$(date +%s%N)
+    echo "$JSON" | HOME="$TMP" bash /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/.claude/statusline.sh >/dev/null
+    END=$(date +%s%N)
+    echo "run $i: $(( (END - START) / 1000000 ))ms"
+done
+
+rm -rf "$TMP"
+```
+
+Expected: all 10 runs under 50ms (typical macOS median ~10-20ms).
+
+If perf exceeds 50ms, common culprits:
+
+- jq calls — the script already has ~8 calls; consider consolidating to fewer jq invocations with multiple outputs (`jq -r '.a, .b, .c'`).
+- awk on a large goal file — bounded by user file size (typically <2KB). Should not be an issue.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git -C /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook add .claude/statusline.sh
+git -C /Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook commit -s -m "feat(statusline): show session goal + context-window token usage
+
+Adds two new segments to .claude/statusline.sh:
+- Goal segment: reads ~/.claude/audit/session-goals/<session_id>.md,
+  extracts last stanza's Goal: line, truncates to 40 chars.
+  Shows '(no goal)' when no file exists.
+- Token segment: shows total context tokens + used_percentage,
+  k-suffix format for >=1000 tokens.
+
+Layout per docs/superpowers/specs/2026-05-25-statusline-goal-design.md
+(single-line, user override of DA panel HARD-DISSENT — overflow risk
+acknowledged, 40-char truncation mitigates).
+
+Project-level statusline.sh only; ~/.claude/statusline.sh is synced
+by Task 20's deploy step."
+```
+
+---
+
+---
+
 ## Task 20: Deploy + live smoke test
 
 **Goal:** Sync the new hooks/skills into `~/.claude/` and verify they fire correctly in a real Claude Code context.
@@ -2437,8 +2674,6 @@ After merge, optionally save a `claude-tooling/decisions` MemPalace drawer notin
 - The deliberate panel-flag override on Q4 (Stop hook auto-detect — accepted with evidence-only stderr framing).
 - The NAT-backed `/done` integration as the precedent for future hook+skill pairs (hook = bash, reasoning = NAT-Python).
 
----
-
 ## Self-review
 
 After writing this plan, the following checks were applied (per writing-plans skill):
@@ -2463,6 +2698,17 @@ After writing this plan, the following checks were applied (per writing-plans sk
 | §Acceptance criteria | Tasks 20 + 22 verify each |
 
 No spec section uncovered.
+
+**Task 23 addendum (added 2026-05-25, spec `2026-05-25-statusline-goal-design.md`):**
+
+| Spec section | Covering step |
+|---|---|
+| §Layout (single-line) | Steps 5-7 verify exact output |
+| §Goal segment | Step 2 (extract logic) + Step 5/6/8 (verify) |
+| §Token segment | Step 2 (format logic) + Step 5/6/7 (verify) |
+| §Order of segments | Step 3 (placement) |
+| §Performance budget | Step 9 (10-run perf check) |
+| §Failure modes | Steps 6, 7 cover no-goal + no-context-window paths |
 
 **2. Placeholder scan:** No `TBD` / `TODO` / `implement later` markers. All code blocks contain complete content. Test assertions are concrete.
 
