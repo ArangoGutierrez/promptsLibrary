@@ -7,6 +7,7 @@
 **Architecture:** Bash hooks for the hot path (`<100ms` Stop budget); pure-bash `/goal` skill for goal capture; Python 3.12 + `nvidia-nat` for `/done` skill (mirrors the validate-recommendation v3 `panel/dispatch.py` pattern: `_invoke_nat` mockable seam + ERROR-fallback). Goal file is per-session append-only Markdown; outcomes log is daily JSONL.
 
 **Tech Stack:**
+
 - Bash 5 + `jq` 1.7+ for hooks (already required by `context-watch.sh`)
 - Python 3.12 (`/opt/homebrew/bin/python3.12`) + `nvidia-nat[langchain]>=1.6,<2.0` for `/done` evaluator
 - `shellcheck` and `markdownlint-cli2` for static checks (already used in repo)
@@ -18,6 +19,7 @@
 **Spec:** `docs/superpowers/specs/2026-05-18-done-hook-design.md` (commit `676ce89`).
 
 **Pre-flight context for every task:**
+
 - Worktree root: `/Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.worktrees/done-hook/`
 - All hook/skill source lives at `.claude/...` paths in the repo (canonical). The user's live `~/.claude/` is synced via `scripts/deploy.sh`. **Do not edit `~/.claude/` directly during development** — edit in the worktree and let deploy.sh handle the sync.
 - Tests execute against the worktree's `.claude/...` paths via the test harness's own internal path resolution. No deploy needed until Task 22.
@@ -97,6 +99,7 @@ Expected: all present. If `pytest` venv missing, install per recommendation-pane
 ```
 
 Expected one of:
+
 - `nat: 1.6.x` — proceed normally.
 - `ModuleNotFoundError: No module named 'nat'` — install:
 
@@ -526,9 +529,9 @@ GOAL
 BASH_LOG="$HOME2/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log"
 mkdir -p "$(dirname "$BASH_LOG")"
 cat > "$BASH_LOG" <<'LOG'
-2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
-2026-05-18T14:31:00Z	shellcheck ~/.claude/hooks/done-hook.sh	exit=0
-2026-05-18T14:32:00Z	git commit -s -m "docs(specs): add design"	exit=0
+2026-05-18T14:30:00Z ./done-hook_test.sh exit=0
+2026-05-18T14:31:00Z shellcheck ~/.claude/hooks/done-hook.sh exit=0
+2026-05-18T14:32:00Z git commit -s -m "docs(specs): add design" exit=0
 LOG
 
 # Fire the hook
@@ -758,7 +761,7 @@ Acceptance:
 GOAL
 mkdir -p "$HOME3/.claude/audit"
 cat > "$HOME3/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
-2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+2026-05-18T14:30:00Z ./done-hook_test.sh exit=0
 LOG
 echo "{\"transcript_path\":\"$TRANSCRIPT3\"}" | HOME="$HOME3" bash "$HOOK" 2>/dev/null
 if ! assert_outcomes_entry "$HOME3" "$UUID3" "verdict" "PARTIAL"; then
@@ -843,7 +846,7 @@ Acceptance:
 GOAL
 mkdir -p "$HOME5/.claude/audit"
 cat > "$HOME5/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
-2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+2026-05-18T14:30:00Z ./done-hook_test.sh exit=0
 LOG
 
 # First fire
@@ -959,7 +962,7 @@ Acceptance:
 GOAL
 mkdir -p "$HOME6/.claude/audit"
 cat > "$HOME6/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
-2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
+2026-05-18T14:30:00Z ./done-hook_test.sh exit=0
 LOG
 STDERR6=$(echo "{\"transcript_path\":\"$TRANSCRIPT6\"}" | HOME="$HOME6" bash "$HOOK" 2>&1 >/dev/null)
 
@@ -1098,6 +1101,7 @@ bash .worktrees/done-hook/.claude/hooks/done-hook_test.sh
 ```
 
 Two possible outcomes:
+
 - **PASSES on first try** — proceed to commit (7/7 PASS).
 - **FAILS perf budget** — hook needs optimization. Likely candidates:
   - `tail -c 200000` already caps input; verify it's being used (it is).
@@ -1133,6 +1137,7 @@ on the 1.5MB scenario."
 **Goal:** Create the skill directory, SKILL.md, and the test harness with scenario 1 (Initial stanza on empty file).
 
 **Files:**
+
 - Create `.claude/skills/goal/SKILL.md`
 - Create `.claude/skills/goal/tests/test_goal_skill.sh`
 
@@ -1209,6 +1214,7 @@ git -C .worktrees/done-hook commit -s -m "test(skills/goal): add test harness wi
 **Goal:** Create `goal.sh` (the skill's runtime) and `SKILL.md` (the trigger metadata).
 
 **Files:**
+
 - Create `.claude/skills/goal/SKILL.md`
 - Create `.claude/skills/goal/goal.sh`
 
@@ -1239,11 +1245,14 @@ Records the current session goal as a stanza in `~/.claude/audit/session-goals/<
 ## Invocation
 
 ```
+
 /goal Goal: <one-line goal>
 Acceptance:
+
 - <bullet 1>
 - <bullet 2>
 - <bullet N>
+
 ```
 
 The skill runs `~/.claude/skills/goal/goal.sh` with the provided text. Behavior:
@@ -1433,6 +1442,7 @@ Three additional scenarios all PASS on Task 12 implementation:
 **Goal:** Create the skill directory layout, SKILL.md, persona file, and an empty Python module stub. Establishes import surface.
 
 **Files:**
+
 - Create `.claude/skills/done/SKILL.md`
 - Create `.claude/skills/done/personas/goal-evaluator.md`
 - Create `.claude/skills/done/eval.py` (skeleton only)
@@ -1789,6 +1799,7 @@ Four additional tests for eval.evaluate():
 **Goal:** Add `done.sh` that orchestrates the full `/done` flow: read goal + outcomes → call eval.py → write user verdict entry. Plus the `abandon` subcommand.
 
 **Files:**
+
 - Create `.claude/skills/done/done.sh`
 - Create `.claude/skills/done/tests/test_skill_integration.sh`
 
@@ -1827,9 +1838,9 @@ Acceptance:
 GOAL
 
 cat > "$HOME_DIR/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
-2026-05-18T14:30:00Z	./done-hook_test.sh	exit=0
-2026-05-18T14:31:00Z	shellcheck ~/.claude/hooks/done-hook.sh	exit=0
-2026-05-18T14:32:00Z	git commit -s -m "docs(specs): add design"	exit=0
+2026-05-18T14:30:00Z ./done-hook_test.sh exit=0
+2026-05-18T14:31:00Z shellcheck ~/.claude/hooks/done-hook.sh exit=0
+2026-05-18T14:32:00Z git commit -s -m "docs(specs): add design" exit=0
 LOG
 
 # Run the Stop hook first to seed the outcomes log
@@ -2181,6 +2192,7 @@ Expected: 0 violations OR a small number of fixable ones (line length, trailing 
 - [ ] **Step 2: Fix violations**
 
 For each reported violation, edit the file inline. Common fixes:
+
 - MD013 (line length): split long lines.
 - MD024 (duplicate headers): rename or merge.
 - MD031 (blanks around fences): add blank lines around ```code``` blocks.
@@ -2354,6 +2366,7 @@ Capture the PR number reported by `gh pr create` — it's needed for Task 22's t
 Use the Agent tool with `subagent_type: principal-engineer`:
 
 > Review PR #<N> on feat/done-hook (done-hook + session-goal protocol). Check architecture against ~/.claude/CLAUDE.md + ~/.claude/rules/. Focus areas:
+>
 > 1. Atomicity — does done-hook.sh bundle concerns?
 > 2. YAGNI — any speculative abstractions?
 > 3. Security — `~/.claude/` write safety; transcript_path parsing.
@@ -2366,11 +2379,12 @@ Use the Agent tool with `subagent_type: principal-engineer`:
 Use the Agent tool with `subagent_type: qa-engineer`:
 
 > Review PR #<N> test quality. Apply the theater-test rule (constitution.md): does every test fail when its subject is broken? For each test:
+>
 > 1. Is the assertion meaningful (not `expect(true)` etc.)?
 > 2. If you deleted the implementation, would the test detect the breakage?
 > 3. Are edge cases / error paths covered, not just happy paths?
 > 4. Does the perf scenario (#7 in done-hook_test.sh) accurately reflect the budget?
-> 5. Mock discipline — does test_eval.py only mock _invoke_nat (one layer)?
+> 5. Mock discipline — does test_eval.py only mock_invoke_nat (one layer)?
 > Output: VERDICT + finding list. Post via `gh pr review <N>`.
 
 - [ ] **Step 3: Dispatch devil's-advocate (if NAT panel is wired up)**
@@ -2378,6 +2392,7 @@ Use the Agent tool with `subagent_type: qa-engineer`:
 If the user's recommendation-panel v3 is live, the panel can be invoked separately. Otherwise: use the Agent tool with a `principal-engineer` subagent and a DA prompt:
 
 > Devil's advocate review of PR #<N>. Find the strongest reason this design is wrong. Consider: hidden assumptions, edge cases, alternative approaches better-fit to the brief. Specifically scrutinize:
+>
 > 1. The bash pattern-match approach in done-hook.sh — when does it falsely match? When does it falsely miss?
 > 2. The NAT-backed /done — what if NAT is consistently wrong? What's the user's recourse?
 > 3. The deliberate code duplication between panel/dispatch.py and done/eval.py — is the YAGNI cost worth the maintenance overhead?
@@ -2387,6 +2402,7 @@ If the user's recommendation-panel v3 is live, the panel can be invoked separate
 - [ ] **Step 4: Address findings**
 
 If any panelist blocks or requests changes:
+
 - Address inline in a new commit.
 - Re-run all tests + linters to verify.
 - Push the fix; re-request review (mark relevant comment as resolved).
@@ -2417,6 +2433,7 @@ Squash commit message should match the conventional commit format (`feat(hooks+s
 - [ ] **Step 8: Update memory**
 
 After merge, optionally save a `claude-tooling/decisions` MemPalace drawer noting:
+
 - The deliberate panel-flag override on Q4 (Stop hook auto-detect — accepted with evidence-only stderr framing).
 - The NAT-backed `/done` integration as the precedent for future hook+skill pairs (hook = bash, reasoning = NAT-Python).
 
@@ -2450,6 +2467,7 @@ No spec section uncovered.
 **2. Placeholder scan:** No `TBD` / `TODO` / `implement later` markers. All code blocks contain complete content. Test assertions are concrete.
 
 **3. Type / name consistency:**
+
 - `EVIDENCE_RECORDS` consistent across Tasks 6, 7, 8 in done-hook.sh.
 - `evaluate(goal_stanza, evidence, user_claim, model)` consistent in Tasks 14, 15, 16.
 - `_invoke_nat(prompt, model, max_tokens)` signature stable across Tasks 14, 15.

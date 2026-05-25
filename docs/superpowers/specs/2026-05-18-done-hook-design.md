@@ -5,6 +5,7 @@
 **Branch:** `feat/done-hook` (worktree at `.worktrees/done-hook/`)
 **Supersedes:** None (new project)
 **Related:**
+
 - Handoff brief: `~/.claude/audit/handoffs/2026-05-15-2000-handoff.md`
 - Validate-recommendation v3 NAT-native design: `docs/superpowers/specs/2026-05-15-validate-recommendation-v3-nat-native-design.md` (reused dispatch pattern)
 - Existing Stop hook: `~/.claude/hooks/context-watch.sh` (peer; coordinated, not replaced)
@@ -136,11 +137,13 @@ Acceptance:
 ```
 
 Parsing rules:
-- The "current goal" is always the last stanza starting with `## ` (Markdown H2).
-- Acceptance bullets are lines starting with `- ` immediately under an `Acceptance:` header within the current stanza.
+
+- The "current goal" is always the last stanza starting with `##` (Markdown H2).
+- Acceptance bullets are lines starting with `-` immediately under an `Acceptance:` header within the current stanza.
 - Anchors for pattern-matching: any literal token in a bullet that looks like a path (`~/...`, `./...`, `docs/...`), a command name (first word matching `[a-z][a-z0-9_-]*`), or a test artifact name (`*_test.sh`, `*_test.go`).
 
 Path derivation:
+
 - Stop hook context: derive `<uuid>` from `basename "$transcript_path" .jsonl`.
 - Skill context (`/goal`, `/done`): same derivation via `~/.claude/sessions/$$.json` lookup (pattern documented in handoff skill).
 
@@ -172,12 +175,14 @@ exit 0
 ```
 
 Behavior:
+
 - Reads `transcript_path` from the hook's stdin JSON (Claude Code passes this on `SessionStart`).
 - If a goal file already exists for this session UUID, exits silently.
 - If absent, prints a two-line nudge to stderr — informational only.
 - <50ms total (one stat call on a per-session path).
 
 Failure modes:
+
 - `transcript_path` missing or empty → silent exit 0 (graceful degradation).
 - `~/.claude/audit/session-goals/` directory missing → `[ -f ]` check fails harmlessly; hook still exits 0.
 
@@ -266,14 +271,16 @@ Stderr output shape (evidence-only, never claims completion):
 The label is `Heuristic: LIKELY_MET` — never `Session goal accomplished`. That phrase fires only after `/done` writes `user.verdict=MET`.
 
 **Goal-name extraction for stderr header:**
-- Pull the first line matching `^Goal: ` from the last stanza of the goal file.
-- Strip the `Goal: ` prefix; trim trailing whitespace.
+
+- Pull the first line matching `^Goal:` from the last stanza of the goal file.
+- Strip the `Goal:` prefix; trim trailing whitespace.
 - Truncate to 60 characters with `…` suffix if longer.
-- If no `Goal: ` line exists (malformed stanza), use the literal string `<unnamed>` as a fallback.
+- If no `Goal:` line exists (malformed stanza), use the literal string `<unnamed>` as a fallback.
 
 **Session-UUID display in stderr header:** print the first 8 characters of the UUID followed by no suffix (e.g., `abc12345`). The full UUID is in the JSONL outcomes entry for machine consumption.
 
 Performance:
+
 - `tail -c 200000` caps input to 200 KB (most-recent activity).
 - `grep -F` (fixed-string) avoids regex overhead.
 - All shell-builtin parsing; no Python or jq invocation per anchor.
@@ -281,6 +288,7 @@ Performance:
 - Measured budget: <100ms typical, <300ms worst on a 1.5 MB bash log.
 
 Failure modes:
+
 - `transcript_path` missing → exit 0 silently.
 - Goal file unreadable → emit `NO_GOAL` entry once, exit 0.
 - Bash audit log missing (fresh setup) → 0 matched, heuristic=NO_EVIDENCE, log entry written.
@@ -304,11 +312,13 @@ tools:
 ```
 
 Invocations:
+
 - `/goal` (no args) — interactive prompt: ask user for `Goal:` line and `Acceptance:` bullets.
 - `/goal <text>` — parse `<text>` as a goal block (must contain `Goal:` line + `Acceptance:` section).
 - `/goal amend <text>` — same parsing; the `amend` keyword is a usability signal but does not change behavior (see rule 3 below).
 
 Behavior:
+
 1. Resolve session UUID via `~/.claude/sessions/$$.json` → extract `sessionId`.
 2. Path: `~/.claude/audit/session-goals/<uuid>.md`. Skill creates the parent directory on first invocation if absent.
 3. **Stanza type is determined solely by file existence**, not by the `amend` keyword:
@@ -336,6 +346,7 @@ tools:
 ```
 
 File layout:
+
 ```
 ~/.claude/skills/done/
 ├── SKILL.md
@@ -541,10 +552,12 @@ The reflection skill's existing `scripts/analyze-sessions.sh` is extended in a v
 ### 8. OTel telemetry (opt-in)
 
 Off by default. Enable via either:
+
 - Env var: `DONE_HOOK_OTEL=1`
 - Config: `otel.enabled: true` in `~/.claude/audit/done.yml`
 
 When enabled:
+
 - `/done` writes an OTel-compatible span as JSON to `~/.claude/audit/otel-spans-YYYY-MM-DD.jsonl` alongside the regular outcomes entry.
 - Span shape: standard OTel JSON with `name="session.done"`, attributes for `session.id`, `goal.matched`, `goal.total`, `user.verdict`, `user.nat_verdict`.
 - v1 ships the emitter only. A Python uploader to push spans to a configured OTel collector is v2 scope.
@@ -619,6 +632,7 @@ All tests mock `panel.dispatch._invoke_nat` (equivalent in `done/eval.py`). No r
 ### Integration test — `skills/done/tests/test_skill_integration.sh`
 
 Spins up a fake session UUID, writes a goal file with 4 bullets, writes a synthetic bash audit log with 3 matching commands, then:
+
 1. Invokes `done-hook.sh` → asserts outcomes log entry has `heuristic.verdict=LIKELY_MET`, `matched=3`, `total=4`.
 2. Invokes `/done confirm` with `_invoke_nat` stubbed to return AGREE → asserts new outcomes entry has `user.verdict=MET`, `nat_verdict=AGREE`.
 3. Cleans up.
