@@ -113,8 +113,8 @@ Invoke the validate-recommendation skill before asking the user. State file:
   $STATE_FILE
 
 The skill will:
-  1. Dispatch devil's advocate (external model via dispatch-da.sh) and PE (principal-engineer subagent) panelists in parallel
-  2. Aggregate verdicts via aggregate.sh
+  1. Dispatch enabled panelists in parallel (panel dispatch for nat-* backends; Agent tool for claude-subagent backends)
+  2. Aggregate verdicts via panel aggregate (JSON directive to stdout)
   3. Emit PANEL_VERDICT: HOLD (auto-proceed) or DISSENT (re-ask augmented) or ERROR (re-ask original)
 
 Skill location: .claude/skills/validate-recommendation/SKILL.md
