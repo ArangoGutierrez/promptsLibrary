@@ -74,6 +74,7 @@ Write to `docs/audits/2026-05-25-claude-config-audit.md`:
 ### 2.5 skills
 ### 2.6 agents
 ### 2.7 plugins enabled
+### 2.8 meta-skills (router / gating patterns — currently empty; finding describes the gap)
 
 ## 3. Cross-cutting themes
 
@@ -84,6 +85,7 @@ Write to `docs/audits/2026-05-25-claude-config-audit.md`:
 ### 3.5 CFO skill relocation — mechanics
 ### 3.6 Worktrees: experimental flag vs official GA
 ### 3.7 Security posture
+### 3.8 Plan-routing via cheap classifier (new)
 
 ## 4. Phased action plan
 
@@ -448,10 +450,10 @@ with plugin-provided skills."
 
 ---
 
-## Task 8: Findings — agents and plugins (§2.6, §2.7)
+## Task 8: Findings — agents, plugins, and meta-skills (§2.6, §2.7, §2.8)
 
 **Files:**
-- Modify: `docs/audits/2026-05-25-claude-config-audit.md` (§2.6, §2.7)
+- Modify: `docs/audits/2026-05-25-claude-config-audit.md` (§2.6, §2.7, §2.8)
 
 - [ ] **Step 1: Read all 4 agent files**
 
@@ -479,13 +481,36 @@ Five plugins enabled. For each, determine if it's actively used in your workflow
 
 Minimum one finding per plugin with a recommendation (keep / disable / re-evaluate).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Write F-META-NN findings (§2.8 meta-skills)**
+
+The meta-skills area is currently empty — there are no router/gating skills in `~/.claude/skills/` today. The finding is a **gap-finding**: it describes the missing category and recommends building the first member.
+
+Write at least:
+
+```markdown
+### 2.8 meta-skills
+
+#### F-META-01 — Missing `pick-planner` router (gap finding)
+- **Severity:** P1
+- **Token impact:** estimated 2-4K tokens saved per simple plan invocation (current writing-plans boilerplate on simple tasks). Breakeven at ~1 simple invocation per session; classifier itself costs ~500-800 tokens.
+- **Friction:** medium — currently every brainstorm → plan flow produces a heavyweight plan regardless of complexity.
+- **Confidence:** high (architecturally identical to `validate-recommendation`, same panel infrastructure, same Nemotron backend, same persona pattern).
+- **Effort:** small — one new skill dir, one new persona file, one edit to brainstorming's "Transition to implementation" step.
+- **Current state:** No router/gating skills exist except `validate-recommendation` (which gates `AskUserQuestion`, not skill invocations). `writing-plans` is invoked unconditionally regardless of task complexity.
+- **Recommended fix:** Build `~/.claude/skills/pick-planner/SKILL.md` + `personas/plan-complexity.md`. Classifier returns SIMPLE / MODERATE / COMPLEX. SIMPLE inlines 3-5 bullets; MODERATE writes a lite plan; COMPLEX invokes `superpowers:writing-plans`. Env-var disable via `SKIP_PLAN_ROUTER=1`. Update brainstorming's "Transition to implementation" wording.
+- **Evidence:** spec §3.8 (area definition), §4.8 (theme), §5 P1 item 6.
+```
+
+If additional meta-skill gaps surface during the audit pass (e.g., a brainstorming gate, a debugging gate), capture them as F-META-02, F-META-03 with the same finding shape.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add docs/audits/2026-05-25-claude-config-audit.md
-git commit -sS -m "docs(audit): F-AGENT and F-PLUGIN findings
+git commit -sS -m "docs(audit): F-AGENT, F-PLUGIN, F-META findings
 
-Findings for agents/ and enabledPlugins per spec rubric."
+Findings for agents/, enabledPlugins, and meta-skills (new gap-finding
+area: pick-planner router) per spec rubric."
 ```
 
 ---
@@ -502,7 +527,7 @@ For each theme, include:
 2. **Cross-references** — which finding IDs (from §2) the theme touches.
 3. **Recommendation direction** — concrete, not "consider".
 
-Themes (must include all seven):
+Themes (must include all eight):
 - 3.1 Stop-hook LLM prompt cost
 - 3.2 Cache-TTL regression
 - 3.3 Opus 4.7 tokenizer expansion
@@ -510,6 +535,7 @@ Themes (must include all seven):
 - 3.5 CFO skill relocation mechanics
 - 3.6 Worktrees experimental flag vs official GA
 - 3.7 Security posture (incl. PANEL_DA_API_KEY rotation requirement)
+- 3.8 Plan-routing via cheap classifier — generalizes validate-recommendation; cross-ref F-META-01
 
 - [ ] **Step 2: Commit**
 
@@ -550,6 +576,7 @@ Same shape. Items per spec §5 P1:
 3. Compress rules/ where redundant (resolves F-RULES-NN aggregate)
 4. Tighten skill descriptions (resolves F-SKILL-02)
 5. Cache-TTL strategy (resolves §3.2)
+6. Build `pick-planner` router skill (resolves F-META-01, §3.8)
 
 - [ ] **Step 3: Build P2 — Polish**
 
@@ -686,7 +713,7 @@ After all tasks complete:
    - [ ] Every recommended fix names the file/section to change
 
 3. **Type consistency:**
-   - [ ] Finding ID format consistent: `F-<AREA>-<NN>` (CLAUDEMD, RULES, SETTINGS, HOOK, SKILL, AGENT, PLUGIN)
+   - [ ] Finding ID format consistent: `F-<AREA>-<NN>` (CLAUDEMD, RULES, SETTINGS, HOOK, SKILL, AGENT, PLUGIN, META)
    - [ ] §4 action items reference exact finding IDs that exist in §2
 
 If any check fails, fix inline and amend the relevant commit.

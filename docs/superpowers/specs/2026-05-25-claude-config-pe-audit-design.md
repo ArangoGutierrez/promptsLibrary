@@ -103,6 +103,9 @@ Areas: 4 agents (doc-writer, explorer, principal-engineer, qa-engineer) — used
 ### 3.7 plugins enabled
 Areas: actual usage of each (code-review, code-simplifier, superpowers, gopls-lsp, clangd-lsp) — clangd-lsp value is questionable for a Go/K8s engineer.
 
+### 3.8 meta-skills (router / gating patterns)
+A new category for skills whose role is to **route or gate** other expensive operations using a cheap classifier (e.g., Nemotron 3 Super via the panel infrastructure), generalizing the pattern already proven by `validate-recommendation`. Currently empty — finding will describe the gap and recommend candidates. First candidate: `pick-planner`, a router that classifies task complexity (SIMPLE / MODERATE / COMPLEX) and either inlines a quick plan, emits a lite plan, or invokes `superpowers:writing-plans`. Brainstorming's "Transition to implementation" step would call `pick-planner` instead of `writing-plans` directly. Future candidates: gates on brainstorming (skip for trivial requests), debugging (skip for trivial errors), review (calibrate effort).
+
 ## 4. Cross-cutting themes
 
 These themes span multiple areas and warrant explicit treatment in the audit doc rather than being scattered across findings.
@@ -133,13 +136,24 @@ Target structure: `~/cfo/` project root with its own `.claude/skills/cfo*/` subt
 - `permissions.ask` correctly prompts on `rm`, `git rebase`, `git reset --hard`, `git push --force`, `sudo`.
 - `sign-commits.sh` hook enforces `-s -S` on every commit. Verified present.
 
+### 4.8 Plan-routing via cheap classifier (new — generalizes `validate-recommendation`)
+The `superpowers:writing-plans` skill produces a heavyweight plan (~500-800 lines) regardless of task complexity. For simple, single-file tasks this is pure token waste — the executor reads boilerplate to find the actual work. Proposed mechanism: a new `pick-planner` skill (or equivalent) called from brainstorming's "Transition to implementation" step. It reads the spec, dispatches a Nemotron 3 Super classifier via the existing `panel` infrastructure (`~/.claude/skills/validate-recommendation/personas/` is the precedent; new persona at `personas/plan-complexity.md`), and routes:
+
+- **SIMPLE** (single file, <30 min, no design call) → emit 3-5 bullet checklist inline; no plan doc.
+- **MODERATE** (2-4 files, <2hr, one design call) → emit a lite plan (file list + ordered tasks, no per-step code blocks); commit to `docs/superpowers/plans/`.
+- **COMPLEX** (multi-file, multi-PR, design trade-offs) → invoke `superpowers:writing-plans` as today.
+
+Cost math: classifier ≈ 500-800 tokens per call (Nemotron is cheap); current writing-plans overhead on simple tasks ≈ 3-5K tokens of boilerplate. Breakeven at ~1 simple invocation per session. Architecturally: pure addition (no fork of the superpowers plugin), trivially disabled via env var, mirrors the validate-recommendation pattern.
+
+Cross-references: F-META-01 (build `pick-planner`). Risk: classifier mis-classifies and a complex task gets a quick-plan that under-delivers — mitigation is user override (`SKIP_PLAN_ROUTER=1` env var) and a "promote to full plan" command if the lite plan turns out insufficient mid-execution.
+
 ## 5. Phased plan
 
 Four phases. **Phase A produces the audit deliverable**; P0/P1/P2 are action phases that consume it. Each action phase is independently shippable with a validation gate.
 
 ### Phase A — Produce the audit document (target: one PR adding `docs/audits/2026-05-25-claude-config-audit.md`)
 1. Inventory snapshot table — file → size → role → status.
-2. Findings list — apply the §1 rubric and §3 area coverage to produce concrete findings with stable IDs (`F-CLAUDEMD-01`, `F-RULES-02`, `F-SETTINGS-03`, `F-HOOK-04`, `F-SKILL-05`, `F-AGENT-06`, `F-PLUGIN-07`).
+2. Findings list — apply the §1 rubric and §3 area coverage to produce concrete findings with stable IDs (`F-CLAUDEMD-01`, `F-RULES-02`, `F-SETTINGS-03`, `F-HOOK-04`, `F-SKILL-05`, `F-AGENT-06`, `F-PLUGIN-07`, `F-META-08`).
 3. Cross-cutting themes section incorporating §4 of this spec.
 4. Phased plan section that maps findings → P0/P1/P2.
 5. PR review: user reads the audit doc, can request adjustments before any action phase begins. P0 does NOT start until the audit doc lands.
@@ -159,6 +173,7 @@ Four phases. **Phase A produces the audit deliverable**; P0/P1/P2 are action pha
 3. Compress `rules/*.md` where redundant with CLAUDE.md (or vice versa). Set per-file line ceilings (suggested: rules ≤50 lines/file, CLAUDE.md ≤120 lines).
 4. Tighten skill descriptions across remaining skills. Target ≤200 chars per `description` field. (Anthropic guidance: descriptions should be pushy but compact.)
 5. Cache-TTL strategy: document the 5m default; mark which long-running flows (team-execute, multi-worktree) explicitly opt into 1h-TTL writes.
+6. Build `pick-planner` router skill (resolves F-META-01). New skill + `personas/plan-complexity.md` Nemotron persona. Brainstorming's "Transition to implementation" updated to call `pick-planner` instead of `writing-plans` directly. Env-var disable: `SKIP_PLAN_ROUTER=1`.
 
 ### P2 — Polish
 1. Consolidate hook `*_test.sh` files; document the convention so future hooks ship with tests.
@@ -209,6 +224,7 @@ If a phase fails its validation gate, do not promote to `~/.claude`; debug in th
 - Editing strategy — decided 2026-05-25. User: "we first edit promptsLibrary/.claude, make sure everything is ok, then promote to ~/.claude".
 - Stop-hook scoping confirmed in scope on user prompt 2026-05-25.
 - 20% reduction target — accepted 2026-05-25.
+- Meta-skills area added (§3.8) and plan-routing theme (§4.8) — decided 2026-05-25. User: "we add something similar like what we have for validator-recommendation for when to use writing plans and when is not required ... by asking nemotron 3 super". User chose "New area 2.8 meta-skills" + "Amend spec + plan now".
 
 ### 6.5 Open items (resolved during implementation)
 - Exact wording of the "TDD is recommended, not required" language in CLAUDE.md and constitution.md.
