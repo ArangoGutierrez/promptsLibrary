@@ -148,6 +148,67 @@
 - **Evidence:** `~/.claude/CLAUDE.md:17`; `~/.claude/settings.json:175-187`; spec §4.1 (Stop-hook LLM prompt cost).
 
 ### 2.2 rules/
+
+#### F-RULES-01 — rules/ auto-load surface: ~2.9 K tokens every session
+- **Severity:** P1
+- **Token impact:** ~2,900 tokens/session (153 lines × ~19 tokens/line average, 7 files)
+- **Friction:** high
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** All 7 files in `~/.claude/rules/` are auto-loaded every session by Claude Code. Total surface is 153 lines / 8,039 bytes. At ~19 tokens/line this costs ~2,900 tokens before the first user message arrives, on top of CLAUDE.md's ~1,200 tokens. The combined auto-loaded surface is ~4,100 tokens, and several findings below show a material fraction of that is duplicate content already present elsewhere in the auto-loaded set.
+- **Recommended fix:** Apply the per-file fixes in F-RULES-02 through F-RULES-06. After those are done, re-measure: target ≤100 lines total across all rules/ files, eliminating duplicate content that is also in CLAUDE.md or a sibling rules/ file. Set an enforced per-file ceiling of 50 lines.
+- **Evidence:** `~/.claude/rules/` (all 7 files); `cat ~/.claude/rules/*.md | wc -l -c` → `153 / 8039`; spec §1 (auto-load cost rubric) and §5 P1 item 3.
+
+#### F-RULES-02 — constitution.md "Implementation Discipline" duplicates CLAUDE.md "TDD Protocol"
+- **Severity:** P1
+- **Token impact:** ~40 tokens/session (2 duplicate lines × ~20 tokens/line)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `constitution.md` lines 17-19 contain `## Implementation Discipline` with two bullets: `"When a test fails, fix the implementation. Modify the test only when the test itself has a genuine bug."` and `"Change tests and implementation in separate turns and separate commits."` CLAUDE.md lines 41-43 contain the `## TDD Protocol` section which includes: `"Tests are contracts: if a test fails, fix the implementation (unless the test has a genuine bug)."` and `"Change tests and implementation in separate turns; commit them in separate commits."` Both files are auto-loaded; this rule is loaded twice every session.
+- **Recommended fix:** Delete `## Implementation Discipline` (lines 17-19) from `constitution.md`. The rule is authoritative in CLAUDE.md. If F-CLAUDEMD-01 strips the "enforced by hook" language from CLAUDE.md, the TDD Protocol section remains the canonical home for this rule.
+- **Evidence:** `~/.claude/rules/constitution.md:17-19`; `~/.claude/CLAUDE.md:41-43`; see also F-CLAUDEMD-02.
+
+#### F-RULES-03 — constitution.md "Theater Tests" partially duplicates learned-anti-patterns.md
+- **Severity:** P1
+- **Token impact:** ~180 tokens/session (9 lines of theater-test content in constitution.md vs 1 line summary in learned-anti-patterns.md — both auto-loaded)
+- **Friction:** medium
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** `constitution.md` devotes 9 lines (5-10, 12-15, 21-24) across three sections to theater-test rules. `learned-anti-patterns.md` line 8 contains the same root problem as a structured pattern entry: `"Pattern: Theater tests — tautological assertions, missing assertions, over-mocking | Fix: Delete and rewrite…"`. The two files approach the same failure mode from different angles (detailed rules vs. curated pattern log), but the overlap means the model receives the theater-test warning twice every session in different phrasings, diluting each.
+- **Recommended fix:** Keep `constitution.md` as the authoritative detailed rules source for theater tests (it has the highest signal density). Remove the theater-test entry from `learned-anti-patterns.md` line 8, since it is fully covered by constitution.md. `learned-anti-patterns.md` should record patterns NOT already in constitution.md — new emergence, not restatement.
+- **Evidence:** `~/.claude/rules/constitution.md:5-15,21-24`; `~/.claude/rules/learned-anti-patterns.md:8`; spec §1 (redundancy across rules/).
+
+#### F-RULES-04 — security.md Containers section duplicates container-conventions.md Security section
+- **Severity:** P1
+- **Token impact:** ~60 tokens/session (3 duplicate lines × ~20 tokens/line)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `security.md` lines 12-14 read: `"No --privileged/hostPID/hostNetwork without documented threat model"` and `"Drop all caps, add back only needed."` `container-conventions.md` lines 11 and 13 cover the same ground: `"No --privileged, no hostPID, no hostNetwork unless documented with justification"` and `"Scan images with trivy before push; block on critical/high CVEs"`. The `trivy` rule also appears in `security.md` line 8. Three distinct instances of the no-privileged rule and two instances of the trivy rule exist across auto-loaded files.
+- **Recommended fix:** Delete `## Containers` section (lines 12-14) from `security.md`. Container security is owned by `container-conventions.md`. Keep the `trivy` scan reference only in `security.md` line 8 (SAST & Supply Chain context) and remove the duplicate from `container-conventions.md` line 13, or vice versa — one source of truth for each tool rule.
+- **Evidence:** `~/.claude/rules/security.md:8,12-14`; `~/.claude/rules/container-conventions.md:11,13`; spec §1 (redundancy across rules/).
+
+#### F-RULES-05 — security.md RBAC rule duplicates k8s-conventions.md RBAC rule
+- **Severity:** P2
+- **Token impact:** ~20 tokens/session (1 duplicate line × ~20 tokens)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `security.md` line 17: `"Namespaced Role over ClusterRole. One SA per workload, never default."` `k8s-conventions.md` line 16: `"Namespaced Role over ClusterRole. +kubebuilder:rbac markers. Audit ClusterRoleBindings."` Both files auto-load every session. The namespaced-Role-over-ClusterRole rule appears twice; the two versions have different addenda (SA constraint vs. kubebuilder markers) but share the same core dictum, which means neither is fully authoritative.
+- **Recommended fix:** Merge both lines into `k8s-conventions.md` line 16: `"Namespaced Role over ClusterRole; one SA per workload, never default. +kubebuilder:rbac markers. Audit ClusterRoleBindings."` Delete `## RBAC` section (lines 16-17) from `security.md`.
+- **Evidence:** `~/.claude/rules/security.md:16-17`; `~/.claude/rules/k8s-conventions.md:15-16`; spec §1 (redundancy across rules/).
+
+#### F-RULES-06 — git-workflow.md mentions agents-workbench in same terms as CLAUDE.md
+- **Severity:** P2
+- **Token impact:** ~20 tokens/session (1 line × ~20 tokens)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `git-workflow.md` line 12: `"agents-workbench is the coordination branch — read-only for source code"`. CLAUDE.md line 47: `"Implementation happens in worktrees. agents-workbench is read-only for source code; writes are blocked by enforce-worktree.sh."` CLAUDE.md line 59: `"Commit context to agents-workbench before ending long sessions."` The agents-workbench read-only constraint is stated in both auto-loaded files.
+- **Recommended fix:** Remove line 12 from `git-workflow.md`. The constraint is already authoritative in CLAUDE.md and is enforced by `enforce-worktree.sh`. The git-workflow.md file should remain focused on commit format, branch naming, PR process, and review protocol — all of which are absent from CLAUDE.md.
+- **Evidence:** `~/.claude/rules/git-workflow.md:12`; `~/.claude/CLAUDE.md:47`; spec §1 (redundancy with CLAUDE.md).
+
 ### 2.3 settings.json
 ### 2.4 hooks
 ### 2.5 skills
