@@ -131,7 +131,11 @@ while IFS= read -r bullet; do
 done <<< "$BULLETS"
 EVIDENCE_RECORDS+="]"
 
-if [ "$TOTAL" -gt 0 ] && [ "$MATCHED" -ge "$((TOTAL - 1))" ]; then
+# LIKELY_MET tolerates one bullet unmatched, but only when TOTAL>1.
+# At TOTAL=1, MATCHED=0 must be NO_EVIDENCE — not LIKELY_MET (PR #19 review F1).
+if [ "$TOTAL" -gt 1 ] && [ "$MATCHED" -ge "$((TOTAL - 1))" ]; then
+  HEURISTIC="LIKELY_MET"
+elif [ "$TOTAL" -eq 1 ] && [ "$MATCHED" -eq 1 ]; then
   HEURISTIC="LIKELY_MET"
 elif [ "$MATCHED" -gt 0 ]; then
   HEURISTIC="PARTIAL"
