@@ -292,6 +292,131 @@
 - **Evidence:** `~/.claude/settings.json` `autoMemoryEnabled = true`; `hooks.SessionStart` contains `reflection-staleness.sh` but no memory-staleness equivalent; `anthropic-skills:consolidate-memory` is available in skills list but not scheduled.
 
 ### 2.4 hooks
+
+**Summary:** 15 active hook scripts registered across 7 event types (SessionStart, PreToolUse, PostToolUse, PreCompact, Stop, PermissionDenied, plus unregistered helpers). 6 `.bak` files in `~/.claude/hooks/` are iteration debris. `tdd-guard.sh` is locked for removal per spec §4.4. The Stop hook includes a `"type": "prompt"` entry that spawns a full Claude inference pass on every stop event. `validate-recommendation.sh` triggers via `AskUserQuestion` hook and writes to `~/.claude/panel/work/` which is outside the sandbox writable paths.
+
+Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 400 bytes; reflection-staleness.sh: 104 bytes; session-goal-init.sh: 0 bytes when transcript absent). `mempalace-wake.sh` (6803 bytes) is present in `~/.claude/hooks/` but is **not registered** in settings.json.
+
+---
+
+#### F-HOOK-01 — Stale `.bak` iteration-debris files in hooks directory
+- **Severity:** P2
+- **Token impact:** N/A (not loaded by runtime, but pollutes the directory and confuses audits)
+- **Friction:** low (noise; any grep across hooks/ picks up stale logic)
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** Six backup files were created during iterative hook development and never removed: `tdd-guard.sh.bak-pre-electron-glue-exemption`, `tdd-guard.sh.bak-pre-mirror-tree-edit`, `tdd-guard.sh.bak-pre-openkurama-additions`, `tdd-guard.sh.bak-pre-worktree-fix`, `enforce-worktree.sh.bak-pre-outside-repo-fix`, and `test-quality-lint.sh.bak-pre-architect-edit`. They are not registered in settings.json and serve no operational purpose. They also preserve older, less-correct versions of logic (pre-electron-glue-exemption, pre-worktree-fix) that would be confusing if re-activated by accident.
+- **Recommended fix:** `rm ~/.claude/hooks/*.bak*` — all six files. The canonical versions are the live `.sh` scripts; git history preserves all prior revisions. Since `tdd-guard.sh` is being removed (F-HOOK-02), its four `.bak` siblings are superseded entirely.
+- **Evidence:** `~/.claude/hooks/tdd-guard.sh.bak-pre-electron-glue-exemption` (8376 bytes, 2026-05-04), `~/.claude/hooks/tdd-guard.sh.bak-pre-mirror-tree-edit` (6936 bytes, 2026-04-28), `~/.claude/hooks/tdd-guard.sh.bak-pre-openkurama-additions` (6376 bytes, 2026-04-28), `~/.claude/hooks/tdd-guard.sh.bak-pre-worktree-fix` (7363 bytes, 2026-04-28), `~/.claude/hooks/enforce-worktree.sh.bak-pre-outside-repo-fix` (2539 bytes), `~/.claude/hooks/test-quality-lint.sh.bak-pre-architect-edit` (6322 bytes).
+
+---
+
+#### F-HOOK-02 — `tdd-guard.sh` locked for removal — settings.json must be updated
+- **Severity:** P1
+- **Token impact:** ~100 tokens per Write/Edit tool call (script exec overhead + stderr on false-positive blocks)
+- **Friction:** high (false-positive blocks on valid implementation writes; 229 lines of exemption case-statements that keep growing)
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** `tdd-guard.sh` (229 lines, 9438 bytes) is registered in `settings.json` at **two** separate locations: `PreToolUse.Write` (line 123) and `PreToolUse.Edit` (line 136). The script enforces Red-Green-Refactor by blocking implementation writes when no test file is recently changed. Per spec §4.4, this is a locked decision for removal: the exemption list (lines 52–137) has grown to cover most real file types and the guard fires on legitimate writes regularly enough to cause workflow friction without catching actual TDD violations in practice. Four `.bak` variants (F-HOOK-01) document repeated scope-creep iterations.
+- **Recommended fix:** (1) Remove both `tdd-guard.sh` entries from `~/.claude/settings.json` (lines 119–124 and 132–138, the `Write` and `Edit` hook lists). (2) Delete `~/.claude/hooks/tdd-guard.sh`. (3) Delete all four `tdd-guard.sh.bak-*` files (covered by F-HOOK-01). TDD discipline is enforced by the `/tdd-protocol` skill and CLAUDE.md wording — the hook is not needed. Verify: no `tdd-guard` references remain in `settings.json` after edit.
+- **Evidence:** `~/.claude/settings.json:123`, `~/.claude/settings.json:136`; spec §4.4 (locked decision); `~/.claude/hooks/tdd-guard.sh:52–137` (exemption list length); four `.bak` files documenting repeated fixes.
+
+---
+
+#### F-HOOK-03 — Stop hook `"type": "prompt"` — full LLM inference on every session stop
+- **Severity:** P0
+- **Token impact:** ~800–1200 tokens per stop event (prompt: 395 chars + transcript tail injected as context; response: short but model must read the prompt and generate `OK` or `STOP: …`)
+- **Friction:** medium (adds latency to every stop; occasionally blocks valid responses when the model misclassifies the conversation)
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** `~/.claude/settings.json:179–180` registers a `"type": "prompt"` Stop hook with a 395-character prompt that re-reads the transcript and checks for unverified completion claims. This fires on **every** stop event, including mid-session tool-use stops. Unlike `"type": "command"` hooks (which run a script), `"type": "prompt"` hooks spawn a second Claude inference pass, incurring ~800–1200 tokens. This is the primary driver of the P0 cost finding documented in **F-SETTINGS-01**; this finding captures the hook-side mechanics.
+- **Recommended fix:** Replace the `"type": "prompt"` entry with a `"type": "command"` hook (`verify-completion.sh`) that uses `grep`/`jq` to heuristically detect unverified claims in the last assistant message text — no LLM call needed. If the heuristic fires, it should exit 2 with a message directing the user to run verification manually. This is the approach analyzed in the spec §3.1 cross-cutting theme. See **F-SETTINGS-01** for the full cost analysis and recommended replacement.
+- **Evidence:** `~/.claude/settings.json:179–180` (`"type": "prompt"`); Stop hook prompt text (395 chars); cross-ref **F-SETTINGS-01**; spec §3.1.
+
+---
+
+#### F-HOOK-04 — `validate-recommendation.sh` writes verdict files to `~/.claude/panel/work/` — sandbox-write friction
+- **Severity:** P0
+- **Token impact:** N/A (correctness issue, not token cost)
+- **Friction:** high (hook and skill silently fail when sandbox blocks the write; panel dispatch appears to succeed but no verdict file is written, causing the skill to fall back on error path every time)
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** `validate-recommendation.sh` is **not registered** in `settings.json` (it is a helper invoked by the harness AskUserQuestion hook path). The skill's `SKILL.md:89` instructs Claude to create `WORKDIR="${HOME}/.claude/panel/work/${CLAUDE_SESSION_ID:-$PPID}"` and write per-panelist `.verdict` files there. The path `~/.claude/panel/work/` is outside the sandbox write-allowed paths (sandbox allows `$TMPDIR`, `.`, and `/tmp/claude` variants). During the brainstorm for this audit, a live friction incident was observed: the panel dispatch completed but the skill could not read verdict files because the write had been silently blocked by the sandbox. The hook itself uses `$TMPDIR` correctly for the state file (line 58–59), but the skill's WORKDIR is not sandbox-safe.
+- **Recommended fix:** Two-track edit: (1) In `SKILL.md:89`, change `WORKDIR="${HOME}/.claude/panel/work/..."` to `WORKDIR="${TMPDIR:-/tmp}/claude-panel-work/${CLAUDE_SESSION_ID:-$PPID}"` — uses `$TMPDIR`, which is always sandbox-writable. (2) Add `~/.claude/panel/work` to the project sandbox `write.allowOnly` list in `settings.json` as a belt-and-suspenders fallback. The `TMPDIR`-based path is the primary fix; the allowlist entry guards against any remaining hardcoded references. Cross-ref: `~/.claude/panel/config.yml` and `config.yml.bak`/`config.yml.smoke-bak` (two additional `.bak` files in the panel dir that should also be cleaned up).
+- **Evidence:** `~/.claude/skills/validate-recommendation/SKILL.md:89` (`WORKDIR="${HOME}/.claude/panel/work/..."`); `~/.claude/skills/validate-recommendation/README.md:221,276,303` (hardcoded `~/.claude/panel/work/` path); sandbox policy (write allowOnly excludes `~/.claude/panel/`); live friction incident during audit brainstorm (2026-05-25).
+
+---
+
+#### F-HOOK-05 — SessionStart hook aggregate output: 504 bytes per session start
+- **Severity:** P1
+- **Token impact:** ~126 tokens per session start (504 bytes ÷ 4 bytes/token), plus session-goal-init.sh emits ~60 bytes (~15 tokens) when a goal file is absent
+- **Friction:** low (no blocking; purely additive context overhead)
+- **Confidence:** high (measured, not estimated)
+- **Effort:** trivial
+- **Current state:** Three hooks fire on every SessionStart: `inject-date.sh` outputs **400 bytes** (current date + year rule), `reflection-staleness.sh` outputs **104 bytes** (staleness reminder when >7 days since last run), and `session-goal-init.sh` outputs **0 bytes** when transcript path is absent (typically on cold start) or ~60 bytes when goal file is missing. Total registered SessionStart output: **504 bytes** (~126 tokens). This is within acceptable range (spec §2 budget is 500 tokens for SessionStart hooks), but the `inject-date.sh` output contains a verbose rule sentence (3 lines) that could be trimmed. Additionally, `mempalace-wake.sh` exists in `~/.claude/hooks/` (6803 bytes, ~1701 tokens) but is **not registered** in settings.json — if ever registered, it would push SessionStart context well past the budget.
+- **Recommended fix:** Current registered output (504 bytes) is borderline acceptable. Trim `inject-date.sh` to emit only `TODAY: <date>\nCURRENT YEAR: <year>\n` (removing the verbose `RULE:` paragraph, which duplicates `inject-date.sh`'s intent already captured in CLAUDE.md). This reduces SessionStart output by ~270 bytes (~68 tokens). Do NOT register `mempalace-wake.sh` without first measuring its actual output under live conditions (it calls a Python subprocess that may produce variable-length drawer content).
+- **Evidence:** measured output: `inject-date.sh` = 400 bytes (tested `echo '{}' | inject-date.sh | wc -c`); `reflection-staleness.sh` = 104 bytes; `session-goal-init.sh` = 0 bytes (no transcript); `mempalace-wake.sh` = 6803 bytes (unregistered); `~/.claude/settings.json:81–89` (SessionStart hook list).
+
+---
+
+#### F-HOOK-06 — `probe-approve.sh` is an expired viability probe left in the hooks directory
+- **Severity:** P1
+- **Token impact:** N/A (not registered)
+- **Friction:** low (present but inert; risk if accidentally registered)
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `~/.claude/hooks/probe-approve.sh` (1534 bytes) is a script explicitly commented as `TEMPORARY: remove from settings.json after the probe is complete.` It auto-approves every PreToolUse call by emitting `permissionDecision="allow"` and was written to test whether hook-based permission overrides could bypass enterprise-managed `ask` rules. The probe is complete (the comment implies it was already removed from settings.json — confirmed: not registered). The script remains on disk with no operational purpose and with dangerous semantics (blanket PreToolUse approval). Accidental registration would silently bypass all permission prompts.
+- **Recommended fix:** Delete `~/.claude/hooks/probe-approve.sh`. If probe results need to be preserved, they belong in `docs/audits/` as a write-up, not as an executable script in the hooks directory.
+- **Evidence:** `~/.claude/hooks/probe-approve.sh:13` (`TEMPORARY: remove from settings.json after the probe is complete`); script not present in `jq '.hooks' ~/.claude/settings.json` output; semantics: `permissionDecisionReason: "probe: auto-approving to test hook override of managed-settings"`.
+
+---
+
+#### F-HOOK-07 — `validate-recommendation.sh` is not registered in settings.json despite being an active system component
+- **Severity:** P1
+- **Token impact:** N/A (hooks fire via AskUserQuestion path, not direct settings registration)
+- **Friction:** medium (discoverability gap; unclear how it is invoked from settings.json audit perspective)
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `validate-recommendation.sh` is described in its header as a `PreToolUse hook for AskUserQuestion` but does not appear in `settings.json` under any event type. The script is 122 lines with a full test suite (`validate-recommendation_test.sh`, 160 lines), a companion skill (`~/.claude/skills/validate-recommendation/`), and active use. It is triggered by the AskUserQuestion tool intercept path rather than direct `PreToolUse` matcher. This architecture means its registration location is not in the standard `hooks` JSON but is implicit in the skill invocation chain — which is not auditable from settings.json alone.
+- **Recommended fix:** Add a comment block to `settings.json` (or a companion `hooks/README.md`) documenting that `validate-recommendation.sh` is invoked via the AskUserQuestion intercept path, not via a direct matcher entry. This makes the hook registration model explicit for future auditors. If the AskUserQuestion interception can be expressed as a `PreToolUse` matcher (`"matcher": "AskUserQuestion"`), add it to settings.json for consistency.
+- **Evidence:** `~/.claude/hooks/validate-recommendation.sh:1–8` (header describes hook purpose); not present in `jq '.hooks' ~/.claude/settings.json`; companion skill at `~/.claude/skills/validate-recommendation/SKILL.md`.
+
+---
+
+#### F-HOOK-08 — `mempalace-wake.sh` is present in hooks directory but not registered — 6803 bytes of latent SessionStart cost
+- **Severity:** P1
+- **Token impact:** 1701 tokens per session start if registered (6803 bytes ÷ 4)
+- **Friction:** low (currently inert; becomes P0 if registered without review)
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `~/.claude/hooks/mempalace-wake.sh` (2513 bytes on disk, but outputs 6803 bytes at runtime including Python subprocess output for pre-loading critical MemPalace drawers) exists in the hooks directory but is not registered in `settings.json`. The script pre-fetches 3 specific drawer IDs via a Python venv subprocess and outputs their content to session context. If registered as a SessionStart hook, it would add ~1701 tokens to every session start — pushing total SessionStart context from the current 126 tokens to ~1827 tokens, a 14× increase. The script has no `_test.sh` companion.
+- **Recommended fix:** Make a deliberate registration decision before adding to settings.json: (1) If MemPalace pre-fetch is desired, add it to SessionStart and establish a token budget limit (recommended: gate output at 500 bytes via truncation). (2) If not needed, delete the file — the MemPalace reminder text at the top of the script (lines 10–17) could be folded into CLAUDE.md instead. Either way, document the decision. Do not leave it as an undecided orphan.
+- **Evidence:** `~/.claude/hooks/mempalace-wake.sh` (not in `jq '.hooks.SessionStart' ~/.claude/settings.json`); measured output = 6803 bytes (tested `echo '{}' | mempalace-wake.sh | wc -c`); no `mempalace-wake_test.sh` companion.
+
+---
+
+#### F-HOOK-09 — `tdd-guard.sh` has no test suite (`tdd-guard_test.sh` missing)
+- **Severity:** P2
+- **Token impact:** N/A
+- **Friction:** low (moot given locked removal, but illustrates the gap)
+- **Confidence:** high
+- **Effort:** trivial (moot — script is being deleted)
+- **Current state:** `tdd-guard.sh` is the most complex hook in the directory (229 lines, 9438 bytes) and enforces a critical workflow gate, yet it has no `tdd-guard_test.sh` companion. By contrast, `done-hook.sh` (187 lines) has `done-hook_test.sh` (263 lines, 10504 bytes), and `enforce-worktree.sh` has `enforce-worktree_test.sh`. The absence of tests means the exemption list changes (4 `.bak` files, reflecting 4 iterations) were made without a safety net. This is noted for the record; with the locked removal (F-HOOK-02) this finding is moot operationally.
+- **Recommended fix:** No action required — `tdd-guard.sh` is being deleted. For future hook development: any hook >50 lines should have a `_test.sh` companion before being registered. The scripts lacking tests that ARE active: `inject-date.sh`, `auto-format.sh`, `sign-commits.sh`, `prevent-push-workbench.sh`, `validate-year.sh`, `reflection-staleness.sh`, `test-quality-lint.sh`. These are lower-priority but should be addressed incrementally.
+- **Evidence:** `ls ~/.claude/hooks/tdd-guard_test.sh` (file absent); `~/.claude/hooks/tdd-guard.sh` (229 lines, registered at `settings.json:123,136`); contrast with `done-hook_test.sh`, `enforce-worktree_test.sh`.
+
+---
+
+#### F-HOOK-10 — `build-helpers.sh` and `test-dep-map.sh` are unregistered helpers with unclear ownership
+- **Severity:** P2
+- **Token impact:** N/A (not loaded by runtime)
+- **Friction:** low
+- **Confidence:** medium
+- **Effort:** trivial
+- **Current state:** `build-helpers.sh` (987 bytes) compiles Go helpers in `hooks/src/` and `hooks/bin/`. `test-dep-map.sh` (5801 bytes) is a dependency-mapping helper called from within `tdd-guard.sh` (line 212). Neither is registered in settings.json as a hook. `test-dep-map.sh` has a full test suite (`test-dep-map_test.sh`, 10595 bytes) but is only useful as a dependency of `tdd-guard.sh`, which is being removed. `build-helpers.sh` has no tests and its build target (`hooks/src/`, `hooks/bin/`) needs review.
+- **Recommended fix:** After `tdd-guard.sh` is removed (F-HOOK-02), delete `test-dep-map.sh` and `test-dep-map_test.sh` — they serve only `tdd-guard.sh`. Evaluate whether `build-helpers.sh` and the `hooks/src/`, `hooks/bin/` directory contents are still needed by any active hook; if not, delete them too.
+- **Evidence:** `~/.claude/hooks/build-helpers.sh` (unregistered); `~/.claude/hooks/test-dep-map.sh` (unregistered; called at `tdd-guard.sh:212`); `ls ~/.claude/hooks/bin/` (compiled artifacts).
+
 ### 2.5 skills
 ### 2.6 agents
 ### 2.7 plugins enabled
