@@ -87,7 +87,7 @@ payload = json.loads(sys.stdin.read())
 print(json.dumps(e.evaluate(payload["goal_stanza"], payload["evidence"], payload["user_claim"])))
 ' <<< "$PAYLOAD")
     else
-      RESULT=$(echo "$PAYLOAD" | /opt/homebrew/bin/python3.12 "$EVAL_DIR/eval.py")
+      RESULT=$(echo "$PAYLOAD" | python3 "$EVAL_DIR/eval.py")
     fi
 
     NAT_VERDICT=$(echo "$RESULT" | jq -r '.verdict')
