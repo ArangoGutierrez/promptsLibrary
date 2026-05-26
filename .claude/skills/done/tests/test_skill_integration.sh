@@ -51,6 +51,25 @@ else
   echo "  got: $LATEST"; FAIL=$((FAIL+1))
 fi
 
+# F3a (PR #19 QA C3): assert /done's user-verdict entry has strictly higher seq
+# than the prior heuristic entry seeded by the Stop hook. Catches stale-match
+# bugs where /done failed to append but an old line happened to contain the
+# expected substrings.
+ALL_SEQS_FOR_UUID=$(grep "\"session\":\"$UUID\"" "$HOME_DIR/.claude/audit/session-outcomes-"*.log | \
+                    grep -oE '"seq":[0-9]+' | grep -oE '[0-9]+')
+LATEST_SEQ=$(echo "$ALL_SEQS_FOR_UUID" | tail -1)
+HEURISTIC_SEQ=$(echo "$ALL_SEQS_FOR_UUID" | head -1)
+if [ -z "$LATEST_SEQ" ] || [ -z "$HEURISTIC_SEQ" ]; then
+  echo "FAIL: scenario 1 seq-check — missing seq in entries for $UUID"
+  FAIL=$((FAIL+1))
+elif [ "$LATEST_SEQ" -le "$HEURISTIC_SEQ" ]; then
+  echo "FAIL: scenario 1 seq-check — /done entry seq ($LATEST_SEQ) not > prior heuristic seq ($HEURISTIC_SEQ)"
+  FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 1 seq-check — /done seq=$LATEST_SEQ > heuristic seq=$HEURISTIC_SEQ"
+  PASS=$((PASS+1))
+fi
+
 # Scenario 2: /done abandon "blocked by Y" → user.verdict=ABANDONED, evaluator=user_only, no NAT
 UUID2="donesk02-aaaa-bbbb-cccc-000000000002"
 HOME_DIR2="$TMP/h2"
@@ -72,6 +91,24 @@ if echo "$LATEST2" | grep -q '"verdict":"ABANDONED"' && \
 else
   echo "FAIL: /done abandon — latest entry missing expected fields"
   echo "  got: $LATEST2"; FAIL=$((FAIL+1))
+fi
+
+# F3b (PR #19 QA C4): hard guard — verify /done abandon did NOT touch the NAT
+# seam. The prior "DONE_FAKE_NAT_RESPONSE unset → NAT errors" guard was
+# environment-dependent (would pass even if NAT was called and succeeded).
+# Concrete failure signals: any NAT verdict marker (AGREE/DISAGREE/INSUFFICIENT/
+# ERROR) or a NAT-mentioning rationale on the abandon entry.
+if echo "$LATEST2" | grep -qE '"nat_verdict":"(AGREE|DISAGREE|INSUFFICIENT_EVIDENCE|ERROR)"'; then
+  echo "FAIL: scenario 2 NAT-guard — abandon entry has NAT verdict marker (NAT was called)"
+  echo "  got: $LATEST2"
+  FAIL=$((FAIL+1))
+elif echo "$LATEST2" | grep -qE '"evaluator_rationale":"[^"]*(AGREE|DISAGREE|INSUFFICIENT|NAT)[^"]*"'; then
+  echo "FAIL: scenario 2 NAT-guard — abandon rationale mentions NAT (NAT was called)"
+  echo "  got: $LATEST2"
+  FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 2 NAT-guard — abandon entry shows no NAT involvement"
+  PASS=$((PASS+1))
 fi
 
 echo
