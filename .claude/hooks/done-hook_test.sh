@@ -155,6 +155,59 @@ else
   echo "PASS: scenario 4 — 0/3 matched -> NO_EVIDENCE"; PASS=$((PASS+1))
 fi
 
+# Scenario 4b: 1/1 bullet, 0 matched → NO_EVIDENCE (not LIKELY_MET)
+# Catches the off-by-one: when TOTAL=1, MATCHED=0, the LIKELY_MET threshold (matched >= total-1) is 0 >= 0 = TRUE.
+# That would be theater: zero evidence cannot be "likely met".
+UUID4B="4b4b4b4b-aaaa-bbbb-cccc-00000000004b"
+HOME4B="$TMP/home4b"
+setup_fake_home "$HOME4B" "$UUID4B"
+TRANSCRIPT4B=$(fake_transcript_path "$HOME4B" "$UUID4B")
+mkdir -p "$(dirname "$TRANSCRIPT4B")"; touch "$TRANSCRIPT4B"
+cat > "$HOME4B/.claude/audit/session-goals/$UUID4B.md" <<'GOAL'
+## Initial 2026-05-25T10:00:00Z
+Goal: single-bullet goal
+Acceptance:
+- ./single_bullet_test.sh passes
+GOAL
+mkdir -p "$HOME4B/.claude/audit"
+: > "$HOME4B/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log"  # empty bash log
+echo "{\"transcript_path\":\"$TRANSCRIPT4B\"}" | HOME="$HOME4B" bash "$HOOK" 2>/dev/null
+if ! assert_outcomes_entry "$HOME4B" "$UUID4B" "verdict" "NO_EVIDENCE"; then
+  echo "FAIL: scenario 4b — single-bullet 0/1 should be NO_EVIDENCE, not LIKELY_MET"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 4b — 0/1 single-bullet -> NO_EVIDENCE"; PASS=$((PASS+1))
+fi
+
+# Scenario 4c: 2/3 bullets matched → LIKELY_MET (threshold boundary)
+# Documents the intended "tolerate one bullet unmatched" semantic.
+# A mutation flipping `>=` to `==` would break this scenario but not scenario 2.
+UUID4C="4c4c4c4c-aaaa-bbbb-cccc-00000000004c"
+HOME4C="$TMP/home4c"
+setup_fake_home "$HOME4C" "$UUID4C"
+TRANSCRIPT4C=$(fake_transcript_path "$HOME4C" "$UUID4C")
+mkdir -p "$(dirname "$TRANSCRIPT4C")"; touch "$TRANSCRIPT4C"
+cat > "$HOME4C/.claude/audit/session-goals/$UUID4C.md" <<'GOAL'
+## Initial 2026-05-25T10:00:00Z
+Goal: three-bullet goal
+Acceptance:
+- ./done-hook_test.sh passes
+- shellcheck clean
+- spec committed to docs/superpowers/specs/
+GOAL
+mkdir -p "$HOME4C/.claude/audit"
+cat > "$HOME4C/.claude/audit/bash-commands-$(date -u +%Y-%m-%d).log" <<'LOG'
+2026-05-25T14:30:00Z	./done-hook_test.sh	exit=0
+2026-05-25T14:31:00Z	shellcheck ~/.claude/hooks/done-hook.sh	exit=0
+LOG
+echo "{\"transcript_path\":\"$TRANSCRIPT4C\"}" | HOME="$HOME4C" bash "$HOOK" 2>/dev/null
+if ! assert_outcomes_entry "$HOME4C" "$UUID4C" "verdict" "LIKELY_MET"; then
+  echo "FAIL: scenario 4c — 2/3 matched should be LIKELY_MET (threshold boundary)"; FAIL=$((FAIL+1))
+elif ! grep -q "\"matched\":2" "$HOME4C/.claude/audit/session-outcomes-"*.log; then
+  echo "FAIL: scenario 4c — matched != 2"; FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario 4c — 2/3 matched -> LIKELY_MET (boundary)"; PASS=$((PASS+1))
+fi
+
 # Scenario 5: state-change debounce
 # Fire twice with same goal + same bash log → only one new entry (besides any NO_GOAL/etc)
 UUID5="55555555-aaaa-bbbb-cccc-000000000005"
