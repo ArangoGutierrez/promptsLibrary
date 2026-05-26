@@ -86,6 +86,67 @@
 ## 2. Findings
 
 ### 2.1 CLAUDE.md
+
+#### F-CLAUDEMD-01 — TDD enforcement language references a removed hook
+- **Severity:** P0
+- **Token impact:** ~140 tokens/session (6 lines × ~23 tokens/line, Opus 4.7 assumption)
+- **Friction:** high
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** Lines 30 and 40 frame TDD as "enforced by hook": `"Workers: implementation in isolated worktrees (TDD enforced by tdd-guard.sh hook on all Write/Edit, both team and solo paths)"` and the section heading `"## TDD Protocol (enforced by hook)"`. The `tdd-guard.sh` removal is a locked decision (2026-05-25). Every session loads instructions that describe a hook that no longer exists, causing confusion and false mental overhead when the hook does not fire.
+- **Recommended fix:** Remove `"enforced by tdd-guard.sh hook"` from line 30. Rewrite the section heading on line 40 to `"## TDD Protocol"`. Replace the body text (lines 41-44) with: `"TDD is the default for production code paths. Red → Green → Refactor. Opt out for docs, install scripts, or exploratory work. Theater tests are a blocking issue — see constitution.md."` Delete the `"See /tdd-protocol for full details"` pointer; the inline text is sufficient for this section and the full skill is invocable on demand.
+- **Evidence:** `~/.claude/CLAUDE.md:30,40-44`; spec §4.4 (TDD-guard removal mechanics); spec §6.4 (locked decision traceability).
+
+#### F-CLAUDEMD-02 — TDD section partially duplicates constitution.md (auto-loaded)
+- **Severity:** P1
+- **Token impact:** ~60 tokens/session (3 lines duplicated at ~20 tokens/line)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** CLAUDE.md lines 42-43 read `"Tests are contracts: if a test fails, fix the implementation (unless the test has a genuine bug). Change tests and implementation in separate turns; commit them in separate commits."` These two rules are also in `~/.claude/rules/constitution.md` lines 18-19 (`"## Implementation Discipline"`), which auto-loads every session. The content is loaded twice every session.
+- **Recommended fix:** After applying F-CLAUDEMD-01's rewrite, keep only the opt-out scope note and the theater-test pointer in CLAUDE.md's TDD section. Delete the implementation-discipline sentences; they are already authoritative in constitution.md.
+- **Evidence:** `~/.claude/CLAUDE.md:42-43`; `~/.claude/rules/constitution.md:17-19`; spec §3.1 (redundancy with rules/).
+
+#### F-CLAUDEMD-03 — Execution Model section embeds detail better owned by team-execute skill
+- **Severity:** P2
+- **Token impact:** ~180 tokens/session (8 lines of role descriptions × ~22 tokens/line)
+- **Friction:** low
+- **Confidence:** medium
+- **Effort:** trivial
+- **Current state:** Lines 27-38 describe the team path roles verbatim: Principal Engineer responsibilities, QA Engineer responsibilities, Workers producing draft PRs, QA promoting to ready-for-review, and DE rejection mechanics. This detail is redundant with the `team-execute` skill body (116 lines, loaded on demand). The CLAUDE.md level needs only the routing rule ("when to use team vs solo"), not the team's internal role definitions.
+- **Recommended fix:** Collapse lines 27-38 to: `"**Team path** (/team-execute) — >=2 source files or design decisions. **Solo path** (superpowers:executing-plans) — single-file fixes, config, docs, debugging."` The role definitions, PR promotion protocol, and DE rejection mechanics stay in the team-execute skill where they are loaded only when a team session starts.
+- **Evidence:** `~/.claude/CLAUDE.md:27-38`; `~/.claude/skills/team-execute/SKILL.md` (116 lines); spec §3.1 (signal density).
+
+#### F-CLAUDEMD-04 — Iteration Budget section is dead text: not referenced downstream
+- **Severity:** P2
+- **Token impact:** ~22 tokens/session (1 line × ~22 tokens)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** Line 51 reads `"Trivial:1 | Simple:2 | Moderate:3 | Complex:4 iterations before escalating to the user."` No skill, rule, agent definition, or hook references this taxonomy by name. It has no enforcement path and no consumer; it is a label without a mechanism.
+- **Recommended fix:** Delete lines 50-51 (`## Iteration Budget` heading and its single content line). If the escalation discipline is worth preserving, promote it to a bullet under `## Principles` where it has weight, or delete entirely and rely on user-in-the-loop review.
+- **Evidence:** `~/.claude/CLAUDE.md:50-51`; confirmed no downstream references in `~/.claude/skills/`, `~/.claude/rules/`, or `~/.claude/agents/` via grep.
+
+#### F-CLAUDEMD-05 — Missing gh CLI permission note (P0 action item from spec)
+- **Severity:** P1
+- **Token impact:** 0 tokens (content addition, not removal — but saves retry friction)
+- **Friction:** medium
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** CLAUDE.md contains no note that `gh` CLI calls are pre-approved in `settings.json`. When the model or a subagent encounters a `gh *` command, it applies the default heuristic of trying sandbox-first, fails, then retries with `dangerouslyDisableSandbox: true`. This generates a permission prompt and wastes ~1-2 turns per gh invocation.
+- **Recommended fix:** Add a line under `## Principles` or as a standalone bullet: `"gh CLI is pre-approved; never retry sandboxed-first for gh commands."` Spec §5.P0 item 6 documents this as a P0 quick win.
+- **Evidence:** `~/.claude/CLAUDE.md` (no gh mention); `~/.claude/settings.json` (`"Bash(gh *)"` in allow list); spec §5 P0 item 6 lists the underlying action as a P0 quick-win in settings.json; this CLAUDE.md gap is rated P1 because the gap itself is documentation-only friction, not a config-correctness issue.
+
+#### F-CLAUDEMD-06 — "Verify before claiming" principle is redundant with Stop-hook prompt (pending P0 removal)
+- **Severity:** P2
+- **Token impact:** 0 tokens now; becomes a correctness gap if Stop-hook is deleted without this principle surviving
+- **Friction:** low
+- **Confidence:** medium
+- **Effort:** trivial
+- **Current state:** CLAUDE.md line 17 states `"Verify before claiming: any response asserting task completion must contain the output of a verification command…"`. The Stop hook in `settings.json` (lines 175-187) fires a `"type": "prompt"` LLM call on every turn end that enforces the same rule mechanically. Both cover identical ground. The Stop-hook is a P0 removal candidate (spec §4.1); if it is removed, line 17 becomes the sole enforcement mechanism and must survive. If it is retained after P0, the two layers remain redundant.
+- **Recommended fix:** Retain line 17 regardless of Stop-hook fate — it is cheap (single line) and becomes the sole safeguard if the hook is removed. When the Stop-hook is removed in P0, add a parenthetical: `"(no hook enforces this — it is enforced by discipline and user review)"` to make the intent explicit. No token impact change.
+- **Evidence:** `~/.claude/CLAUDE.md:17`; `~/.claude/settings.json:175-187`; spec §4.1 (Stop-hook LLM prompt cost).
+
 ### 2.2 rules/
 ### 2.3 settings.json
 ### 2.4 hooks
