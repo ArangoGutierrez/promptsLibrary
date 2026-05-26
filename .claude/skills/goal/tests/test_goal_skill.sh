@@ -96,6 +96,24 @@ else
   echo "PASS: scenario A — Origin recorded from cwd's git remote"; PASS=$((PASS+1))
 fi
 
+# Scenario B: cwd has no git remote → stanza has no 'Origin:' line
+UUID_B="goalt00b-aaaa-bbbb-cccc-00000000000b"
+HOME_B="$TMP/hB"
+INPUT_B=$'Goal: scenario B\nAcceptance:\n- one'
+WORK_B="$TMP/repoB"
+mkdir -p "$WORK_B"  # plain dir, no git init
+( cd "$WORK_B" && run_goal "$HOME_B" "$UUID_B" "$INPUT_B" >/dev/null 2>&1 )
+FILE_B="$HOME_B/.claude/audit/session-goals/$UUID_B.md"
+if [ ! -f "$FILE_B" ]; then
+  echo "FAIL: scenario B — goal file not created"; FAIL=$((FAIL+1))
+elif grep -q "^Origin: " "$FILE_B"; then
+  echo "FAIL: scenario B — Origin line should be absent"
+  echo "  got: $(grep '^Origin:' "$FILE_B")"
+  FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario B — Origin omitted when cwd has no git remote"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
