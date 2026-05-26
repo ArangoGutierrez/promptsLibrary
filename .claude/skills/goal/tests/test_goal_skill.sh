@@ -77,6 +77,25 @@ else
   echo "PASS: scenario 4 — 'amend' keyword stripped"; PASS=$((PASS+1))
 fi
 
+# Scenario A: cwd has a git origin → stanza records 'Origin: <url>'
+UUID_A="goalt00a-aaaa-bbbb-cccc-00000000000a"
+HOME_A="$TMP/hA"
+INPUT_A=$'Goal: scenario A\nAcceptance:\n- one'
+WORK_A="$TMP/repoA"
+mkdir -p "$WORK_A"
+( cd "$WORK_A" && git init -q && git remote add origin git@example.com:foo/bar.git )
+( cd "$WORK_A" && run_goal "$HOME_A" "$UUID_A" "$INPUT_A" >/dev/null 2>&1 )
+FILE_A="$HOME_A/.claude/audit/session-goals/$UUID_A.md"
+if [ ! -f "$FILE_A" ]; then
+  echo "FAIL: scenario A — goal file not created"; FAIL=$((FAIL+1))
+elif ! grep -q "^Origin: git@example.com:foo/bar.git$" "$FILE_A"; then
+  echo "FAIL: scenario A — Origin line missing or wrong"
+  echo "  got: $(grep -E '^(Goal|Origin):' "$FILE_A" | head -4)"
+  FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario A — Origin recorded from cwd's git remote"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
