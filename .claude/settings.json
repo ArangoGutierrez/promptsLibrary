@@ -83,6 +83,10 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/reflection-staleness.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/session-goal-init.sh"
           }
         ]
       }
@@ -182,6 +186,10 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/context-watch.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/done-hook.sh"
           }
         ]
       }
