@@ -4,7 +4,7 @@
 
 **Goal:** Produce `docs/audits/2026-05-25-claude-config-audit.md` — the source-of-truth audit deliverable with concrete findings (stable IDs), cross-cutting themes, and a mapping of findings → action phases (P0/P1/P2). This plan does NOT execute the action phases; those get planned separately after Phase A lands.
 
-**Architecture:** Single-document deliverable produced by a structured audit pass over `~/.claude/` (mirrored in `promptsLibrary/.claude/`). Each finding follows the rubric defined in the spec §1 (`docs/superpowers/specs/2026-05-25-claude-config-pe-audit-design.md`). The audit is read-only — no config changes happen in Phase A. P0/P1/P2 plans get written in follow-up sessions, referencing finding IDs from this audit doc.
+**Architecture:** Single-document deliverable produced by a structured audit pass over the **live `~/.claude/`** (revised target — see "Working location" below). The shared subset is also mirrored at `promptsLibrary/.claude/`; private subset is live-only per the dual-track editing strategy. Each finding follows the rubric defined in the spec §1 (`docs/superpowers/specs/2026-05-25-claude-config-pe-audit-design.md`). The audit is read-only — no config changes happen in Phase A. P0/P1/P2 plans get written in follow-up sessions, referencing finding IDs from this audit doc.
 
 **Tech Stack:** Markdown for the deliverable. `bash` + `wc` + `jq` + `git` for measurement. `gh` (already permitted, unsandboxed) for the PR. No code changes to the config in this phase.
 
@@ -17,12 +17,12 @@
 **Created in this phase:**
 - `docs/audits/2026-05-25-claude-config-audit.md` — the audit deliverable. Single file, structured per spec §3 (finding shape) and §4 (cross-cutting themes).
 
-**Read-only references during this phase** (DO NOT modify):
-- `~/.claude/CLAUDE.md` (mirrored at `.claude/CLAUDE.md`)
-- `~/.claude/rules/*.md` (mirrored at `.claude/rules/*.md`)
-- `~/.claude/settings.json` and `settings.local.json`
+**Read-only references during this phase** (DO NOT modify) — all paths refer to the **live `~/.claude/`** per the revised editing strategy:
+- `~/.claude/CLAUDE.md`
+- `~/.claude/rules/*.md`
+- `~/.claude/settings.json` and `settings.local.json` (if present)
 - `~/.claude/hooks/*.sh` (~30 files including 6 `.bak`)
-- `~/.claude/skills/*/SKILL.md` (24 skill dirs)
+- `~/.claude/skills/*/SKILL.md` (25 skill dirs as of 2026-05-25)
 - `~/.claude/agents/*.md` (4 files)
 - `~/.claude/commands/*.md`
 - `~/.claude/panel/config.yml`
@@ -33,9 +33,11 @@
 
 ## Working location
 
-All work happens in this worktree: `.claude/worktrees/competent-matsumoto-8be15b/`. The audit reads from `.claude/` (the repo mirror) so it's reproducible from git, not from the live `~/.claude/` which has runtime drift (sessions, paste-cache, etc.).
+All work happens in this worktree: `/Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.claude/worktrees/competent-matsumoto-8be15b/` (the `.claude/` here is the **repo's** internal worktree directory, not the user's `~/.claude/`). The audit DOC lives in the repo (`docs/audits/`), but the audit MEASURES `~/.claude/` directly — see escalation below.
 
-**Important:** measurements happen against the repo mirror, NOT `~/.claude/`. The repo is the source of truth per the locked editing strategy.
+**Revised 2026-05-25 after Phase A T2 escalation:** measurements happen against **live `~/.claude/`**, not the repo mirror. The repo holds ~12 shareable/public skills; live has 25 (the extras are CFO, NVIDIA-internal, and panel infrastructure that are intentionally not in the repo). Auditing the repo mirror would miss most of the friction the user reported. Per the revised editing strategy (dual-track, spec §6.1): shared config edits flow through the repo; private config edits go directly to `~/.claude/`.
+
+**Excludes when measuring `~/.claude/`:** skip runtime-only state — `projects/`, `sessions/`, `paste-cache/`, `shell-snapshots/`, `tasks/`, `file-history/`, `session-env/`, `telemetry/`, `debug/`, `ide/`, `backups/`, `cache/`, anything with timestamps in the name like `*.pre-nuke-*`. These churn constantly and aren't part of the config surface.
 
 ---
 
@@ -118,28 +120,28 @@ plan sections populated in subsequent commits."
 **Files:**
 - Modify: `docs/audits/2026-05-25-claude-config-audit.md` (§1)
 
-- [ ] **Step 1: Measure all files in scope**
+- [ ] **Step 1: Measure all files in scope (against live `~/.claude/`)**
 
-Run these from the worktree root:
+Run these from any working directory:
 
 ```bash
 echo "=== CLAUDE.md ==="
-wc -l -c .claude/CLAUDE.md
+wc -l -c ~/.claude/CLAUDE.md
 echo ""
 echo "=== rules/ ==="
-wc -l -c .claude/rules/*.md
+wc -l -c ~/.claude/rules/*.md
 echo ""
 echo "=== settings.json ==="
-wc -l -c .claude/settings.json .claude/settings.local.json 2>/dev/null
+wc -l -c ~/.claude/settings.json ~/.claude/settings.local.json 2>/dev/null
 echo ""
 echo "=== hooks (live count, excluding .bak) ==="
-find .claude/hooks -maxdepth 1 -name '*.sh' ! -name '*.bak*' | wc -l
+find ~/.claude/hooks -maxdepth 1 -name '*.sh' ! -name '*.bak*' | wc -l
 echo ""
 echo "=== hooks .bak files ==="
-find .claude/hooks -maxdepth 1 -name '*.bak*'
+find ~/.claude/hooks -maxdepth 1 -name '*.bak*'
 echo ""
 echo "=== skills ==="
-for d in .claude/skills/*/; do
+for d in ~/.claude/skills/*/; do
     if [ -f "$d/SKILL.md" ]; then
         bytes=$(wc -c < "$d/SKILL.md")
         lines=$(wc -l < "$d/SKILL.md")
@@ -148,24 +150,24 @@ for d in .claude/skills/*/; do
 done
 echo ""
 echo "=== agents ==="
-wc -l .claude/agents/*.md
+wc -l ~/.claude/agents/*.md
 echo ""
 echo "=== commands ==="
-wc -l .claude/commands/*.md
+wc -l ~/.claude/commands/*.md
 ```
 
-Capture the output — it will become the inventory table.
+Some operations may require `dangerouslyDisableSandbox: true` if the sandbox doesn't grant read on `~/.claude/` — try sandboxed first; if "Operation not permitted" appears, retry with sandbox disabled.
+
+Capture the output — it becomes the inventory table.
 
 - [ ] **Step 2: Measure the auto-loaded surface (per-session context cost)**
 
-Run:
-
 ```bash
 echo "=== Auto-loaded surface (CLAUDE.md + rules/) ==="
-cat .claude/CLAUDE.md .claude/rules/*.md | wc -l -c
+cat ~/.claude/CLAUDE.md ~/.claude/rules/*.md | wc -l -c
 echo ""
 echo "=== Sum of skill descriptions (YAML frontmatter, pre-loaded) ==="
-for d in .claude/skills/*/; do
+for d in ~/.claude/skills/*/; do
     awk '/^---$/{c++; next} c==1' "$d/SKILL.md" 2>/dev/null | grep -E '^description:' 
 done | wc -c
 ```
@@ -179,12 +181,12 @@ Replace the `(Table populated in Task 2.)` placeholder in §1 with a markdown ta
 ```markdown
 | Area | File / Directory | Lines | Bytes | Role | Status |
 |------|------------------|-------|-------|------|--------|
-| CLAUDE.md | `.claude/CLAUDE.md` | <N> | <N> | Per-session memory (auto-loaded) | active |
-| rules/ | `.claude/rules/constitution.md` | <N> | <N> | Auto-loaded rule | active |
-| rules/ | `.claude/rules/go-conventions.md` | <N> | <N> | Auto-loaded rule | active |
+| CLAUDE.md | `~/.claude/CLAUDE.md` | <N> | <N> | Per-session memory (auto-loaded) | active |
+| rules/ | `~/.claude/rules/constitution.md` | <N> | <N> | Auto-loaded rule | active |
+| rules/ | `~/.claude/rules/go-conventions.md` | <N> | <N> | Auto-loaded rule | active |
 | ... | ... | ... | ... | ... | ... |
-| hooks/ | `.claude/hooks/tdd-guard.sh` | 229 | <N> | PreToolUse Write/Edit | flagged: locked-removal |
-| hooks/ | `.claude/hooks/tdd-guard.sh.bak-pre-*` (4) | — | — | Stale backup | flagged: delete |
+| hooks/ | `~/.claude/hooks/tdd-guard.sh` | 229 | <N> | PreToolUse Write/Edit | flagged: locked-removal |
+| hooks/ | `~/.claude/hooks/tdd-guard.sh.bak-pre-*` (4) | — | — | Stale backup | flagged: delete |
 | ... | ... | ... | ... | ... | ... |
 | **Auto-loaded surface total** | (CLAUDE.md + rules/) | <N> | <N> | Pre-loaded every session | baseline |
 | **Skill descriptions total** | (24 skills) | — | <N> | Pre-loaded every session | baseline |
@@ -217,7 +219,7 @@ captured as the per-session baseline."
 
 - [ ] **Step 1: Re-read CLAUDE.md**
 
-Read `.claude/CLAUDE.md` in full. Note: it's 65 lines, under the 80-line SOTA target.
+Read `~/.claude/CLAUDE.md` in full. Note: it's 65 lines, under the 80-line SOTA target.
 
 - [ ] **Step 2: Evaluate against the rubric**
 
@@ -243,7 +245,7 @@ Use this format for each finding (replace the heading template content):
 - **Effort:** trivial
 - **Current state:** The "TDD Protocol (enforced by hook)" section frames TDD as a hard requirement enforced by `tdd-guard.sh`. The hook is being removed (locked decision); this language must follow.
 - **Recommended fix:** Replace "TDD Protocol (enforced by hook)" section with "TDD Protocol (recommended)". Keep theater-test discipline (constitution.md is source of truth). Add: "TDD is the default for production code paths; opt out for docs, install scripts, hacky one-offs, and exploratory work."
-- **Evidence:** `.claude/CLAUDE.md:48-52`; spec §4.4.
+- **Evidence:** `~/.claude/CLAUDE.md:48-52`; spec §4.4.
 ```
 
 Write 3-6 findings minimum for CLAUDE.md. Don't manufacture findings — if a finding doesn't have evidence and a concrete fix, don't include it.
@@ -313,7 +315,7 @@ Run:
 
 ```bash
 jq '.permissions.allow[] | select(test("gh"))' .claude/settings.json
-jq '.sandbox' .claude/settings.json
+jq '.sandbox' ~/.claude/settings.json
 ```
 
 Confirm: `Bash(gh *)` is in allow AND `sandbox.autoAllowBashIfSandboxed` is true. This means gh CLI should be unsandboxed-allowed; record what the user observed as friction.
@@ -353,7 +355,7 @@ Findings for ~/.claude/settings.json per spec rubric."
 Run:
 
 ```bash
-ls -la .claude/hooks/*.sh .claude/hooks/*.bak* 2>/dev/null
+ls -la ~/.claude/hooks/*.sh .claude/hooks/*.bak* 2>/dev/null
 ```
 
 - [ ] **Step 2: Read the headline hooks**
@@ -410,7 +412,7 @@ SessionStart hook output measurements."
 Run:
 
 ```bash
-for d in .claude/skills/*/; do
+for d in ~/.claude/skills/*/; do
     name=$(basename "$d")
     desc=$(awk '/^---$/{c++; next} c==1' "$d/SKILL.md" 2>/dev/null | grep -E '^description:' | sed 's/^description: //')
     desc_len=${#desc}
@@ -457,11 +459,11 @@ with plugin-provided skills."
 
 - [ ] **Step 1: Read all 4 agent files**
 
-`.claude/agents/doc-writer.md`, `explorer.md`, `principal-engineer.md`, `qa-engineer.md`.
+`~/.claude/agents/doc-writer.md`, `explorer.md`, `principal-engineer.md`, `qa-engineer.md`.
 
 - [ ] **Step 2: Cross-reference with team-execute**
 
-Read `.claude/commands/team-execute.md` and `.claude/skills/team-execute/SKILL.md`. Confirm the 4 agents are still the right set for the team-execute orchestration. Note any agent whose tool allowlist is over- or under-scoped.
+Read `~/.claude/commands/team-execute.md` and `~/.claude/skills/team-execute/SKILL.md`. Confirm the 4 agents are still the right set for the team-execute orchestration. Note any agent whose tool allowlist is over- or under-scoped.
 
 - [ ] **Step 3: Write F-AGENT-NN findings**
 
@@ -472,7 +474,7 @@ At minimum, one summary finding on whether the agent set + their tool allowlists
 Run:
 
 ```bash
-jq '.enabledPlugins' .claude/settings.json
+jq '.enabledPlugins' ~/.claude/settings.json
 ```
 
 Five plugins enabled. For each, determine if it's actively used in your workflow.
@@ -670,7 +672,7 @@ gh pr create --draft --title "docs(audit): claude config PE audit — Phase A" -
 Phase A of the Claude config PE audit. Produces the source-of-truth audit document with concrete findings and a mapping to action phases.
 
 ## Approach
-Read-only audit of \`~/.claude\` (mirrored in \`.claude/\` for reproducibility). Per the spec at \`docs/superpowers/specs/2026-05-25-claude-config-pe-audit-design.md\`.
+Read-only audit of \`~/.claude\` (mirrored in \`~/.claude/\` for reproducibility). Per the spec at \`docs/superpowers/specs/2026-05-25-claude-config-pe-audit-design.md\`.
 
 ## Deliverable
 \`docs/audits/2026-05-25-claude-config-audit.md\`

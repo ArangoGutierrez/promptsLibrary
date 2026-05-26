@@ -52,7 +52,8 @@ User-prioritized grading axes: Token cost per session, Friction, Capability leve
 | TDD guard | **Remove the PreToolUse hook**; move TDD discipline to skill-only (`superpowers:test-driven-development` and CLAUDE.md rule). Trust + skill discipline instead of mechanical enforcement. |
 | CFO/personal-finance skills | **Move to dedicated CFO project**, project-scoped. Free ~30KB of skill metadata from every NVIDIA k8s session. |
 | Research depth | Targeted (official docs + 2-3 practitioner posts). |
-| Editing strategy | **Edit `promptsLibrary/.claude` first, validate, then promote to `~/.claude`.** Repo is the source of truth; live config is downstream. |
+| Editing strategy | **Dual-track** (revised 2026-05-25 after Phase A T2 escalation). For **shared/public** config (CLAUDE.md, rules/, settings.json, hooks, and skills already in the repo): edit `promptsLibrary/.claude` first, validate, then promote to `~/.claude`. For **private** config (CFO skills, NVIDIA-internal skills like `nvinfo-cli`, panel infra, anything containing personal-finance or company-confidential content): edit `~/.claude` directly — these are intentionally not in the repo. |
+| Audit measurement target | **`~/.claude/` (live)**, not the repo mirror (revised 2026-05-25 after Phase A T2 escalation). The repo holds ~12 shareable skills; live has 25. The friction the user reported (TDD-guard false positives, Stop-hook prompt cost, `.bak` debris) lives in the live config. Auditing the repo mirror would miss most of it. |
 
 ### SOTA reference points (2026)
 - Cache TTL silently regressed from 1h → 5m default in March 2026; 1h still available at 2x input price.
@@ -191,12 +192,25 @@ If a phase fails its validation gate, do not promote to `~/.claude`; debug in th
 
 ## 6. Appendix
 
-### 6.1 Editing & promotion flow
-1. All edits land first in `promptsLibrary/.claude/` (this repo).
+### 6.1 Editing & promotion flow (dual-track, revised)
+
+**Track A — shared/public config** (in the repo):
+1. Edit `promptsLibrary/.claude/` first.
 2. Test in a fresh Claude Code session opened against this repo.
 3. Measure: prompt-token count, skill availability, hook behavior.
-4. Once validated, promote to `~/.claude/` via a documented sync script (to be defined in the implementation plan; candidate approach: `rsync -av --delete .claude/ ~/.claude/` with explicit excludes for runtime-only paths like `projects/`, `sessions/`, `paste-cache/`).
+4. Promote to `~/.claude/` via a documented sync script (candidate: `rsync -av .claude/ ~/.claude/` with explicit excludes for runtime-only paths like `projects/`, `sessions/`, `paste-cache/`, and `--exclude` patterns for the private-only subset). Do NOT use `--delete` — that would remove the private skills.
 5. Each phase gets its own promotion event; do not batch P0+P1+P2 into one sync.
+
+**Track B — private config** (live only):
+1. Edit `~/.claude/` directly. No repo mirror.
+2. Test in any session.
+3. Commit a redacted reference (filename + intent only) to a private notes file if traceability matters.
+
+**Files in each track**, baseline as of 2026-05-25:
+- **Track A** (in repo): `CLAUDE.md`, `rules/`, `settings.json` (with redaction for any private fields), `hooks/` (most), skills under repo `.claude/skills/` (12 today).
+- **Track B** (live only): `cfo`, `cfo-*` (7 skills), `gh-activity-gather`, `gh-jira-activity`, `nvinfo-cli`, `managing-omnistation`, `validate-recommendation`, `panel/` infrastructure, and any future personal/NVIDIA-internal skill.
+
+The audit doc (`docs/audits/...`) lives in the repo regardless of track — its content describes both tracks.
 
 ### 6.2 Measurement methodology
 - Baseline: open a fresh session in this repo, send a no-op prompt, capture the prompt-token count reported by Claude Code's telemetry (`~/.claude/telemetry/`) or status line.
@@ -225,6 +239,7 @@ If a phase fails its validation gate, do not promote to `~/.claude`; debug in th
 - Stop-hook scoping confirmed in scope on user prompt 2026-05-25.
 - 20% reduction target — accepted 2026-05-25.
 - Meta-skills area added (§3.8) and plan-routing theme (§4.8) — decided 2026-05-25. User: "we add something similar like what we have for validator-recommendation for when to use writing plans and when is not required ... by asking nemotron 3 super". User chose "New area 2.8 meta-skills" + "Amend spec + plan now".
+- Dual-track editing strategy + audit target switched to live `~/.claude` — decided 2026-05-25 after Phase A T2 escalation. Phase A T2 implementer measured the repo mirror (12 skills, 0 .bak files) versus live (25 skills, 6 .bak files); the friction the user reported lives in the private subset that's intentionally not in the repo. User chose "Audit live ~/.claude, accept dual-track edits".
 
 ### 6.5 Open items (resolved during implementation)
 - Exact wording of the "TDD is recommended, not required" language in CLAUDE.md and constitution.md.
