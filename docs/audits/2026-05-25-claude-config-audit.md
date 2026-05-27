@@ -518,8 +518,94 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `~/.claude/skills/nvinfo-cli/SKILL.md:3-9` (folded block); awk measurement returned 2; Python returned 373. Cross-ref F-SKILL-03.
 
 ### 2.6 agents
+
+4 agents present: `doc-writer` (sonnet), `explorer` (haiku), `principal-engineer` (opus), `qa-engineer` (opus). Total size: ~8.2 KB / ~2 K tokens. All are sub-agents invoked on demand, not auto-loaded — no baseline session cost.
+
+#### F-AGENT-01 — `principal-engineer` carries `Agent` tool; no sub-agent spawning documented
+- **Severity:** P2
+- **Token impact:** N/A (the tool is available but invocation is rare and demand-driven)
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `~/.claude/agents/principal-engineer.md` declares `tools: [Read, Grep, Glob, Bash, Agent]`. The `Agent` tool lets PE spawn further sub-agents. Nothing in the PE role body documents when or why this is used; team-execute does not reference it.
+- **Recommended fix:** Either document the intended sub-agent use case in the PE body (e.g., "May dispatch `explorer` for large-scope codebase searches during review") or remove `Agent` from the tool list to enforce a flat invocation graph and prevent accidental recursive agent spawning.
+- **Evidence:** `~/.claude/agents/principal-engineer.md:5` (`- Agent`); `~/.claude/skills/team-execute/SKILL.md` — no mention of PE spawning sub-agents.
+
+#### F-AGENT-02 — Role name mismatch between `commands/team-execute.md` and `skills/team-execute/SKILL.md`
+- **Severity:** P1
+- **Token impact:** N/A — runtime confusion risk, not token cost
+- **Friction:** medium — a user following the command sees "Distinguished Systems Engineer"; one following the skill sees "Principal Engineer" referencing `agents/principal-engineer.md`. Two different invocation paths produce structurally different teams.
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** `~/.claude/commands/team-execute.md` defines the senior role as "Distinguished Systems Engineer" and instructs it to read 8 `architect-*.md` libraries from `~/.claude/team/lib/`. `~/.claude/skills/team-execute/SKILL.md` defines the same slot as "Principal Engineer" and references `agents/principal-engineer.md`. These two artefacts are both active; either path can be invoked.
+- **Recommended fix:** Decide on one canonical role name. If `principal-engineer.md` is the canonical agent, update `commands/team-execute.md` to reference it and remove the `team/lib/architect-*.md` library-loading step (or move those libraries into the agent). If "Distinguished Systems Engineer" is preferred, rename `agents/principal-engineer.md` and update the skill. Add a deprecation notice on the superseded file.
+- **Evidence:** `~/.claude/commands/team-execute.md:7` ("Distinguished Systems Engineer"); `~/.claude/skills/team-execute/SKILL.md:12` ("Principal Engineer (see `agents/principal-engineer.md`)").
+
+#### F-AGENT-03 — `qa-engineer` body duplicates QA validation logic already in `commands/team-execute.md`
+- **Severity:** P2
+- **Token impact:** ~1.3 K tokens when qa-engineer is loaded (5 520 bytes / ~4 chars per token). The duplication itself adds no session cost but creates drift risk.
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** `~/.claude/agents/qa-engineer.md` contains a full 11-point gate checklist, CI replication steps, bot review triage logic, and mutation testing instructions — most of which is also present in `~/.claude/commands/team-execute.md` (step 10, qa-validator sections). Two sources of truth for the QA protocol will drift.
+- **Recommended fix:** Slim `qa-engineer.md` to a role-identity + pointer document ("See `~/.claude/team/lib/qa-validator.md` for the full validation sequence") mirroring the approach used by `principal-engineer.md`. Authoritative checklist lives in one place.
+- **Evidence:** `~/.claude/agents/qa-engineer.md:1-5520`; `~/.claude/commands/team-execute.md` steps 10-11 (parallel content). Size delta vs `principal-engineer.md`: 5 520 vs 1 421 bytes.
+
 ### 2.7 plugins enabled
+
+5 plugins active: `code-review`, `code-simplifier`, `superpowers`, `gopls-lsp`, `clangd-lsp`.
+
+#### F-PLUGIN-01 — `code-simplifier` agent hardcodes JavaScript/TypeScript/React style rules for a Go/K8s project
+- **Severity:** P1
+- **Token impact:** ~600 tokens when `code-simplifier` sub-agent is loaded (agent body is ~2.4 KB). Actual cost is per-invocation; the harm is correctness, not tokens.
+- **Friction:** high — when invoked it will apply ES module import sorting, arrow function style, and React component patterns to Go code.
+- **Confidence:** high
+- **Effort:** trivial — disable the plugin.
+- **Current state:** `~/.claude/plugins/cache/claude-plugins-official/code-simplifier/1.0.0/agents/code-simplifier.md` contains "Use ES modules with proper import sorting", "Prefer `function` keyword over arrow functions", "Follow proper React component patterns with explicit Props types". The primary stack is Go and Kubernetes; there is no TypeScript or React in the codebase.
+- **Recommended fix:** Disable `code-simplifier@claude-plugins-official` in `settings.json`. If code cleanup automation is desired, add a local `code-simplifier` agent with Go-specific rules (gofmt idioms, receiver consistency, error wrapping).
+- **Evidence:** `~/.claude/plugins/cache/claude-plugins-official/code-simplifier/1.0.0/agents/code-simplifier.md:17-22`; `settings.json` `enabledPlugins`.
+
+#### F-PLUGIN-02 — `code-review` plugin overlaps with local `code-review` skill and `principal-engineer` agent review responsibilities
+- **Severity:** P2
+- **Token impact:** ~300 tokens/session for the plugin command description being available. Invocation adds 4 parallel agent calls.
+- **Friction:** low — both paths produce review output; users must know which to invoke.
+- **Confidence:** medium — depends on whether the local skill and plugin skill are being used for different scenarios.
+- **Effort:** small
+- **Current state:** Three review paths exist: (1) `code-review@claude-plugins-official` — 4 parallel agents with confidence scoring, CLAUDE.md compliance, git blame; (2) local `~/.claude/skills/code-review/` — referenced in system-reminder as `code-review`; (3) `principal-engineer` agent review as part of team-execute. The plugin and local skill do not document how they divide responsibility.
+- **Recommended fix:** Document the intended division: plugin `/code-review` for async/automated PR review; local `code-review` skill for interactive review sessions; PE agent for team-execute review gate. Or consolidate by disabling the plugin and folding its confidence-scoring approach into the local skill. Add a one-line comment to `settings.json` `enabledPlugins` entry.
+- **Evidence:** `~/.claude/plugins/cache/claude-plugins-official/code-review/f9178d73a2f5/README.md`; system-reminder listing `code-review` skill; `~/.claude/agents/principal-engineer.md` review section.
+
+#### F-PLUGIN-03 — `clangd-lsp` plugin enabled for a Go/Kubernetes engineer (cross-ref F-SETTINGS-04)
+- **Severity:** P2
+- **Token impact:** See F-SETTINGS-04 — LSP handshake + diagnostics tokens on every `.c`/`.cpp` file open; zero benefit on a Go-only stack.
+- **Friction:** high
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `clangd-lsp@claude-plugins-official` is enabled. Primary language is Go. No C/C++ files exist in the active repositories. This is a locked decision in F-SETTINGS-04.
+- **Recommended fix:** `"clangd-lsp@claude-plugins-official": false` in `settings.json`. Already captured in F-SETTINGS-04; this entry cross-references that finding for the plugin dimension.
+- **Evidence:** `settings.json` `enabledPlugins`; `~/.claude/plugins/cache/claude-plugins-official/clangd-lsp/1.0.0/README.md` (supported extensions: `.c .h .cpp .cc .cxx .hpp .hxx .C .H`). Cross-ref: F-SETTINGS-04.
+
+#### F-PLUGIN-04 — Two cached versions of `superpowers` plugin (4.3.0 and 5.1.0) are content-identical, consuming duplicate disk space
+- **Severity:** P2
+- **Token impact:** N/A — both versions load the same ~114 KB of skill content; only 5.1.0 is active.
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `~/.claude/plugins/cache/claude-plugins-official/superpowers/` contains both `4.3.0/` and `5.1.0/`. A recursive diff shows identical skill content (only `.in_use` marker files differ). The stale `4.3.0/` cache is ~114 KB of redundant disk state.
+- **Recommended fix:** Remove the stale version directory: `rm -rf ~/.claude/plugins/cache/claude-plugins-official/superpowers/4.3.0`. Plugin manager should handle this automatically on next update; if it does not, file a bug.
+- **Evidence:** `ls ~/.claude/plugins/cache/claude-plugins-official/superpowers/` shows `4.3.0` and `5.1.0`; `diff -r` shows no content delta between the two (only `.in_use` markers).
+
 ### 2.8 meta-skills (router / gating patterns — currently empty; finding describes the gap)
+
+#### F-META-01 — Missing `pick-planner` router (gap finding)
+- **Severity:** P1
+- **Token impact:** estimated 2-4 K tokens saved per simple plan invocation. Breakeven at ~1 simple invocation per session; classifier itself costs ~500-800 tokens.
+- **Friction:** medium — currently every brainstorm → plan flow produces a heavyweight plan regardless of complexity.
+- **Confidence:** high (architecturally identical to `validate-recommendation`).
+- **Effort:** small — one new skill dir, one new persona file, one edit to brainstorming's "Transition to implementation" step.
+- **Current state:** No router/gating skills exist except `validate-recommendation` (which gates `AskUserQuestion`, not skill invocations). `writing-plans` is invoked unconditionally regardless of task complexity.
+- **Recommended fix:** Build `~/.claude/skills/pick-planner/SKILL.md` + `~/.claude/skills/validate-recommendation/personas/plan-complexity.md`. Classifier returns SIMPLE / MODERATE / COMPLEX. SIMPLE inlines 3-5 bullets; MODERATE writes a lite plan; COMPLEX invokes `superpowers:writing-plans`. Env-var disable via `SKIP_PLAN_ROUTER=1`. Update brainstorming's "Transition to implementation" wording.
+- **Evidence:** spec §3.8 (area definition), §4.8 (theme), §5 P1 item 6.
 
 ## 3. Cross-cutting themes
 
