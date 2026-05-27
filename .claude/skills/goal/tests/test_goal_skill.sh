@@ -143,6 +143,27 @@ else
   echo "PASS: scenario B — Origin omitted when cwd has no git remote"; PASS=$((PASS+1))
 fi
 
+# Scenario C: cwd is a git repo but has no 'origin' remote → stanza has no 'Origin:' line.
+# Distinct from Scenario B (no .git at all) — proves goal.sh handles both no-git AND
+# git-without-remote cases via the same fail-open path.
+UUID_C="goalt00c-aaaa-bbbb-cccc-00000000000c"
+HOME_C="$TMP/hC"
+INPUT_C=$'Goal: scenario C\nAcceptance:\n- one'
+WORK_C="$TMP/repoC"
+mkdir -p "$WORK_C"
+( cd "$WORK_C" && git init -q )  # initialize repo but do NOT add an origin remote
+( cd "$WORK_C" && run_goal "$HOME_C" "$UUID_C" "$INPUT_C" >/dev/null 2>&1 )
+FILE_C="$HOME_C/.claude/audit/session-goals/$UUID_C.md"
+if [ ! -f "$FILE_C" ]; then
+  echo "FAIL: scenario C — goal file not created"; FAIL=$((FAIL+1))
+elif grep -q "^Origin: " "$FILE_C"; then
+  echo "FAIL: scenario C — Origin line should be absent (git repo without origin)"
+  echo "  got: $(grep '^Origin:' "$FILE_C")"
+  FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario C — Origin omitted when git repo has no origin remote"; PASS=$((PASS+1))
+fi
+
 echo
 echo "==== Results: ${PASS} passed, ${FAIL} failed ===="
 [ "$FAIL" -eq 0 ]
