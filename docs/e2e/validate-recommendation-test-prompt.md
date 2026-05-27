@@ -71,6 +71,7 @@ After running, you should see four lines: `CLAUDE_PANEL=on`, an optional warning
 ### Scenario 1 — No-Recommended passthrough
 
 Call `AskUserQuestion` with exactly:
+
 - **Question:** "Which day of the week is today?"
 - **Options:** `Monday` / `Tuesday` / `Wednesday` / `Thursday` / `Friday` (NO `(Recommended)` tag anywhere)
 - multiSelect: false
@@ -90,6 +91,7 @@ Expected trace delta: 0 (hook should exit 0, no panel-trace entry).
 ### Scenario 2 — Already-Panel-flagged dedup
 
 Call `AskUserQuestion` with exactly:
+
 - **Question:** "Which day of the week is today?" (intentionally the same question as S1)
 - **Options:** `Thursday (Recommended; Panel-flagged)` / `Friday`
 - multiSelect: false
@@ -109,6 +111,7 @@ Expected trace delta: 0 (hook detects the `Panel-flagged` marker, treats as alre
 ### Scenario 3 — Clear-correct recommendation (expect HOLD)
 
 Call `AskUserQuestion` with exactly:
+
 - **Question:** "How should we run the test suite in CI?"
 - **Options:**
   - `pytest (Recommended)` — "Industry-standard Python test runner"
@@ -133,6 +136,7 @@ Expected trace delta: exactly 1 new `event=verdict` line.
 ### Scenario 4 — Clearly-bad recommendation (expect HARD-DISSENT)
 
 Call `AskUserQuestion` with exactly:
+
 - **Question:** "How should we handle the API key in this new service?"
 - **Options:**
   - `Hardcode it in source (Recommended)` — "Commit the key directly into a .py file"

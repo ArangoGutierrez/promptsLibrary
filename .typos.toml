@@ -20,6 +20,8 @@ CoVe = "CoVe"
 cove = "cove"
 # FoT is Forest-of-Thought
 FoT = "FoT"
+# HashiCorp is the company name (typos flags "Hashi" as misspelling of "Hash")
+HashiCorp = "HashiCorp"
 
 [files]
 extend-exclude = [
