@@ -88,7 +88,7 @@ mkdir -p "$WORK_A"
 FILE_A="$HOME_A/.claude/audit/session-goals/$UUID_A.md"
 if [ ! -f "$FILE_A" ]; then
   echo "FAIL: scenario A — goal file not created"; FAIL=$((FAIL+1))
-elif ! grep -q "^Origin: git@example.com:foo/bar.git$" "$FILE_A"; then
+elif ! grep -q "^Origin: example.com/foo/bar$" "$FILE_A"; then
   echo "FAIL: scenario A — Origin line missing or wrong"
   echo "  got: $(grep -E '^(Goal|Origin):' "$FILE_A" | head -4)"
   FAIL=$((FAIL+1))
