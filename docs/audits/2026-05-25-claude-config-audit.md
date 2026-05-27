@@ -2,7 +2,7 @@
 
 - **Owner:** eduardoa@nvidia.com
 - **Spec:** [docs/superpowers/specs/2026-05-25-claude-config-pe-audit-design.md](../superpowers/specs/2026-05-25-claude-config-pe-audit-design.md)
-- **Status:** Draft
+- **Status:** Final — pending user review
 
 ## 1. Inventory snapshot
 
@@ -691,7 +691,23 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 
 ### 4.1 P0 — Quick wins
 
-Target: one PR to `promptsLibrary/.claude` (shared track) + direct edits to `~/.claude` (private track). <2h work.
+Target: one PR to `promptsLibrary/.claude` (shared track) + direct edits to `~/.claude` (private track).
+
+**Estimated effort (revised):**
+
+| Item | Effort |
+|---|---|
+| 1. Delete 6 `.bak` files | 5m |
+| 2. Remove tdd-guard.sh + 4 .bak siblings + settings.json entries | 20m |
+| 3. Move TDD language in CLAUDE.md and rules/constitution.md | 15m |
+| 4. **Delete Stop-hook prompt block** (recommended path; CLAUDE.md principle is sufficient) | 10m |
+| 5. Fix validate-recommendation WORKDIR sandbox-write path | 30m |
+| 6. Trim skill descriptions (>200 char offenders) | 15m |
+| 7. Add `gh` CLI doc note to CLAUDE.md | 5m |
+| 8. Rotate PANEL_DA_API_KEY (out-of-band, not via Claude) | 5m |
+| **Total** | **~1h45m** |
+
+Stays under 2h with the "delete Stop hook entirely" decision on item 4. If you choose to write a `verify-completion.sh` command-hook replacement instead, expect item 4 to grow to ~45m and total P0 effort to ~2h15m.
 
 1. **Delete stale `.bak` iteration-debris files from `~/.claude/hooks/`** — `tdd-guard.sh.bak`, `validate-recommendation.sh.bak`, and any other `.bak` siblings. (resolves F-HOOK-01; see §2.5)
 
@@ -699,9 +715,9 @@ Target: one PR to `promptsLibrary/.claude` (shared track) + direct edits to `~/.
 
 3. **Edit `CLAUDE.md` and `rules/constitution.md` TDD language** — replace "MUST" enforcement wording with "should + theater-test discipline still required"; remove the dead reference to `tdd-guard.sh` from the TDD Protocol section of `CLAUDE.md`. (resolves F-CLAUDEMD-01; see §2.1)
 
-4. **Replace or delete the Stop hook `"type": "prompt"` entry in `settings.json`** — measure the hook's token cost first; if signal-to-noise is poor, delete the Stop hook entirely; otherwise replace with a fast `"type": "command"` regex that emits structured JSON. Apply to both `promptsLibrary/.claude/settings.json` and `~/.claude/settings.json`. (resolves F-SETTINGS-01, F-HOOK-03; see §2.3, §2.5)
+4. **Delete the Stop-hook prompt block.** — The `"type": "prompt"` entry costs ~800-1200 tokens per turn. Delete the entry entirely from both `promptsLibrary/.claude/settings.json` and `~/.claude/settings.json`; the CLAUDE.md "Verify before claiming" principle (line 17) is sufficient for enforcement. (resolves F-SETTINGS-01, F-HOOK-03; see §2.3, §2.5)
 
-5. **Fix `validate-recommendation.sh` sandbox write path** — move the verdict output directory from `~/.claude/panel/work/` to `$TMPDIR/panel/work/` (or alternatively add `~/.claude/panel/work/` to the `write.allowOnly` list in `~/.claude/settings.json`). This eliminates the `dangerouslyDisableSandbox` friction on every panel invocation. (resolves F-HOOK-04; see §2.5)
+5. **Fix `validate-recommendation.sh` sandbox write path** — move the verdict output directory from `~/.claude/panel/work/` to `$TMPDIR/panel/work/` (or alternatively add `~/.claude/panel/work/` to the `write.allowOnly` list in `~/.claude/settings.json`). This eliminates the `dangerouslyDisableSandbox` friction on every panel invocation. This fixes the write-path correctness issue (F-HOOK-04); the missing settings.json registration is addressed in P1 item 4 (F-HOOK-07). (resolves F-HOOK-04; see §2.5)
 
 6. **Trim skill descriptions to reduce aggregate auto-load token cost** — edit the `description` field of every skill listed in §2.6 F-SKILL-01 to be ≤200 chars; focus on the highest-token offenders first (`team-execute`, `loop`, `schedule`, `claude-api`, `code-review`). Target: ≥30% reduction in aggregate description bytes. (resolves F-SKILL-01; see §2.6)
 
@@ -737,7 +753,7 @@ Target: one cleanup PR; items are low-risk and independently droppable if scope 
 
 1. **Remove "Execution Model" detail from `CLAUDE.md`** — the section embeds orchestration detail that belongs in `skills/team-execute/SKILL.md`; replace with a one-line pointer. Remove the "Iteration Budget" section (dead text, not referenced downstream). (resolves F-CLAUDEMD-03, F-CLAUDEMD-04; see §2.1)
 
-2. **Remove the `"Verify before claiming"` principle from `CLAUDE.md`** — once the Stop hook is removed (P0 item 4), this principle is free-floating redundancy; delete or fold into the Workflow line. (resolves F-CLAUDEMD-06; see §2.1)
+2. **Remove the `"Verify before claiming"` principle from `CLAUDE.md`** (requires P0 item 4 complete) — once the Stop hook is removed (P0 item 4), this principle is free-floating redundancy; delete or fold into the Workflow line. (resolves F-CLAUDEMD-06; see §2.1)
 
 3. **Remove duplicate RBAC rule from `security.md` and agents-workbench reference from `git-workflow.md`** — the RBAC line is already covered by `k8s-conventions.md`; the agents-workbench wording in `git-workflow.md` mirrors `CLAUDE.md` exactly. One authoritative location per rule. (resolves F-RULES-05, F-RULES-06; see §2.2)
 
@@ -756,3 +772,21 @@ Target: one cleanup PR; items are low-risk and independently droppable if scope 
 10. **Refresh `learned-anti-patterns.md` via `/reflection`** — the last `/reflection` run was 11 days before the audit; run it now to prune stale warning-severity entries and incorporate any new failure modes observed since 2026-05-14. (spec §5 P2 item 5; no §2 finding required — maintenance action)
 
 ## 5. Validation gate
+
+**Baseline measurement (pre-P0):**
+1. Open a fresh Claude Code session against this repo (`promptsLibrary/`).
+2. Send a no-op prompt: "echo hello".
+3. Capture the prompt-token count from the status line or `~/.claude/telemetry/`.
+4. Record as the baseline.
+
+**Per-phase gate:**
+After each of P0, P1, P2 lands in `promptsLibrary/.claude` (Track A) or `~/.claude` (Track B):
+1. Repeat the baseline measurement.
+2. Diff vs. previous baseline.
+3. If P0+P1 cumulative reduction < 20%, do NOT promote to `~/.claude` — debug in the repo first.
+
+**Promotion procedure (per spec §6.1 dual-track):**
+- **Track A — shared/public config**: edits land first in `promptsLibrary/.claude/`. Once validation gate passes, sync to `~/.claude/` via a documented sync script (defined in the P0 plan; candidate: `rsync -av .claude/ ~/.claude/` with excludes for runtime paths and the private subset; do NOT use `--delete`).
+- **Track B — private config**: edits go directly to `~/.claude/`. No repo mirror. Live PANEL_DA_API_KEY rotation happens out-of-band, never via Claude.
+
+Each phase gets its own promotion event; do not batch P0+P1+P2 into one sync.
