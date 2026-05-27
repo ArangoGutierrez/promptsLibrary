@@ -690,7 +690,69 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ## 4. Phased action plan
 
 ### 4.1 P0 — Quick wins
+
+Target: one PR to `promptsLibrary/.claude` (shared track) + direct edits to `~/.claude` (private track). <2h work.
+
+1. **Delete stale `.bak` iteration-debris files from `~/.claude/hooks/`** — `tdd-guard.sh.bak`, `validate-recommendation.sh.bak`, and any other `.bak` siblings. (resolves F-HOOK-01; see §2.5)
+
+2. **Remove `tdd-guard.sh` from `settings.json` PreToolUse arrays and delete the script** — edit both the repo copy (`promptsLibrary/.claude/settings.json`) and `~/.claude/settings.json` to remove all `tdd-guard.sh` hook entries, then delete `~/.claude/hooks/tdd-guard.sh`. (resolves F-HOOK-02; see §2.5)
+
+3. **Edit `CLAUDE.md` and `rules/constitution.md` TDD language** — replace "MUST" enforcement wording with "should + theater-test discipline still required"; remove the dead reference to `tdd-guard.sh` from the TDD Protocol section of `CLAUDE.md`. (resolves F-CLAUDEMD-01; see §2.1)
+
+4. **Replace or delete the Stop hook `"type": "prompt"` entry in `settings.json`** — measure the hook's token cost first; if signal-to-noise is poor, delete the Stop hook entirely; otherwise replace with a fast `"type": "command"` regex that emits structured JSON. Apply to both `promptsLibrary/.claude/settings.json` and `~/.claude/settings.json`. (resolves F-SETTINGS-01, F-HOOK-03; see §2.3, §2.5)
+
+5. **Fix `validate-recommendation.sh` sandbox write path** — move the verdict output directory from `~/.claude/panel/work/` to `$TMPDIR/panel/work/` (or alternatively add `~/.claude/panel/work/` to the `write.allowOnly` list in `~/.claude/settings.json`). This eliminates the `dangerouslyDisableSandbox` friction on every panel invocation. (resolves F-HOOK-04; see §2.5)
+
+6. **Trim skill descriptions to reduce aggregate auto-load token cost** — edit the `description` field of every skill listed in §2.6 F-SKILL-01 to be ≤200 chars; focus on the highest-token offenders first (`team-execute`, `loop`, `schedule`, `claude-api`, `code-review`). Target: ≥30% reduction in aggregate description bytes. (resolves F-SKILL-01; see §2.6)
+
+7. **Add a `gh` CLI permission note to `CLAUDE.md`** — insert one line in the Principles or Workflow section: "gh CLI (`Bash(gh *)`) is pre-approved in the sandbox; do not retry with `dangerouslyDisableSandbox`." (resolves F-CLAUDEMD-05; see §2.1) *(Note: F-CLAUDEMD-05 is marked P1 but aligns with spec §5 P0 item 6 and is <5-minute work, so grouped here.)*
+
+8. **Rotate `PANEL_DA_API_KEY`** — out-of-band rotation via the issuing service, not through Claude. After rotation, update the value in `~/.claude/settings.json` `env` block. (spec §5 P0 item 7; no §2 finding required — secret hygiene action)
+
 ### 4.2 P1 — Structural
+
+Target: 3–5 PRs to `promptsLibrary/.claude`, each independently shippable. Locked decisions land here.
+
+1. **Relocate all CFO skills out of `~/.claude/skills/`** — move `cfo`, `cfo-earnings-review`, `cfo-dcf`, `cfo-tax-check`, `cfo-state-refresh`, `cfo-rsu-decision`, `cfo-rebalance`, and any `cfo/` journal references to a dedicated `~/cfo/` project directory. Update `~/.claude/settings.json` to remove CFO skill paths. Fix the two YAML frontmatter syntax errors discovered during the audit while relocating. (resolves F-SKILL-02, F-SKILL-05; see §2.6)
+
+2. **Migrate from `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` to the official `isolation: worktree` subagent pattern** — remove the env var from `~/.claude/settings.json`, update `agents/` role definitions, `skills/team-execute/SKILL.md`, and `skills/worktree-guide/SKILL.md` to reflect the official pattern. Fix the role-name mismatch between `commands/team-execute.md` and `skills/team-execute/SKILL.md`. (resolves F-SETTINGS-03, F-AGENT-02; see §2.3, §2.7)
+
+3. **Compress `rules/*.md` to eliminate duplication with `CLAUDE.md`** — remove the "Implementation Discipline" block from `rules/constitution.md` (duplicates CLAUDE.md TDD Protocol), remove the "Theater Tests" content that is fully subsumed by `learned-anti-patterns.md`, remove the `security.md` Containers section (duplicated by `container-conventions.md`), and apply a per-file ceiling of ≤50 lines per rules file, ≤120 lines for `CLAUDE.md`. (resolves F-RULES-01, F-RULES-02, F-RULES-03, F-RULES-04, F-CLAUDEMD-02; see §2.2)
+
+4. **Register `validate-recommendation.sh` in `settings.json` and unregister/archive `probe-approve.sh`** — add the hook registration entry for `validate-recommendation.sh` under the appropriate trigger (e.g., PostToolUse or PreToolUse) in `~/.claude/settings.json`; delete or move `probe-approve.sh` to an `archive/` subdirectory. Decide whether `mempalace-wake.sh` should be registered or deleted. (resolves F-HOOK-06, F-HOOK-07, F-HOOK-08; see §2.5)
+
+5. **Tighten the `gh` CLI sandbox allowlist and reduce SessionStart hook output** — add `Bash(gh *)` to the `allowlist` section in `~/.claude/settings.json` so the gh permission check never blocks; profile each SessionStart hook for its byte contribution and remove or shorten the highest-output contributors. (resolves F-SETTINGS-02, F-HOOK-05; see §2.3, §2.5)
+
+6. **Set `effortLevel` context-sensitively and document cache-TTL strategy** — remove the global `effortLevel: "high"` override (or scope it to team-execute sessions only via env var); document in `CLAUDE.md` which flows (team-execute, multi-worktree) explicitly opt into 1h-TTL writes vs. the 5-minute default. Capture the tradeoff: opus[1m] + 5m TTL causes cache thrashing on long tasks. (resolves F-SETTINGS-05, F-SETTINGS-06; see §2.3)
+
+7. **Tighten non-CFO skill descriptions to ≤200 chars** — edit `description` fields in `skills/code-review/SKILL.md`, `skills/loop/SKILL.md`, `skills/schedule/SKILL.md`, `skills/claude-api/SKILL.md`, `skills/run/SKILL.md`, and any others that remain over-limit after the P0 pass. (resolves F-SKILL-03; see §2.6)
+
+8. **Replace `code-simplifier` plugin with a Go/K8s-appropriate equivalent or remove it** — the current plugin body hardcodes JavaScript/TypeScript/React rules; either replace the system prompt with Go/K8s conventions or disable the plugin in `enabledPlugins`. (resolves F-PLUGIN-01; see §2.8)
+
+9. **Build the `pick-planner` router skill** — create `~/.claude/skills/pick-planner/SKILL.md` implementing a SIMPLE / MODERATE / COMPLEX classifier, a `personas/plan-complexity.md` persona, and an `SKIP_PLAN_ROUTER=1` env-var bypass. Update the `superpowers:brainstorming` skill's "Transition to implementation" step to call `pick-planner` before writing any plan document. (resolves F-META-01; see §2.9)
+
 ### 4.3 P2 — Polish
+
+Target: one cleanup PR; items are low-risk and independently droppable if scope changes.
+
+1. **Remove "Execution Model" detail from `CLAUDE.md`** — the section embeds orchestration detail that belongs in `skills/team-execute/SKILL.md`; replace with a one-line pointer. Remove the "Iteration Budget" section (dead text, not referenced downstream). (resolves F-CLAUDEMD-03, F-CLAUDEMD-04; see §2.1)
+
+2. **Remove the `"Verify before claiming"` principle from `CLAUDE.md`** — once the Stop hook is removed (P0 item 4), this principle is free-floating redundancy; delete or fold into the Workflow line. (resolves F-CLAUDEMD-06; see §2.1)
+
+3. **Remove duplicate RBAC rule from `security.md` and agents-workbench reference from `git-workflow.md`** — the RBAC line is already covered by `k8s-conventions.md`; the agents-workbench wording in `git-workflow.md` mirrors `CLAUDE.md` exactly. One authoritative location per rule. (resolves F-RULES-05, F-RULES-06; see §2.2)
+
+4. **Disable `clangd-lsp` plugin and clean up `attribution` and `autoMemory` settings** — remove `clangd-lsp` from `enabledPlugins` in `~/.claude/settings.json`; either populate the `attribution` block with real values or delete the empty block; add a comment or note about what `autoMemoryEnabled: true` persists so entries can be audited periodically. (resolves F-SETTINGS-04, F-SETTINGS-07, F-SETTINGS-08, F-PLUGIN-03; see §2.3, §2.8)
+
+5. **Trim `validate-recommendation` skill body** — the body is approaching the size threshold; remove duplicated rationale text and inline examples that are better held in the persona files. (resolves F-SKILL-04; see §2.6)
+
+6. **Delete or merge local `tdd-protocol` and `worktree-guide` skills that shadow superpowers plugin** — evaluate whether the local overrides add value beyond `superpowers:test-driven-development` and `superpowers:using-git-worktrees`; if not, delete the local skills to eliminate the shadowing confusion. Fix the `nvinfo-cli` folded-YAML description so the awk parser returns the full description string. (resolves F-SKILL-06, F-SKILL-07, F-SKILL-08; see §2.6)
+
+7. **Consolidate hook test coverage and document the convention** — add a `tdd-guard_test.sh` skeleton (or delete `tdd-guard.sh` in P0 and remove this item); document that every registered hook must ship a corresponding `*_test.sh` in the same directory. Clarify ownership of `build-helpers.sh` and `test-dep-map.sh` (register, document, or delete). (resolves F-HOOK-09, F-HOOK-10; see §2.5)
+
+8. **Resolve agent-definition issues** — document in `agents/principal-engineer.md` why the `Agent` tool is granted and what the expected sub-agent spawning scenario is; remove the QA validation logic from `agents/qa-engineer.md` that duplicates `commands/team-execute.md`; ensure one canonical location per workflow step. (resolves F-AGENT-01, F-AGENT-03; see §2.7)
+
+9. **Audit `enabledPlugins` for overlap and stale entries** — disable `code-review` plugin if it fully overlaps with the local `code-review` skill and `principal-engineer` agent; remove the stale 4.3.0 `superpowers` plugin cache directory (keep only 5.1.0). Add `$schema` line to project copies of `settings.json` if the canonical schema URL is available. (resolves F-PLUGIN-02, F-PLUGIN-04; see §2.8, spec §5 P2 item 2)
+
+10. **Refresh `learned-anti-patterns.md` via `/reflection`** — the last `/reflection` run was 11 days before the audit; run it now to prune stale warning-severity entries and incorporate any new failure modes observed since 2026-05-14. (spec §5 P2 item 5; no §2 finding required — maintenance action)
 
 ## 5. Validation gate
