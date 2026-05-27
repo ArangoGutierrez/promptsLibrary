@@ -93,7 +93,16 @@ elif ! grep -q "^Origin: example.com/foo/bar$" "$FILE_A"; then
   echo "  got: $(grep -E '^(Goal|Origin):' "$FILE_A" | head -4)"
   FAIL=$((FAIL+1))
 else
-  echo "PASS: scenario A — Origin recorded from cwd's git remote"; PASS=$((PASS+1))
+  # Verify Origin appears BETWEEN Goal: and Acceptance: (spec ordering invariant).
+  GOAL_LN=$(grep -n '^Goal: ' "$FILE_A" | head -1 | cut -d: -f1)
+  ORIGIN_LN=$(grep -n '^Origin: ' "$FILE_A" | head -1 | cut -d: -f1)
+  ACC_LN=$(grep -n '^Acceptance:' "$FILE_A" | head -1 | cut -d: -f1)
+  if [ -z "$ORIGIN_LN" ] || [ "$ORIGIN_LN" -le "$GOAL_LN" ] || [ "$ORIGIN_LN" -ge "$ACC_LN" ]; then
+    echo "FAIL: scenario A — Origin not between Goal and Acceptance (Goal=$GOAL_LN Origin=$ORIGIN_LN Acceptance=$ACC_LN)"
+    FAIL=$((FAIL+1))
+  else
+    echo "PASS: scenario A — Origin normalized + positioned between Goal and Acceptance"; PASS=$((PASS+1))
+  fi
 fi
 
 # Scenario A2: HTTPS clone of the same repo → same normalized Origin as Scenario A.
