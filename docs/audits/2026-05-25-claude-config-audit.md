@@ -418,6 +418,105 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `~/.claude/hooks/build-helpers.sh` (unregistered); `~/.claude/hooks/test-dep-map.sh` (unregistered; called at `tdd-guard.sh:212`); `ls ~/.claude/hooks/bin/` (compiled artifacts).
 
 ### 2.5 skills
+
+25 skills under `~/.claude/skills/`. All descriptions are pre-loaded into every Claude Code session as part of the skill-registration manifest. Measurements use character counts from actual frontmatter (Python-parsed for folded YAML blocks); token estimates use chars÷4.
+
+---
+
+#### F-SKILL-01 — Aggregate skill-description auto-load cost
+- **Severity:** P0
+- **Token impact:** ~1,359 tokens/session (5,438 chars across 25 skill descriptions)
+- **Friction:** high
+- **Confidence:** high
+- **Effort:** medium (requires trimming each offending description)
+- **Current state:** All 25 skill descriptions are injected into every session context regardless of whether those skills are relevant. Total measured description payload is 5,438 chars (~1,359 tokens). The 12 skills with descriptions >200 chars collectively account for 4,133 chars (~1,033 tokens) — 76% of the total description load. The 7 CFO skills alone contribute 2,358 chars (~590 tokens), 43% of total.
+- **Recommended fix:** (1) Relocate CFO subtree per spec §4.5 (see F-SKILL-02) to eliminate 2,358 chars (~590 tokens), leaving 3,080 chars. (2) Trim the 5 remaining bloat offenders to ≤200 chars each (see F-SKILL-03), saving ~880 chars of excess. Combined effect reduces description payload to ~2,200 chars (~550 tokens), an ~60% reduction.
+- **Evidence:** `~/.claude/skills/*/SKILL.md` frontmatters; measured 2026-05-27. Full per-skill table: `cfo`=604, `nvinfo-cli`=373, `cfo-earnings-review`=372, `cfo-tax-check`=362, `gh-activity-gather`=292, `cfo-rsu-decision`=277, `managing-omnistation`=272, `cfo-dcf`=271, `goal`=240, `cfo-state-refresh`=238, `cfo-rebalance`=234, `gh-jira-activity`=216. Spec §5 P1 item 4.
+
+---
+
+#### F-SKILL-02 — CFO subtree must relocate out of global skills
+- **Severity:** P1
+- **Token impact:** 590 tokens/session reclaimed (2,358 chars eliminated from global load)
+- **Friction:** medium (requires new `~/cfo/` project + `.claude/skills/` symlinks or plugin)
+- **Confidence:** high
+- **Effort:** small
+- **Current state:** 7 CFO skills (`cfo`, `cfo-dcf`, `cfo-earnings-review`, `cfo-rebalance`, `cfo-rsu-decision`, `cfo-state-refresh`, `cfo-tax-check`) live in `~/.claude/skills/` and are injected into every session. These skills are exclusively relevant when working in the `~/cfo/` personal-finance project. Combined description payload: 2,358 chars (590 tokens). Individual sizes: `cfo`=5,111 B, `cfo-dcf`=7,473 B, `cfo-earnings-review`=6,521 B, `cfo-rebalance`=5,421 B, `cfo-rsu-decision`=6,592 B, `cfo-state-refresh`=4,686 B, `cfo-tax-check`=4,713 B (total: 40,517 B / ~10,129 tokens of body).
+- **Recommended fix:** Move all 7 skills to `~/cfo/.claude/skills/`. They will only load when the `~/cfo/` project is active. This is a locked decision per spec §4.5; no design debate needed — execute it.
+- **Evidence:** `~/.claude/skills/cfo*/SKILL.md`; spec §4.5 (locked). Cross-ref F-SKILL-01.
+
+---
+
+#### F-SKILL-03 — Description bloat: 5 non-CFO skills exceed 200-char limit
+- **Severity:** P1
+- **Token impact:** ~220 tokens/session over-budget (880 chars excess across 5 skills)
+- **Friction:** low (description trimming is in-place edit)
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** After CFO relocation (F-SKILL-02), 5 non-CFO skills still have descriptions >200 chars: `nvinfo-cli` (373 chars, 173 over budget), `gh-activity-gather` (292 chars, 92 over), `managing-omnistation` (272 chars, 72 over), `goal` (240 chars, 40 over), `gh-jira-activity` (216 chars, 16 over). The 200-char target is per spec §5 P1 item 4; Anthropic guidance is "pushy but compact."
+- **Recommended fix:** Trim each description to ≤200 chars. Remove internal trigger-phrase lists from the description field — those belong in the skill body or a `trigger:` frontmatter key, not in the description that loads every session. Target: convey what the skill does and the primary invocation signal only.
+- **Evidence:** `~/.claude/skills/nvinfo-cli/SKILL.md:3` (373 chars); `~/.claude/skills/gh-activity-gather/SKILL.md:3` (292 chars); `~/.claude/skills/managing-omnistation/SKILL.md:3` (272 chars); `~/.claude/skills/goal/SKILL.md:3` (240 chars); `~/.claude/skills/gh-jira-activity/SKILL.md:3` (216 chars). Spec §5 P1 item 4.
+
+---
+
+#### F-SKILL-04 — validate-recommendation body approaching size threshold
+- **Severity:** P2
+- **Token impact:** negligible (body only loads on invocation, not per-session)
+- **Friction:** low
+- **Confidence:** medium
+- **Effort:** trivial
+- **Current state:** `validate-recommendation` has 359 body lines (13,605 bytes), the largest skill body in the set. The 400-line hard limit is not breached but is close. The skill includes verbose panel-dispatch protocol, JSON schema examples, and full error-case handling inline. Two other skills are in the 250–275 range: `nvinfo-cli` (271 lines) and `gh-activity-gather` (268 lines).
+- **Recommended fix:** Extract the JSON schema examples and panel-wiring details from `validate-recommendation` into a separate referenced doc (`~/.claude/skills/validate-recommendation/PANEL-PROTOCOL.md`) and reference it by path. Keeps invocation body under 200 lines. Lower priority than P1 items; address if editing the skill for other reasons.
+- **Evidence:** `~/.claude/skills/validate-recommendation/SKILL.md` (359 body lines, 13,605 bytes); `~/.claude/skills/nvinfo-cli/SKILL.md` (271 body lines); `~/.claude/skills/gh-activity-gather/SKILL.md` (268 body lines).
+
+---
+
+#### F-SKILL-05 — YAML frontmatter syntax errors in 2 CFO skills
+- **Severity:** P2
+- **Token impact:** N/A
+- **Friction:** low (only matters if a YAML-strict loader processes frontmatter)
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `cfo-earnings-review` and `cfo-tax-check` have unquoted colons inside their `description:` values (e.g., `description: Post-earnings review: auto-fetches…`). Python `yaml.safe_load` fails with `mapping values are not allowed here`. Claude Code's runtime likely parses these with a more lenient parser, so no functional regression, but the files are technically invalid YAML.
+- **Recommended fix:** Quote the description values: `description: "Post-earnings review: auto-fetches…"`. Moot if CFO skills are relocated (F-SKILL-02) — fix en passant during the move.
+- **Evidence:** `~/.claude/skills/cfo-earnings-review/SKILL.md:3`; `~/.claude/skills/cfo-tax-check/SKILL.md:3`; `yaml.safe_load` traceback (measured 2026-05-27). Cross-ref F-SKILL-02.
+
+---
+
+#### F-SKILL-06 — Semantic overlap: local tdd-protocol shadows plugin superpowers:test-driven-development
+- **Severity:** P2
+- **Token impact:** ~17 tokens/session (66-char description, benign)
+- **Friction:** low
+- **Confidence:** medium
+- **Effort:** trivial
+- **Current state:** Local `tdd-protocol` (66-char description, 36 body lines) coexists with plugin `superpowers:test-driven-development`. They are not pure duplicates: the local skill adds NVIDIA-specific extensions (mutation gate with `gremlins`, DORA cycle labeling `[RED]/[GREEN]/[MUTATE]/[REFACTOR]`, `tdd-guard.sh` hook integration, `SKIP_TDD_GUARD=1` escape hatch). However, both appear in the session skill manifest and both trigger on overlapping phrases ("starting implementation work"). This creates router ambiguity.
+- **Recommended fix:** Add a `supersedes: superpowers:test-driven-development` marker (if supported) or rename the local skill to `tdd-protocol-nvidia` to signal intentional extension. Document in the skill body that it extends the plugin. No deletion needed — the local extensions are substantive.
+- **Evidence:** `~/.claude/skills/tdd-protocol/SKILL.md` (66-char description); `~/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/test-driven-development/SKILL.md`; description overlap on "starting implementation work".
+
+---
+
+#### F-SKILL-07 — Semantic overlap: local worktree-guide shadows plugin superpowers:using-git-worktrees
+- **Severity:** P2
+- **Token impact:** ~26 tokens/session (102-char description, benign)
+- **Friction:** low
+- **Confidence:** medium
+- **Effort:** trivial
+- **Current state:** Local `worktree-guide` (102-char description, 30 body lines) coexists with plugin `superpowers:using-git-worktrees`. The local skill is substantively different: it encodes `agents-workbench` branch topology, the `enforce-worktree.sh` / `prevent-push-workbench.sh` hook guards, and the fetch-from-remote-ref worktree creation pattern specific to this workflow. The plugin provides generic git worktree mechanics. Both trigger on "starting implementation work in isolated branches."
+- **Recommended fix:** Same as F-SKILL-06: document in the skill body that it extends the plugin. Consider adding a `note:` frontmatter field pointing at the plugin. Ambiguity is lower risk here since the trigger phrases are distinct enough in practice.
+- **Evidence:** `~/.claude/skills/worktree-guide/SKILL.md` (102-char description, 30 body lines); `~/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/using-git-worktrees/SKILL.md`.
+
+---
+
+#### F-SKILL-08 — nvinfo-cli description missing: awk parsing returns 2 chars (folded YAML block)
+- **Severity:** P2
+- **Token impact:** N/A
+- **Friction:** low
+- **Confidence:** high
+- **Effort:** trivial
+- **Current state:** `nvinfo-cli` uses a YAML `>-` folded block scalar for its `description:` field. The awk-based measurement script in this audit's Task 7 returned `desc_chars=2` (the `>-` characters), indicating the skill body extraction script is brittle. Python YAML parsing returns the correct 373-char description. The skill itself is functionally correct; this is an audit-tooling observation.
+- **Recommended fix:** Convert `nvinfo-cli` description from folded block `>-` to a single quoted string. Keeps the frontmatter consistent with all other skills and makes the description parseable by simple line-oriented tools. Also reduces the description to ≤200 chars per F-SKILL-03 when rewriting.
+- **Evidence:** `~/.claude/skills/nvinfo-cli/SKILL.md:3-9` (folded block); awk measurement returned 2; Python returned 373. Cross-ref F-SKILL-03.
+
 ### 2.6 agents
 ### 2.7 plugins enabled
 ### 2.8 meta-skills (router / gating patterns — currently empty; finding describes the gap)
