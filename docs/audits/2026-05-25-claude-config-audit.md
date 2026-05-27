@@ -610,13 +610,82 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ## 3. Cross-cutting themes
 
 ### 3.1 Stop-hook LLM prompt cost
-### 3.2 Cache-TTL regression (1h → 5m)
+
+**Summary:** The `"type": "prompt"` Stop hook (F-SETTINGS-01, F-HOOK-03) fires a full Claude inference pass on every turn end. At ~395 chars / ~99 tokens for the prompt itself, plus transcript-tail injection and a `OK`/`STOP` response, the actual per-stop cost lands at ~800–1,200 tokens. Across a 30-turn session that is ~9,000–24,000 tokens consumed solely to enforce a rule already expressed in CLAUDE.md line 17 and `constitution.md`'s Test Quality Gate. With Opus 4.7's ~35% tokenizer expansion the real cost is higher than any pre-2026 estimate would suggest (see §3.3).
+
+**Cross-references:** F-SETTINGS-01, F-HOOK-03, F-CLAUDEMD-06.
+
+**Recommendation direction:** Replace the `"type": "prompt"` entry with a `"type": "command"` hook (`verify-completion.sh`) that uses `grep`/`jq` to detect unverified completion claims — no LLM round-trip, ~5 tokens overhead. If the check is deemed unnecessary given the CLAUDE.md principle, delete the Stop hook entry entirely. Do not retain the prompt-type entry in any form.
+
+---
+
+### 3.2 Cache-TTL regression (1h → 5m, March 2026)
+
+**Summary:** Anthropic silently regressed the default prompt-cache TTL from 1h to 5min in March 2026. Every idle gap longer than 5 minutes — a Bash command running, user review time, a `sleep` call in a hook — causes the full auto-loaded surface to be written as a cold-cache entry again. The per-session auto-loaded surface is measured at ~4,100 tokens (CLAUDE.md ~1,200 + rules ~2,900 per F-RULES-01, plus ~1,359 tokens of skill descriptions per F-SKILL-01 = ~5,459 tokens total). Cold-cache writes on Opus cost ~3–5× cached reads; sessions with multiple idle gaps lose the cache benefit entirely.
+
+**Cross-references:** F-RULES-01, F-SKILL-01, F-SETTINGS-06.
+
+**Recommendation direction:** Reduce the auto-loaded surface by ≥25% first (apply F-CLAUDEMD-01 through F-RULES-06 and F-SKILL-02) so each cold-cache write is smaller. For long-running team-execute sessions, add explicit cache-control markers on stable CLAUDE.md sections to request 1h TTL. Audit hook scripts for unnecessary `sleep` calls that idle the cache without benefit.
+
+---
+
 ### 3.3 Opus 4.7 tokenizer expansion (~35%)
+
+**Summary:** The Opus 4.7 tokenizer produces ~35% more tokens per line of prose compared to earlier model assumptions. All token estimates in this audit (§1, §2) use the current 2026 assumption: ~18–25 tokens/line for English prose, ~12–18 tokens/line for code/config. Any pre-2026 budget or sizing heuristic based on character counts or line counts underestimates actual spend by ~35%. This amplifies every other cost finding: the Stop-hook prompt cost (§3.1), the cold-cache write cost (§3.2), the skill-description load (F-SKILL-01), and the rules/ surface (F-RULES-01).
+
+**Cross-references:** F-SETTINGS-01, F-SETTINGS-05, F-SETTINGS-06, F-RULES-01, F-SKILL-01 (and all findings with a token estimate).
+
+**Recommendation direction:** Recalibrate all hard-coded token budgets (e.g., skill description 200-char ceiling from spec §5 P1 item 4) using the 2026 tokenizer ratio, not the prior model. When measuring progress after applying P0/P1 fixes, use `tiktoken` or the Claude tokenizer API to verify actual reduction, not line-count arithmetic.
+
+---
+
 ### 3.4 TDD-guard removal — mechanics
+
+**Summary:** `tdd-guard.sh` is locked for removal (spec §4.4, F-HOOK-02). The 229-line script is registered at two locations in `settings.json` (lines 123 and 136), has no test suite (`tdd-guard_test.sh` absent, F-HOOK-09), and has four `.bak` siblings documenting repeated exemption-list scope creep (F-HOOK-01). The guard fires on legitimate writes regularly enough to cause workflow friction without catching actual TDD violations in practice.
+
+**Cross-references:** F-HOOK-01, F-HOOK-02, F-HOOK-09, F-HOOK-10, F-CLAUDEMD-01, F-CLAUDEMD-02.
+
+**Recommendation direction:** Execute the five-step removal: (1) remove both `tdd-guard.sh` entries from `settings.json`; (2) delete `tdd-guard.sh`; (3) delete all four `.bak` siblings; (4) delete `test-dep-map.sh` and `test-dep-map_test.sh` (only consumer is `tdd-guard.sh`); (5) rewrite CLAUDE.md TDD section heading and body per F-CLAUDEMD-01 to remove "enforced by hook" language. TDD discipline is enforced by `/tdd-protocol` skill and the rewritten CLAUDE.md wording.
+
+---
+
 ### 3.5 CFO skill relocation — mechanics
+
+**Summary:** Seven CFO skills living in `~/.claude/skills/` inject 2,358 chars (~590 tokens) of description text into every session — even sessions with no personal-finance context (F-SKILL-02, F-SKILL-01). This is 43% of the total 5,438-char skill-description load. Individual skill bodies total 40,517 bytes (~10,129 tokens) available per invocation. The relocation is a locked decision per spec §4.5.
+
+**Cross-references:** F-SKILL-01, F-SKILL-02, F-SKILL-05.
+
+**Recommendation direction:** Move all 7 skills (`cfo`, `cfo-dcf`, `cfo-earnings-review`, `cfo-rebalance`, `cfo-rsu-decision`, `cfo-state-refresh`, `cfo-tax-check`) to `~/cfo/.claude/skills/`. Fix the YAML unquoted-colon syntax errors in `cfo-earnings-review` and `cfo-tax-check` during the move (F-SKILL-05). Remove any CFO references from `~/.claude/CLAUDE.md` after relocation.
+
+---
+
 ### 3.6 Worktrees: experimental flag vs official GA
+
+**Summary:** `settings.json` sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and `teammateMode: in-process`. Official Claude Code docs (2026) now ship `isolation: worktree` as the GA path for subagent isolation. The `isolation` key is absent from `settings.json` (`has("isolation") = false`), indicating the GA worktree path has not been adopted. Running a stale experimental env var alongside the GA mechanism risks undocumented behavior changes as the flag is phased out (F-SETTINGS-03).
+
+**Cross-references:** F-SETTINGS-03, F-AGENT-01, F-AGENT-02.
+
+**Recommendation direction:** Verify with Claude Code release notes whether `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is still required with `teammateMode: in-process`. If the GA path is `isolation: worktree` on per-agent definitions, add that field to each `agents/*.md` file and remove the env var from `settings.json`. Update `team-execute` skill and `worktree-guide` skill to document the adopted isolation model.
+
+---
+
 ### 3.7 Security posture
+
+**Summary:** A live incident during audit brainstorming printed `PANEL_DA_API_KEY` to stdout via a shell expansion error. This key must be rotated before any audit changes land. The broader `settings.json` deny and ask posture is sound: `.env`, `.pem`, `.key`, credentials, kubeconfig, AWS dir, and SSH keys are correctly blocked; `rm`, `git rebase --hard`, `git push --force`, and `sudo` correctly require prompt. `sign-commits.sh` enforces `-s -S` on every commit. The one structural gap is `validate-recommendation.sh` writing verdict files to `~/.claude/panel/work/`, which is outside sandbox-writable paths — causing silent failures (F-HOOK-04).
+
+**Cross-references:** F-HOOK-04, F-SETTINGS-02.
+
+**Recommendation direction:** Rotate `PANEL_DA_API_KEY` immediately. In `validate-recommendation/SKILL.md:89`, change `WORKDIR` from `${HOME}/.claude/panel/work/...` to `${TMPDIR:-/tmp}/claude-panel-work/${CLAUDE_SESSION_ID:-$PPID}` to use a sandbox-safe path. Add `~/.claude/panel/work` to `settings.json` `write.allowOnly` as a belt-and-suspenders fallback. No changes needed to the permissions.deny or permissions.ask posture.
+
+---
+
 ### 3.8 Plan-routing via cheap classifier (new)
+
+**Summary:** The `superpowers:writing-plans` skill produces a full heavyweight plan (~500–800 lines) regardless of task complexity. For simple, single-file tasks this generates 3–5K tokens of boilerplate the executor must read to find 3–5 actual bullets of real work (F-META-01). A `pick-planner` classifier, modeled on the existing `validate-recommendation` pattern, would cost ~500–800 tokens per call (Nemotron 3 Super via the existing panel infrastructure) and route SIMPLE tasks to an inline 3-5 bullet list, saving 2–4K tokens per simple plan invocation. Breakeven is ~1 simple-plan invocation per session.
+
+**Cross-references:** F-META-01.
+
+**Recommendation direction:** Build `~/.claude/skills/pick-planner/SKILL.md` and `~/.claude/skills/validate-recommendation/personas/plan-complexity.md`. The classifier returns SIMPLE / MODERATE / COMPLEX; SIMPLE emits an inline checklist, MODERATE writes a lite plan to `docs/superpowers/plans/`, COMPLEX invokes `superpowers:writing-plans` as today. Add `SKIP_PLAN_ROUTER=1` env-var override for the user to bypass the router when needed. Update the brainstorming skill's "Transition to implementation" step to call `pick-planner` before writing any plan document.
 
 ## 4. Phased action plan
 
