@@ -96,6 +96,26 @@ else
   echo "PASS: scenario A — Origin recorded from cwd's git remote"; PASS=$((PASS+1))
 fi
 
+# Scenario A2: HTTPS clone of the same repo → same normalized Origin as Scenario A.
+# Proves the SSH vs HTTPS false-positive class is eliminated.
+UUID_A2="goalt0a2-aaaa-bbbb-cccc-0000000000a2"
+HOME_A2="$TMP/hA2"
+INPUT_A2=$'Goal: scenario A2\nAcceptance:\n- one'
+WORK_A2="$TMP/repoA2"
+mkdir -p "$WORK_A2"
+( cd "$WORK_A2" && git init -q && git remote add origin https://example.com/foo/bar.git )
+( cd "$WORK_A2" && run_goal "$HOME_A2" "$UUID_A2" "$INPUT_A2" >/dev/null 2>&1 )
+FILE_A2="$HOME_A2/.claude/audit/session-goals/$UUID_A2.md"
+if [ ! -f "$FILE_A2" ]; then
+  echo "FAIL: scenario A2 — goal file not created"; FAIL=$((FAIL+1))
+elif ! grep -q "^Origin: example.com/foo/bar$" "$FILE_A2"; then
+  echo "FAIL: scenario A2 — HTTPS URL did not normalize to 'example.com/foo/bar'"
+  echo "  got: $(grep -E '^(Goal|Origin):' "$FILE_A2" | head -4)"
+  FAIL=$((FAIL+1))
+else
+  echo "PASS: scenario A2 — HTTPS URL normalizes to same identity as SSH"; PASS=$((PASS+1))
+fi
+
 # Scenario B: cwd has no git remote → stanza has no 'Origin:' line
 UUID_B="goalt00b-aaaa-bbbb-cccc-00000000000b"
 HOME_B="$TMP/hB"
