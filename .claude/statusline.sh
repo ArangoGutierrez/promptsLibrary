@@ -40,7 +40,24 @@ fi
 # goal-file Origin and the current cwd's git remote are known AND differ.
 # Empty on either side → no check, no warning (preserves backward compat
 # with pre-spec goal files and non-git cwds).
-CUR_ORIGIN=$(git config --get remote.origin.url 2>/dev/null || true)
+
+# Normalize a git origin URL to '<host>/<owner>/<repo>' identity.
+# Must match goal.sh's normalize_origin() — kept in sync intentionally
+# (deliberate duplication for v1; shared lib is a follow-up).
+normalize_origin() {
+  local url="$1"
+  [ -z "$url" ] && return
+  url="${url#https://}"
+  url="${url#http://}"
+  url="${url#git://}"
+  url="${url#*@}"
+  url="${url/://}"
+  url="${url%.git}"
+  url="${url%/}"
+  echo "$url"
+}
+
+CUR_ORIGIN=$(normalize_origin "$(git config --get remote.origin.url 2>/dev/null || true)")
 GOAL_WARN=""
 if [ -n "$GOAL_ORIGIN" ] && [ -n "$CUR_ORIGIN" ] && [ "$GOAL_ORIGIN" != "$CUR_ORIGIN" ]; then
     GOAL_WARN=" ⚠ wrong-repo"

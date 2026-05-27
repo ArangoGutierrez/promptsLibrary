@@ -41,7 +41,26 @@ INPUT="${INPUT#amend }"
 # Project anchor: git remote.origin.url of the cwd at write time.
 # Empty when cwd is not a git repo OR the repo has no 'origin' remote.
 # Recorded in the stanza so the statusline can warn on cwd-vs-goal mismatch.
-ORIGIN=$(git config --get remote.origin.url 2>/dev/null || true)
+
+# Normalize a git origin URL to '<host>/<owner>/<repo>' identity.
+# Strips protocol, user@, colon delimiter of SSH URLs, and .git suffix.
+# Empty input → empty output. Examples (all → 'github.com/foo/bar'):
+#   git@github.com:foo/bar.git, https://github.com/foo/bar.git,
+#   https://user:pass@github.com/foo/bar
+normalize_origin() {
+  local url="$1"
+  [ -z "$url" ] && return
+  url="${url#https://}"
+  url="${url#http://}"
+  url="${url#git://}"
+  url="${url#*@}"
+  url="${url/://}"
+  url="${url%.git}"
+  url="${url%/}"
+  echo "$url"
+}
+
+ORIGIN=$(normalize_origin "$(git config --get remote.origin.url 2>/dev/null || true)")
 
 # Format check — warn but write
 if ! echo "$INPUT" | grep -q '^Goal: '; then
