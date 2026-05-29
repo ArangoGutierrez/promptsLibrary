@@ -1,6 +1,6 @@
 # Claude Config PE Audit — 2026-05-25
 
-- **Owner:** eduardoa@nvidia.com
+- **Owner:** <eduardoa@nvidia.com>
 - **Spec:** [docs/superpowers/specs/2026-05-25-claude-config-pe-audit-design.md](../superpowers/specs/2026-05-25-claude-config-pe-audit-design.md)
 - **Status:** Final — pending user review
 
@@ -88,6 +88,7 @@
 ### 2.1 CLAUDE.md
 
 #### F-CLAUDEMD-01 — TDD enforcement language references a removed hook
+
 - **Severity:** P0
 - **Token impact:** ~140 tokens/session (6 lines × ~23 tokens/line, Opus 4.7 assumption)
 - **Friction:** high
@@ -98,6 +99,7 @@
 - **Evidence:** `~/.claude/CLAUDE.md:30,40-44`; spec §4.4 (TDD-guard removal mechanics); spec §6.4 (locked decision traceability).
 
 #### F-CLAUDEMD-02 — TDD section partially duplicates constitution.md (auto-loaded)
+
 - **Severity:** P1
 - **Token impact:** ~60 tokens/session (3 lines duplicated at ~20 tokens/line)
 - **Friction:** low
@@ -108,6 +110,7 @@
 - **Evidence:** `~/.claude/CLAUDE.md:42-43`; `~/.claude/rules/constitution.md:17-19`; spec §3.1 (redundancy with rules/).
 
 #### F-CLAUDEMD-03 — Execution Model section embeds detail better owned by team-execute skill
+
 - **Severity:** P2
 - **Token impact:** ~180 tokens/session (8 lines of role descriptions × ~22 tokens/line)
 - **Friction:** low
@@ -118,6 +121,7 @@
 - **Evidence:** `~/.claude/CLAUDE.md:27-38`; `~/.claude/skills/team-execute/SKILL.md` (116 lines); spec §3.1 (signal density).
 
 #### F-CLAUDEMD-04 — Iteration Budget section is dead text: not referenced downstream
+
 - **Severity:** P2
 - **Token impact:** ~22 tokens/session (1 line × ~22 tokens)
 - **Friction:** low
@@ -128,6 +132,7 @@
 - **Evidence:** `~/.claude/CLAUDE.md:50-51`; confirmed no downstream references in `~/.claude/skills/`, `~/.claude/rules/`, or `~/.claude/agents/` via grep.
 
 #### F-CLAUDEMD-05 — Missing gh CLI permission note (P0 action item from spec)
+
 - **Severity:** P1
 - **Token impact:** 0 tokens (content addition, not removal — but saves retry friction)
 - **Friction:** medium
@@ -138,6 +143,7 @@
 - **Evidence:** `~/.claude/CLAUDE.md` (no gh mention); `~/.claude/settings.json` (`"Bash(gh *)"` in allow list); spec §5 P0 item 6 lists the underlying action as a P0 quick-win in settings.json; this CLAUDE.md gap is rated P1 because the gap itself is documentation-only friction, not a config-correctness issue.
 
 #### F-CLAUDEMD-06 — "Verify before claiming" principle is redundant with Stop-hook prompt (pending P0 removal)
+
 - **Severity:** P2
 - **Token impact:** 0 tokens now; becomes a correctness gap if Stop-hook is deleted without this principle surviving
 - **Friction:** low
@@ -150,6 +156,7 @@
 ### 2.2 rules/
 
 #### F-RULES-01 — rules/ auto-load surface: ~2.9 K tokens every session
+
 - **Severity:** P1
 - **Token impact:** ~2,900 tokens/session (153 lines × ~19 tokens/line average, 7 files)
 - **Friction:** high
@@ -160,6 +167,7 @@
 - **Evidence:** `~/.claude/rules/` (all 7 files); `cat ~/.claude/rules/*.md | wc -l -c` → `153 / 8039`; spec §1 (auto-load cost rubric) and §5 P1 item 3.
 
 #### F-RULES-02 — constitution.md "Implementation Discipline" duplicates CLAUDE.md "TDD Protocol"
+
 - **Severity:** P1
 - **Token impact:** ~40 tokens/session (2 duplicate lines × ~20 tokens/line)
 - **Friction:** low
@@ -170,6 +178,7 @@
 - **Evidence:** `~/.claude/rules/constitution.md:17-19`; `~/.claude/CLAUDE.md:41-43`; see also F-CLAUDEMD-02.
 
 #### F-RULES-03 — constitution.md "Theater Tests" partially duplicates learned-anti-patterns.md
+
 - **Severity:** P1
 - **Token impact:** ~180 tokens/session (9 lines of theater-test content in constitution.md vs 1 line summary in learned-anti-patterns.md — both auto-loaded)
 - **Friction:** medium
@@ -180,6 +189,7 @@
 - **Evidence:** `~/.claude/rules/constitution.md:5-15,21-24`; `~/.claude/rules/learned-anti-patterns.md:8`; spec §1 (redundancy across rules/).
 
 #### F-RULES-04 — security.md Containers section duplicates container-conventions.md Security section
+
 - **Severity:** P1
 - **Token impact:** ~60 tokens/session (3 duplicate lines × ~20 tokens/line)
 - **Friction:** low
@@ -190,6 +200,7 @@
 - **Evidence:** `~/.claude/rules/security.md:8,12-14`; `~/.claude/rules/container-conventions.md:11,13`; spec §1 (redundancy across rules/).
 
 #### F-RULES-05 — security.md RBAC rule duplicates k8s-conventions.md RBAC rule
+
 - **Severity:** P2
 - **Token impact:** ~20 tokens/session (1 duplicate line × ~20 tokens)
 - **Friction:** low
@@ -200,6 +211,7 @@
 - **Evidence:** `~/.claude/rules/security.md:16-17`; `~/.claude/rules/k8s-conventions.md:15-16`; spec §1 (redundancy across rules/).
 
 #### F-RULES-06 — git-workflow.md mentions agents-workbench in same terms as CLAUDE.md
+
 - **Severity:** P2
 - **Token impact:** ~20 tokens/session (1 line × ~20 tokens)
 - **Friction:** low
@@ -212,6 +224,7 @@
 ### 2.3 settings.json
 
 #### F-SETTINGS-01 — Stop hook `"type": "prompt"` fires an LLM round-trip on every turn end
+
 - **Severity:** P0
 - **Token impact:** ~9,000–24,000 tokens/session (~300–800 tokens × ~30 turns/session: input prompt + output "OK"/"STOP" response)
 - **Friction:** high
@@ -222,6 +235,7 @@
 - **Evidence:** `~/.claude/settings.json` `hooks.Stop[0].hooks[0].type = "prompt"`; spec §4.1 (Stop-hook LLM prompt cost, P0 action item); `~/.claude/CLAUDE.md:17`; `~/.claude/rules/constitution.md` Test Quality Gate.
 
 #### F-SETTINGS-02 — `gh` CLI sandbox resolution path generates unnecessary friction
+
 - **Severity:** P1
 - **Token impact:** ~100–200 tokens/session (1-2 retry turns × ~100 tokens each, on sessions that invoke gh)
 - **Friction:** medium
@@ -232,6 +246,7 @@
 - **Evidence:** `~/.claude/settings.json` `permissions.allow[4] = "Bash(gh *)"`, `sandbox.autoAllowBashIfSandboxed = true`; spec §5 P0 item 6; F-CLAUDEMD-05 (documentation gap).
 
 #### F-SETTINGS-03 — `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is an deprecated env var path
+
 - **Severity:** P1
 - **Token impact:** N/A (no direct token cost — indirect risk of deprecated behavior)
 - **Friction:** medium
@@ -242,6 +257,7 @@
 - **Evidence:** `~/.claude/settings.json` `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"`, `teammateMode = "in-process"`, `has("isolation") = false`; spec §4.6 (Worktrees: experimental flag vs GA); spec §5 P1 item 2.
 
 #### F-SETTINGS-04 — `clangd-lsp` plugin enabled for a Go/Kubernetes engineer
+
 - **Severity:** P2
 - **Token impact:** ~200–500 tokens/session (LSP plugin loads tool definitions into every session)
 - **Friction:** low
@@ -252,6 +268,7 @@
 - **Evidence:** `~/.claude/settings.json` `enabledPlugins["clangd-lsp@claude-plugins-official"] = true`; primary workload is Go/K8s, side projects are Node.js; `gopls-lsp` already enabled; spec §3.7 (plugins enabled) and §5 P2 item 3.
 
 #### F-SETTINGS-05 — `effortLevel: "high"` applies maximum token budget globally
+
 - **Severity:** P1
 - **Token impact:** ~15–30% token overhead per response on non-complex tasks (extended thinking activated on tasks that don't need it)
 - **Friction:** low
@@ -262,6 +279,7 @@
 - **Evidence:** `~/.claude/settings.json` `effortLevel = "high"`; spec §1 (effort cost rubric); spec §4.3 (Opus 4.7 tokenizer expansion ~35%).
 
 #### F-SETTINGS-06 — `model: "opus[1m]"` and 5-minute cache TTL regression interact badly
+
 - **Severity:** P1
 - **Token impact:** ~5,000–15,000 tokens/session (cold-cache re-read of CLAUDE.md + rules on sessions with >5min idle gaps)
 - **Friction:** medium
@@ -272,6 +290,7 @@
 - **Evidence:** `~/.claude/settings.json` `model = "opus[1m]"`; spec §4.2 (Cache-TTL regression, 1h→5m); spec §4.3 (Opus 4.7 tokenizer expansion); auto-loaded surface measured at ~4,100 tokens in F-RULES-01.
 
 #### F-SETTINGS-07 — `attribution` block is present but empty
+
 - **Severity:** P2
 - **Token impact:** ~5 tokens/session (empty JSON object keys loaded)
 - **Friction:** low
@@ -282,6 +301,7 @@
 - **Evidence:** `~/.claude/settings.json` `attribution = {"commit": "", "pr": ""}`; no downstream reference to the attribution block in any hook, skill, or rule.
 
 #### F-SETTINGS-08 — `autoMemoryEnabled: true` with no audit trail for auto-saved memory entries
+
 - **Severity:** P2
 - **Token impact:** variable (~100–500 tokens/session if auto-memory re-reads stale context)
 - **Friction:** low
@@ -300,6 +320,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-01 — Stale `.bak` iteration-debris files in hooks directory
+
 - **Severity:** P2
 - **Token impact:** N/A (not loaded by runtime, but pollutes the directory and confuses audits)
 - **Friction:** low (noise; any grep across hooks/ picks up stale logic)
@@ -312,6 +333,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-02 — `tdd-guard.sh` locked for removal — settings.json must be updated
+
 - **Severity:** P1
 - **Token impact:** ~100 tokens per Write/Edit tool call (script exec overhead + stderr on false-positive blocks)
 - **Friction:** high (false-positive blocks on valid implementation writes; 229 lines of exemption case-statements that keep growing)
@@ -324,6 +346,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-03 — Stop hook `"type": "prompt"` — full LLM inference on every session stop
+
 - **Severity:** P0
 - **Token impact:** ~800–1200 tokens per stop event (prompt: 395 chars + transcript tail injected as context; response: short but model must read the prompt and generate `OK` or `STOP: …`)
 - **Friction:** medium (adds latency to every stop; occasionally blocks valid responses when the model misclassifies the conversation)
@@ -336,6 +359,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-04 — `validate-recommendation.sh` writes verdict files to `~/.claude/panel/work/` — sandbox-write friction
+
 - **Severity:** P0
 - **Token impact:** N/A (correctness issue, not token cost)
 - **Friction:** high (hook and skill silently fail when sandbox blocks the write; panel dispatch appears to succeed but no verdict file is written, causing the skill to fall back on error path every time)
@@ -348,6 +372,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-05 — SessionStart hook aggregate output: 504 bytes per session start
+
 - **Severity:** P1
 - **Token impact:** ~126 tokens per session start (504 bytes ÷ 4 bytes/token), plus session-goal-init.sh emits ~60 bytes (~15 tokens) when a goal file is absent
 - **Friction:** low (no blocking; purely additive context overhead)
@@ -360,6 +385,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-06 — `probe-approve.sh` is an expired viability probe left in the hooks directory
+
 - **Severity:** P1
 - **Token impact:** N/A (not registered)
 - **Friction:** low (present but inert; risk if accidentally registered)
@@ -372,6 +398,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-07 — `validate-recommendation.sh` is not registered in settings.json despite being an active system component
+
 - **Severity:** P1
 - **Token impact:** N/A (hooks fire via AskUserQuestion path, not direct settings registration)
 - **Friction:** medium (discoverability gap; unclear how it is invoked from settings.json audit perspective)
@@ -384,6 +411,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-08 — `mempalace-wake.sh` is present in hooks directory but not registered — 6803 bytes of latent SessionStart cost
+
 - **Severity:** P1
 - **Token impact:** 1701 tokens per session start if registered (6803 bytes ÷ 4)
 - **Friction:** low (currently inert; becomes P0 if registered without review)
@@ -396,6 +424,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-09 — `tdd-guard.sh` has no test suite (`tdd-guard_test.sh` missing)
+
 - **Severity:** P2
 - **Token impact:** N/A
 - **Friction:** low (moot given locked removal, but illustrates the gap)
@@ -408,6 +437,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-HOOK-10 — `build-helpers.sh` and `test-dep-map.sh` are unregistered helpers with unclear ownership
+
 - **Severity:** P2
 - **Token impact:** N/A (not loaded by runtime)
 - **Friction:** low
@@ -424,6 +454,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-01 — Aggregate skill-description auto-load cost
+
 - **Severity:** P0
 - **Token impact:** ~1,359 tokens/session (5,438 chars across 25 skill descriptions)
 - **Friction:** high
@@ -436,6 +467,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-02 — CFO subtree must relocate out of global skills
+
 - **Severity:** P1
 - **Token impact:** 590 tokens/session reclaimed (2,358 chars eliminated from global load)
 - **Friction:** medium (requires new `~/cfo/` project + `.claude/skills/` symlinks or plugin)
@@ -448,6 +480,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-03 — Description bloat: 5 non-CFO skills exceed 200-char limit
+
 - **Severity:** P1
 - **Token impact:** ~220 tokens/session over-budget (880 chars excess across 5 skills)
 - **Friction:** low (description trimming is in-place edit)
@@ -460,6 +493,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-04 — validate-recommendation body approaching size threshold
+
 - **Severity:** P2
 - **Token impact:** negligible (body only loads on invocation, not per-session)
 - **Friction:** low
@@ -472,6 +506,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-05 — YAML frontmatter syntax errors in 2 CFO skills
+
 - **Severity:** P2
 - **Token impact:** N/A
 - **Friction:** low (only matters if a YAML-strict loader processes frontmatter)
@@ -484,6 +519,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-06 — Semantic overlap: local tdd-protocol shadows plugin superpowers:test-driven-development
+
 - **Severity:** P2
 - **Token impact:** ~17 tokens/session (66-char description, benign)
 - **Friction:** low
@@ -496,6 +532,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-07 — Semantic overlap: local worktree-guide shadows plugin superpowers:using-git-worktrees
+
 - **Severity:** P2
 - **Token impact:** ~26 tokens/session (102-char description, benign)
 - **Friction:** low
@@ -508,6 +545,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ---
 
 #### F-SKILL-08 — nvinfo-cli description missing: awk parsing returns 2 chars (folded YAML block)
+
 - **Severity:** P2
 - **Token impact:** N/A
 - **Friction:** low
@@ -522,6 +560,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 4 agents present: `doc-writer` (sonnet), `explorer` (haiku), `principal-engineer` (opus), `qa-engineer` (opus). Total size: ~8.2 KB / ~2 K tokens. All are sub-agents invoked on demand, not auto-loaded — no baseline session cost.
 
 #### F-AGENT-01 — `principal-engineer` carries `Agent` tool; no sub-agent spawning documented
+
 - **Severity:** P2
 - **Token impact:** N/A (the tool is available but invocation is rare and demand-driven)
 - **Friction:** low
@@ -532,6 +571,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `~/.claude/agents/principal-engineer.md:5` (`- Agent`); `~/.claude/skills/team-execute/SKILL.md` — no mention of PE spawning sub-agents.
 
 #### F-AGENT-02 — Role name mismatch between `commands/team-execute.md` and `skills/team-execute/SKILL.md`
+
 - **Severity:** P1
 - **Token impact:** N/A — runtime confusion risk, not token cost
 - **Friction:** medium — a user following the command sees "Distinguished Systems Engineer"; one following the skill sees "Principal Engineer" referencing `agents/principal-engineer.md`. Two different invocation paths produce structurally different teams.
@@ -542,6 +582,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `~/.claude/commands/team-execute.md:7` ("Distinguished Systems Engineer"); `~/.claude/skills/team-execute/SKILL.md:12` ("Principal Engineer (see `agents/principal-engineer.md`)").
 
 #### F-AGENT-03 — `qa-engineer` body duplicates QA validation logic already in `commands/team-execute.md`
+
 - **Severity:** P2
 - **Token impact:** ~1.3 K tokens when qa-engineer is loaded (5 520 bytes / ~4 chars per token). The duplication itself adds no session cost but creates drift risk.
 - **Friction:** low
@@ -556,6 +597,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 5 plugins active: `code-review`, `code-simplifier`, `superpowers`, `gopls-lsp`, `clangd-lsp`.
 
 #### F-PLUGIN-01 — `code-simplifier` agent hardcodes JavaScript/TypeScript/React style rules for a Go/K8s project
+
 - **Severity:** P1
 - **Token impact:** ~600 tokens when `code-simplifier` sub-agent is loaded (agent body is ~2.4 KB). Actual cost is per-invocation; the harm is correctness, not tokens.
 - **Friction:** high — when invoked it will apply ES module import sorting, arrow function style, and React component patterns to Go code.
@@ -566,6 +608,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `~/.claude/plugins/cache/claude-plugins-official/code-simplifier/1.0.0/agents/code-simplifier.md:17-22`; `settings.json` `enabledPlugins`.
 
 #### F-PLUGIN-02 — `code-review` plugin overlaps with local `code-review` skill and `principal-engineer` agent review responsibilities
+
 - **Severity:** P2
 - **Token impact:** ~300 tokens/session for the plugin command description being available. Invocation adds 4 parallel agent calls.
 - **Friction:** low — both paths produce review output; users must know which to invoke.
@@ -576,6 +619,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `~/.claude/plugins/cache/claude-plugins-official/code-review/f9178d73a2f5/README.md`; system-reminder listing `code-review` skill; `~/.claude/agents/principal-engineer.md` review section.
 
 #### F-PLUGIN-03 — `clangd-lsp` plugin enabled for a Go/Kubernetes engineer (cross-ref F-SETTINGS-04)
+
 - **Severity:** P2
 - **Token impact:** See F-SETTINGS-04 — LSP handshake + diagnostics tokens on every `.c`/`.cpp` file open; zero benefit on a Go-only stack.
 - **Friction:** high
@@ -586,6 +630,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Evidence:** `settings.json` `enabledPlugins`; `~/.claude/plugins/cache/claude-plugins-official/clangd-lsp/1.0.0/README.md` (supported extensions: `.c .h .cpp .cc .cxx .hpp .hxx .C .H`). Cross-ref: F-SETTINGS-04.
 
 #### F-PLUGIN-04 — Two cached versions of `superpowers` plugin (4.3.0 and 5.1.0) are content-identical, consuming duplicate disk space
+
 - **Severity:** P2
 - **Token impact:** N/A — both versions load the same ~114 KB of skill content; only 5.1.0 is active.
 - **Friction:** low
@@ -598,6 +643,7 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 ### 2.8 meta-skills (router / gating patterns — currently empty; finding describes the gap)
 
 #### F-META-01 — Missing `pick-planner` router (gap finding)
+
 - **Severity:** P1
 - **Token impact:** estimated 2-4 K tokens saved per simple plan invocation. Breakeven at ~1 simple invocation per session; classifier itself costs ~500-800 tokens.
 - **Friction:** medium — currently every brainstorm → plan flow produces a heavyweight plan regardless of complexity.
@@ -774,6 +820,7 @@ Target: one cleanup PR; items are low-risk and independently droppable if scope 
 ## 5. Validation gate
 
 **Baseline measurement (pre-P0):**
+
 1. Open a fresh Claude Code session against this repo (`promptsLibrary/`).
 2. Send a no-op prompt: "echo hello".
 3. Capture the prompt-token count from the status line or `~/.claude/telemetry/`.
@@ -781,11 +828,13 @@ Target: one cleanup PR; items are low-risk and independently droppable if scope 
 
 **Per-phase gate:**
 After each of P0, P1, P2 lands in `promptsLibrary/.claude` (Track A) or `~/.claude` (Track B):
+
 1. Repeat the baseline measurement.
 2. Diff vs. previous baseline.
 3. If P0+P1 cumulative reduction < 20%, do NOT promote to `~/.claude` — debug in the repo first.
 
 **Promotion procedure (per spec §6.1 dual-track):**
+
 - **Track A — shared/public config**: edits land first in `promptsLibrary/.claude/`. Once validation gate passes, sync to `~/.claude/` via a documented sync script (defined in the P0 plan; candidate: `rsync -av .claude/ ~/.claude/` with excludes for runtime paths and the private subset; do NOT use `--delete`).
 - **Track B — private config**: edits go directly to `~/.claude/`. No repo mirror. Live PANEL_DA_API_KEY rotation happens out-of-band, never via Claude.
 

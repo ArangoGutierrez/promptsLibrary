@@ -146,7 +146,7 @@ The `superpowers:writing-plans` skill produces a heavyweight plan (~500-800 line
 
 Cost math: classifier ≈ 500-800 tokens per call (Nemotron is cheap); current writing-plans overhead on simple tasks ≈ 3-5K tokens of boilerplate. Breakeven at ~1 simple invocation per session. Architecturally: pure addition (no fork of the superpowers plugin), trivially disabled via env var, mirrors the validate-recommendation pattern.
 
-Cross-references: F-META-01 (build `pick-planner`). Risk: classifier mis-classifies and a complex task gets a quick-plan that under-delivers — mitigation is user override (`SKIP_PLAN_ROUTER=1` env var) and a "promote to full plan" command if the lite plan turns out insufficient mid-execution.
+Cross-references: F-META-01 (build `pick-planner`). Risk: classifier misclassifies and a complex task gets a quick-plan that under-delivers — mitigation is user override (`SKIP_PLAN_ROUTER=1` env var) and a "promote to full plan" command if the lite plan turns out insufficient mid-execution.
 
 ## 5. Phased plan
 
