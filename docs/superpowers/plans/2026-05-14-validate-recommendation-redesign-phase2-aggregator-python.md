@@ -4,7 +4,7 @@
 
 **Goal:** Replace `aggregate.sh` with a Python implementation (`python -m panel aggregate`) at byte-for-byte parity. Keep `aggregate.sh` as a thin shim for one release. Existing `aggregate_test.sh` must continue to pass against the new Python implementation routed through the shim.
 
-**Architecture:** Stdlib-only Python package at `~/.claude/skills/validate-recommendation/panel/`. Subcommand pattern (`argparse`-based dispatch in `cli.py`). One file per concern: `verdict.py` (parsing + validation), `aggregate.py` (decide logic), `sanitize.py` (markdown stripper), `trace.py` (append-only log). `__main__.py` makes `python -m panel` invokable. Tests under `panel/tests/` use `pytest`.
+**Architecture:** Stdlib-only Python package at `~/.claude/skills/validate-recommendation/panel/`. Subcommand pattern (`argparse`-based dispatch in `cli.py`). One file per concern: `verdict.py` (parsing + validation), `aggregate.py` (decide logic), `sanitize.py` (markdown stripper), `trace.py` (append-only log). `__main__.py` makes `python -m panel` invocable. Tests under `panel/tests/` use `pytest`.
 
 **Tech Stack:** Python 3.11+ (stdlib only — `argparse`, `re`, `pathlib`, `json`, `hashlib`, `datetime`). `pytest` for tests (installed in user env; no project-level dep file in Phase 2). Bash shim retained.
 

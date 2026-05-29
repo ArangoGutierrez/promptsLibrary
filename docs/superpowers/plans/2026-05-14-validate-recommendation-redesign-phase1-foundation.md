@@ -591,7 +591,7 @@ If the verdict file is missing: most likely a sandbox issue — see the spec's e
 
 - [ ] **Step 3: Run the full v1 test pipeline end-to-end with the live panel**
 
-Trigger a real `AskUserQuestion` with a `(Recommended)` option in a Claude Code session and confirm the hook → skill → panel → aggregate path completes successfully without manual intervention. Check `~/.claude/debug/panel-trace.log` — the new entry should be an `outcome=HOLD` or `outcome=DISSENT` (NOT `outcome=ERROR detail="DA verdict unparseable"`).
+Trigger a real `AskUserQuestion` with a `(Recommended)` option in a Claude Code session and confirm the hook → skill → panel → aggregate path completes successfully without manual intervention. Check `~/.claude/debug/panel-trace.log` — the new entry should be an `outcome=HOLD` or `outcome=DISSENT` (NOT `outcome=ERROR detail="DA verdict unparsable"`).
 
 - [ ] **Step 4: Phase 1 sign-off**
 

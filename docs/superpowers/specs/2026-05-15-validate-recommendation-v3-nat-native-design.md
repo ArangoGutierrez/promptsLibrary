@@ -299,7 +299,7 @@ python3.12 -m panel dispatch \
 
 - Exit 0 on any path that wrote the verdict file (success or ERROR). Non-zero only on missing CLI args.
 - Output file format: `VERDICT/RATIONALE/ALTERNATIVE` triplet (see Personas).
-- Failures (network error, unparseable model output, NAT exception, OVERTURN+missing-alternative) become `VERDICT: ERROR` verdict files — never crash.
+- Failures (network error, unparsable model output, NAT exception, OVERTURN+missing-alternative) become `VERDICT: ERROR` verdict files — never crash.
 - File written with `umask 077`.
 
 **Key implementation seam:**
