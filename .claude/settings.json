@@ -117,10 +117,6 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/validate-year.sh"
-          },
-          {
-            "type": "command",
-            "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
           }
         ]
       },
@@ -130,10 +126,6 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/enforce-worktree.sh"
-          },
-          {
-            "type": "command",
-            "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
           }
         ]
       }
