@@ -86,6 +86,10 @@
           },
           {
             "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/config-audit-staleness.sh"
+          },
+          {
+            "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/session-goal-init.sh"
           }
         ]
