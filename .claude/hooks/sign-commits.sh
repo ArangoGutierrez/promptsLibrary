@@ -4,6 +4,7 @@
 #
 # Exit 0 = allow
 # Exit 2 = block (stderr becomes Claude's feedback)
+set -uo pipefail
 
 # Read JSON input from stdin
 INPUT=$(cat)

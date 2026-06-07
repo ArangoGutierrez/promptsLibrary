@@ -6,6 +6,7 @@
 #
 # Exit 0 = allow
 # Exit 2 = block (stderr becomes Claude's feedback)
+set -uo pipefail
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
