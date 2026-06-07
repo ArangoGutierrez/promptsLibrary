@@ -29,5 +29,29 @@ OUT2=$(bash "$SCAN" "$CLEAN" 2>/dev/null); RC2=$?
 if [ -z "$OUT2" ]; then echo "PASS: clean no findings"; PASS=$((PASS+1)); else echo "FAIL: clean had findings: $OUT2"; FAIL=$((FAIL+1)); fi
 if [ "$RC2" -eq 0 ]; then echo "PASS: clean exit 0"; PASS=$((PASS+1)); else echo "FAIL: clean exit $RC2"; FAIL=$((FAIL+1)); fi
 
+# ---- prune fixture: noise trees skipped (both finds), live dirs still scanned ----
+PRUNE="$TMP/prune"
+for d in plugins projects tasks shell-snapshots telemetry archive; do
+  mkdir -p "$PRUNE/$d"
+  printf '#!/bin/bash\necho hi\n' > "$PRUNE/$d/noisy.sh"          # missing set -e: flags hook-hygiene if scanned
+done
+printf '#!/bin/bash\necho hi\n' > "$PRUNE/plugins/stale.sh.bak-x"; chmod +x "$PRUNE/plugins/stale.sh.bak-x"
+mkdir -p "$PRUNE/hooks"
+printf '#!/bin/bash\necho hi\n' > "$PRUNE/hooks/real.sh"          # not pruned: must flag
+printf '#!/bin/bash\necho hi\n' > "$PRUNE/hooks/real.sh.bak-keep"; chmod +x "$PRUNE/hooks/real.sh.bak-keep"
+OUTP=$(bash "$SCAN" "$PRUNE" 2>/dev/null)
+if echo "$OUTP" | grep -q "noisy.sh";        then echo "FAIL: noise tree scanned (main find): $(echo "$OUTP" | grep -m1 noisy.sh)"; FAIL=$((FAIL+1)); else echo "PASS: noise trees pruned (main find)"; PASS=$((PASS+1)); fi
+if echo "$OUTP" | grep -q "stale.sh.bak-x";   then echo "FAIL: noise tree scanned (bak find)";  FAIL=$((FAIL+1)); else echo "PASS: noise trees pruned (bak find)"; PASS=$((PASS+1)); fi
+if echo "$OUTP" | grep -q "hooks/real.sh:";   then echo "PASS: live dir still scanned (main find)"; PASS=$((PASS+1)); else echo "FAIL: live dir over-pruned (main find): $OUTP"; FAIL=$((FAIL+1)); fi
+if echo "$OUTP" | grep -q "real.sh.bak-keep"; then echo "PASS: live dir still scanned (bak find)";  PASS=$((PASS+1)); else echo "FAIL: live dir over-pruned (bak find): $OUTP"; FAIL=$((FAIL+1)); fi
+
+# ---- broad-perms scope: docs mentioning keywords must NOT flag; real json MUST ----
+SCOPE="$TMP/scope"; mkdir -p "$SCOPE"
+printf 'Set `"dangerouslyDisableSandbox": true` or pick bypassPermissions mode in a hook.\n' > "$SCOPE/doc.md"
+printf '{ "permissions": { "defaultMode": "bypassPermissions" } }\n' > "$SCOPE/settings.json"
+OUTS=$(bash "$SCAN" "$SCOPE" 2>/dev/null)
+if echo "$OUTS" | grep -q "doc.md"; then echo "FAIL: doc.md flagged broad-perms: $(echo "$OUTS" | grep -m1 doc.md)"; FAIL=$((FAIL+1)); else echo "PASS: doc keywords not flagged"; PASS=$((PASS+1)); fi
+if echo "$OUTS" | grep "broad-perms" | grep -q "settings.json"; then echo "PASS: real json bypass flagged"; PASS=$((PASS+1)); else echo "FAIL: real json bypass missed: $OUTS"; FAIL=$((FAIL+1)); fi
+
 echo "==== Results: $PASS passed, $FAIL failed ===="
 [ "$FAIL" -eq 0 ]
