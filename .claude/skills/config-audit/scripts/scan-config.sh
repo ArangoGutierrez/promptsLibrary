@@ -12,6 +12,17 @@ FINDINGS="$(mktemp)"; trap 'rm -f "$FINDINGS"' EXIT
 add() { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$FINDINGS"; }
 is_suppressed() { sed -n "${2}p" "$1" 2>/dev/null | grep -qE "config-audit:ignore[[:space:]]+(all|$3)"; }
 
+# find_config DIR PRED... — list files under DIR matching find predicate PRED,
+# pruning noise trees (huge, machine-managed, or archived) that are not live config.
+# -prune skips the whole subtree, unlike a post-hoc -not -path filter that still descends.
+find_config() {
+  local d="$1"; shift
+  find "$d" \
+    \( -type d \( -name .git -o -name node_modules -o -name plugins -o -name projects \
+       -o -name tasks -o -name shell-snapshots -o -name telemetry -o -name archive \) -prune \) \
+    -o \( -type f \( "$@" \) -print \)
+}
+
 while IFS= read -r f; do
   [ -f "$f" ] || continue
 
@@ -30,32 +41,37 @@ while IFS= read -r f; do
     add 2 injection-sink "$f:$ln" "untrusted content piped to shell / eval"
   done < <(grep -nE 'curl[^|]*\|[[:space:]]*(ba)?sh|eval[[:space:]]+"?\$\(|\$\(curl' "$f" 2>/dev/null)
 
-  # broad-perms: bypass (sev 2)
-  while IFS=: read -r ln text; do
-    [ -n "${ln:-}" ] || continue
-    is_suppressed "$f" "$ln" broad-perms && continue
-    add 2 broad-perms "$f:$ln" "sandbox/permission bypass"
-  done < <(grep -nE 'dangerouslyDisableSandbox"?[[:space:]]*:[[:space:]]*true|bypassPermissions' "$f" 2>/dev/null)
+  # broad-perms: only real in JSON config — docs that quote these keywords are not findings
+  case "$f" in
+  *.json)
+    # bypass (sev 2)
+    while IFS=: read -r ln text; do
+      [ -n "${ln:-}" ] || continue
+      is_suppressed "$f" "$ln" broad-perms && continue
+      add 2 broad-perms "$f:$ln" "sandbox/permission bypass"
+    done < <(grep -nE 'dangerouslyDisableSandbox"?[[:space:]]*:[[:space:]]*true|"bypassPermissions"' "$f" 2>/dev/null)
 
-  # broad-perms: wildcard Bash (sev 1)
-  while IFS=: read -r ln text; do
-    [ -n "${ln:-}" ] || continue
-    is_suppressed "$f" "$ln" broad-perms && continue
-    add 1 broad-perms "$f:$ln" "wildcard Bash permission grant"
-  done < <(grep -nE '"Bash\(\*\)"' "$f" 2>/dev/null)
+    # wildcard Bash (sev 1)
+    while IFS=: read -r ln text; do
+      [ -n "${ln:-}" ] || continue
+      is_suppressed "$f" "$ln" broad-perms && continue
+      add 1 broad-perms "$f:$ln" "wildcard Bash permission grant"
+    done < <(grep -nE '"Bash\(\*\)"' "$f" 2>/dev/null)
+    ;;
+  esac
 
   # hook-hygiene: shell script with no hardening at all (sev 1)
   case "$f" in
     *.sh) grep -qE '^[[:space:]]*set -' "$f" 2>/dev/null || add 1 hook-hygiene "$f:1" "shell script missing 'set -euo pipefail'";;
   esac
-done < <(find "$DIR" -type f \( -name '*.sh' -o -name '*.md' -o -name '*.json' -o -name '*.js' -o -name '*.toml' -o -name '*.yaml' -o -name '*.yml' \) -not -path '*/.git/*' -not -path '*/node_modules/*' 2>/dev/null)
+done < <(find_config "$DIR" -name '*.sh' -o -name '*.md' -o -name '*.json' -o -name '*.js' -o -name '*.toml' -o -name '*.yaml' -o -name '*.yml' 2>/dev/null)
 
 # hook-hygiene: executable backup scripts (sev 1)
 while IFS= read -r b; do
   [ -n "$b" ] || continue
   [ -x "$b" ] || continue
   add 1 hook-hygiene "$b:1" "executable backup script (drop exec bit or delete)"
-done < <(find "$DIR" -type f \( -name '*.bak' -o -name '*.bak-*' \) -not -path '*/.git/*' 2>/dev/null)
+done < <(find_config "$DIR" -name '*.bak' -o -name '*.bak-*' 2>/dev/null)
 
 # mcp-hygiene: enabled MCP count (sev 1 if >10) — best-effort, needs jq
 if command -v jq >/dev/null 2>&1; then
