@@ -28,5 +28,17 @@ if [ "$(cat "$DST/settings.json")" = '{}' ]; then echo "PASS: settings.json pres
 if [ "$(cat "$DST/settings.json")" = '{}' ] && ! grep -q SENTINEL "$DST/settings.json"; then echo "PASS: src settings.json not copied (no-clobber holds)"; PASS=$((PASS+1)); else echo "FAIL: src settings.json clobbered dst"; FAIL=$((FAIL+1)); fi
 if [ ! -e "$DST/skills/unlisted/x.md" ]; then echo "PASS: unlisted src file not copied (allowlist-only)"; PASS=$((PASS+1)); else echo "FAIL: unlisted src file leaked"; FAIL=$((FAIL+1)); fi
 
+# ---- re-sync into an already-populated dst: overwrite in place, mirror, no nesting ----
+# dst/skills/config-audit now exists (from the apply above) — the case that triggered cp -R nesting.
+echo stale > "$SRC/skills/config-audit/old.md"
+SYNC_SRC="$SRC" SYNC_DST="$DST" bash "$SYNC" --apply >/dev/null 2>&1
+rm "$SRC/skills/config-audit/old.md"
+echo skill2 > "$SRC/skills/config-audit/SKILL.md"
+SYNC_SRC="$SRC" SYNC_DST="$DST" bash "$SYNC" --apply >/dev/null 2>&1
+if [ ! -e "$DST/skills/config-audit/config-audit" ]; then echo "PASS: re-sync overwrites in place (no nesting)"; PASS=$((PASS+1)); else echo "FAIL: re-sync nested into existing dir"; FAIL=$((FAIL+1)); fi
+if [ "$(cat "$DST/skills/config-audit/SKILL.md" 2>/dev/null)" = skill2 ]; then echo "PASS: re-sync updates content in place"; PASS=$((PASS+1)); else echo "FAIL: re-sync left stale content"; FAIL=$((FAIL+1)); fi
+if [ ! -e "$DST/skills/config-audit/old.md" ]; then echo "PASS: re-sync mirrors (drops removed file)"; PASS=$((PASS+1)); else echo "FAIL: re-sync left orphaned file"; FAIL=$((FAIL+1)); fi
+if grep -q PRIVATE "$DST/skills/cfo/SKILL.md" 2>/dev/null; then echo "PASS: re-sync leaves home-only intact"; PASS=$((PASS+1)); else echo "FAIL: re-sync clobbered home-only"; FAIL=$((FAIL+1)); fi
+
 echo "==== Results: $PASS passed, $FAIL failed ===="
 [ "$FAIL" -eq 0 ]

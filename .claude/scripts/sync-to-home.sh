@@ -21,6 +21,7 @@ echo "$ALLOW" | while IFS= read -r rel; do
   [ -e "$src" ] || { echo "skip (missing src): $rel"; continue; }
   if [ "$APPLY" -eq 1 ]; then
     mkdir -p "$(dirname "$dst")"
+    rm -rf "$dst"          # mirror, don't nest: cp -R into an existing dir creates $dst/$(basename src)
     cp -R "$src" "$dst"
     echo "copied: $rel"
   else
