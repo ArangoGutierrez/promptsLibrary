@@ -10,6 +10,7 @@
 # Also works as a UserPromptSubmit hook (same output contract).
 #
 # Exit 0 = success (stdout added to context)
+set -uo pipefail
 
 YEAR=$(date +%Y)
 DATE=$(date +"%A %B %d, %Y")

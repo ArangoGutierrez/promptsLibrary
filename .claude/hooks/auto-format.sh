@@ -4,6 +4,7 @@
 #
 # Detects file type and runs the appropriate formatter.
 # Always exits 0 — formatting failures should not block the agent.
+set -uo pipefail
 
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // empty')

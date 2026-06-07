@@ -5,6 +5,7 @@
 # Logs to ~/.claude/audit/bash-commands-YYYY-MM-DD.log
 # Format: ISO8601 | session | cwd | exit_code | cmd
 # Always exits 0 — logging should never block the agent.
+set -uo pipefail
 
 INPUT=$(cat)
 
