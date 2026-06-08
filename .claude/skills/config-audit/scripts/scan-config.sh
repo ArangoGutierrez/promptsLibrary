@@ -29,6 +29,7 @@ while IFS= read -r f; do
   # secrets (sev 2)
   while IFS=: read -r ln text; do
     [ -n "${ln:-}" ] || continue
+    case "$f" in *_test.sh) continue;; esac   # test files hold deliberate fixtures, not real secrets
     case "$text" in *'<'*'>'*|*example*|*EXAMPLE*|*REDACTED*|*xxxx*|*placeholder*|*your_*) continue;; esac
     # example-code, not a credential: value is a dotted method/property chain (a.b.c)
     printf '%s\n' "$text" | grep -qEi "(api[_-]?key|secret|token|password|bearer)[\"' ]*[:=][\"' ]*[A-Za-z_]+(\.[A-Za-z_]+)+" && continue
@@ -41,6 +42,7 @@ while IFS= read -r f; do
   # injection-sink (sev 2)
   while IFS=: read -r ln text; do
     [ -n "${ln:-}" ] || continue
+    case "$f" in *_test.sh) continue;; esac   # test files hold deliberate fixtures, not real sinks
     # printed as advice (echo/printf) or commented out — not an executed sink
     printf '%s\n' "$text" | grep -qE '^[[:space:]]*(echo|printf)[[:space:]]' && continue
     printf '%s\n' "$text" | grep -qE '^[[:space:]]*#' && continue
@@ -68,8 +70,14 @@ while IFS= read -r f; do
   esac
 
   # hook-hygiene: shell script with no hardening at all (sev 1)
+  # suppressible via a 'config-audit:ignore hook-hygiene' marker in the head (e.g. after the
+  # shebang) — needed for sourced libs, where 'set -u' would leak into the caller's shell.
   case "$f" in
-    *.sh) grep -qE '^[[:space:]]*set -' "$f" 2>/dev/null || add 1 hook-hygiene "$f:1" "shell script missing 'set -euo pipefail'";;
+    *.sh)
+      if ! grep -qE '^[[:space:]]*set -' "$f" 2>/dev/null; then
+        head -5 "$f" 2>/dev/null | grep -qE "config-audit:ignore[[:space:]]+(all|hook-hygiene)" \
+          || add 1 hook-hygiene "$f:1" "shell script missing 'set -euo pipefail'"
+      fi ;;
   esac
 done < <(find_config "$DIR" -name '*.sh' -o -name '*.md' -o -name '*.json' -o -name '*.js' -o -name '*.toml' -o -name '*.yaml' -o -name '*.yml' 2>/dev/null)
 

