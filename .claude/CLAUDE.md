@@ -20,11 +20,11 @@ When unsure whether a task is exempt, brainstorm.
 
 ## Effort (Opus 4.8)
 
-Default `effortLevel: "high"` — best quality/UX balance on 4.8 (≈ 4.7 default token spend, better results). Tune it actively; effort matters more on 4.8 than prior models.
+Default `effortLevel: "xhigh"` — deliberately above 4.8's recommended `high` baseline, for the deep architecture/debugging that dominates this work. Drop to `high` (the balanced default, ≈ 4.7 token spend) if turns feel over-budget. Tune effort actively; it matters more on 4.8 than prior models.
 
 - `low`/`medium`: trivial or latency-sensitive turns (risk under-thinking on complex work)
-- `high`: default
-- `xhigh`/`max`: deep architecture, gnarly debugging, large multi-step refactors — pair with a large max-output budget
+- `high`: 4.8's recommended balanced default
+- `xhigh` (current default) / `max`: deep architecture, gnarly debugging, large multi-step refactors — pair with a large max-output budget
 
 Use `/fast` for trivial turns (cheaper throughput, same per-token price).
 

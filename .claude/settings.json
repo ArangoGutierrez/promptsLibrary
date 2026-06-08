@@ -86,12 +86,26 @@
           },
           {
             "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/config-audit-staleness.sh"
+          },
+          {
+            "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/session-goal-init.sh"
           }
         ]
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/validate-recommendation.sh",
+            "timeout": 10
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -189,6 +203,10 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
   "enabledPlugins": {
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
@@ -198,13 +216,15 @@
   },
   "sandbox": {
     "enabled": true,
-    "autoAllowBashIfSandboxed": true
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "allowWrite": [
+        "/Users/eduardoa/.claude/panel/work"
+      ]
+    }
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "autoMemoryEnabled": true,
   "teammateMode": "in-process",
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh"
-  }
+  "skipWorkflowUsageWarning": true
 }
