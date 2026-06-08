@@ -2,7 +2,7 @@
 # day_test.sh — unit tests for day.sh pure decision logic.
 set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=day.sh
+# shellcheck disable=SC1091  # day.sh sourced at runtime; functions defined there
 source "$SCRIPT_DIR/day.sh"
 
 PASS=0; FAIL=0
