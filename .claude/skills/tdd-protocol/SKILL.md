@@ -35,8 +35,8 @@ Plan → Red → Green → Mutate → Refactor. Never skip phases.
 - **Batch size**: Smallest PR-sized chunks. 1 concern = 1 PR
 - Tests define "done". Implementation stops when tests pass
 
-## Enforcement (hybrid)
+## Enforcement (skill-driven)
 
-- **Hook guard** (always on): `tdd-guard.sh` blocks implementation writes when no failing test exists. If the hook fires, you are in the wrong phase — write or modify a test first.
+- **Skill-driven discipline**: TDD is enforced by this skill, the `superpowers:test-driven-development` skill, and the constitution's theater-test rules — not by a filesystem hook. No hook blocks implementation writes. If you reach for implementation and no failing test exists, you are in the wrong phase — write or modify a test first.
 - **Escalation**: When diff exceeds threshold, use isolated subagent contexts — one for Red (test writing), one for Green (implementation). Prevents same-author blind spots where the test writer unconsciously shapes tests to match the implementation they're already imagining.
-- **Escape hatch**: Set `SKIP_TDD_GUARD=1` for exceptional cases (hotfixes, generated code). Document why.
+- **Exceptional cases**: For hotfixes or generated code where a test cannot meaningfully precede the change, document why in the commit and proceed — the discipline is a judgment call, not a gate.

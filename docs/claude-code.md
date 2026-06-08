@@ -7,7 +7,7 @@
 What this configuration adds:
 
 - **Engineering standards** codified in `CLAUDE.md` — a mandatory brainstorm-first policy, a full TDD protocol (Plan→Red→Green→Refactor), an iteration budget, and a clear priority stack (Security > Correctness > Performance > Style).
-- **Enforcement hooks** that make the standards machine-checkable — six shell scripts that intercept file writes and Bash commands before Claude executes them, blocking violations with actionable error messages.
+- **Enforcement hooks** that make the standards machine-checkable — shell scripts that intercept file writes and Bash commands before Claude executes them, blocking violations with actionable error messages. (TDD discipline itself is skill-driven, not hook-enforced — see the TDD Protocol section.)
 - **A plugin ecosystem** — four official plugins covering code review, code simplification, Go language server integration, and the `superpowers` workflow engine that drives brainstorming, TDD, worktree management, and parallel agent dispatch.
 - **A fine-grained permissions model** — explicit allow/deny/ask lists for every tool Claude can call, plus a sandbox with network restrictions for remote use.
 
@@ -22,7 +22,6 @@ What this configuration adds:
 │   ├── sign-commits.sh     # PreToolUse/Bash: enforce DCO signoff + GPG signature
 │   ├── prevent-push-workbench.sh  # PreToolUse/Bash: block pushing agents-workbench
 │   ├── enforce-worktree.sh # PreToolUse/Write+Edit: block source edits on coordination branch
-│   ├── tdd-guard.sh        # PreToolUse/Write+Edit: block impl writes without a test
 │   └── validate-year.sh    # PreToolUse/Write: block stale copyright years in new files
 ├── plugins/
 │   └── installed_plugins.json
@@ -82,7 +81,7 @@ Additional rules:
 
 - **Tests are contracts.** Never weaken, delete, or modify a test to make an implementation pass. If a test is wrong, that is a separate concern addressed in a separate commit.
 - **Batch size.** Smallest PR-sized chunks. One concern equals one PR.
-- **Hook guard.** The `tdd-guard.sh` hook (described below) mechanically enforces the Red-before-Green constraint at the filesystem level.
+- **Skill-driven discipline.** The Red-before-Green constraint is enforced by skills — the `superpowers:test-driven-development` skill, the local `/tdd-protocol` skill, and the constitution's theater-test rules — not by a filesystem hook. If you reach for implementation and no failing test exists, you are in the wrong phase: write the test first.
 - **Escalation.** When a diff grows large, use isolated subagent contexts — one subagent writes the tests (Red), a separate subagent writes the implementation (Green). This eliminates same-author blind spots.
 
 ### agents-workbench Workflow
@@ -189,8 +188,8 @@ Hooks are shell scripts that intercept Claude's tool calls before they execute. 
 |-------|---------|---------|
 | `SessionStart` | — | `inject-date.sh` |
 | `PreToolUse` | `Bash` | `sign-commits.sh`, `prevent-push-workbench.sh` |
-| `PreToolUse` | `Write` | `enforce-worktree.sh`, `validate-year.sh`, `tdd-guard.sh` |
-| `PreToolUse` | `Edit` | `enforce-worktree.sh`, `tdd-guard.sh` |
+| `PreToolUse` | `Write` | `enforce-worktree.sh`, `validate-year.sh` |
+| `PreToolUse` | `Edit` | `enforce-worktree.sh` |
 
 Note: `validate-year.sh` runs only on `Write` (new file creation) because existing files may legitimately carry older copyright years.
 
@@ -345,43 +344,9 @@ Allowed files on agents-workbench:
   AGENTS.md, .agents/*, .worktrees/*, docs/plans/*, CLAUDE.md, .cursor/rules/*, .gitignore
 ```
 
-### tdd-guard.sh
+### TDD enforcement (skill-driven)
 
-**Event:** `PreToolUse` / `Write` and `Edit`
-
-Enforces the TDD Red-before-Green constraint. When Claude attempts to write or edit an implementation file, this hook checks whether the TDD cycle is active. If not, the write is blocked.
-
-**Always allowed (no check):**
-
-- Test files: `*_test.go`, `*_test.*`, `*.test.*`, `*.spec.*`, `test_*.py`, files under `tests/`, `test/`, `__tests__/`
-- Configuration and documentation: `.json`, `.yaml`, `.md`, `.toml`, `.cfg`, `.sh`, `Makefile`, `Dockerfile`, `.proto`, `.tf`, and many others
-- Coordination files: `CLAUDE.md`, `AGENTS.md`, `.agents/*`, `docs/*`
-
-**For implementation files, two checks run in order:**
-
-1. **Active TDD cycle check** — If any test file has been modified (staged or unstaged) in the current git session, the TDD cycle is considered active and the write is allowed.
-2. **Test file existence check** — If no test file has been modified, the hook looks for a corresponding test file on disk at standard locations (`<name>_test.<ext>`, `<name>.test.<ext>`, `tests/<name>_test.<ext>`, etc.). If found, the write is allowed (the tests exist, even if not recently modified). If no test file exists at all, the write is blocked.
-
-The hook also allows writes during git merge, cherry-pick, revert, and rebase operations, since those involve integration work rather than new implementation.
-
-**Escape hatch** for hotfixes and generated code:
-
-```bash
-SKIP_TDD_GUARD=1 # set in environment before the write
-```
-
-When blocked:
-
-```
-TDD GUARD: No test file found for implementation file.
-File: src/mypackage/handler.go
-
-Write the failing test FIRST (Red phase), then implement.
-Expected test file locations:
-  src/mypackage/handler_test.go
-  src/mypackage/handler.test.go
-  src/mypackage/tests/handler_test.go
-```
+There is no TDD filesystem hook. The Red-before-Green constraint is enforced by skills rather than by intercepting writes: the `superpowers:test-driven-development` skill, the local `/tdd-protocol` skill, and the constitution's theater-test rules. If implementation is attempted before a failing test exists, that is a wrong-phase error the skills catch — write the test first. Hotfixes and generated code where a test cannot meaningfully precede the change are a documented judgment call, not a bypassed gate.
 
 ### validate-year.sh
 

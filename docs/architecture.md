@@ -33,7 +33,7 @@ This configuration solves these problems with a three-layer architecture:
 
 1. **Isolation via worktrees.** Every feature is developed in its own Git worktree — a separate directory that shares the same `.git` database but has an independent working tree. Agents are confined to their worktree. Concurrent work is physically separated.
 
-2. **Discipline via hooks.** Six Claude Code hooks and five Cursor hooks fire automatically on every relevant action. They enforce signed commits, TDD discipline, branch isolation, year correctness, and protection against dangerous commands. Hooks are not suggestions — they mechanically block non-compliant actions.
+2. **Discipline via hooks and skills.** Five Claude Code hooks and five Cursor hooks fire automatically on every relevant action. They enforce signed commits, branch isolation, year correctness, and protection against dangerous commands. Hooks are not suggestions — they mechanically block non-compliant actions. TDD discipline is enforced separately, by skills rather than a hook (see Phase 3 and the design rationale below).
 
 3. **Coordination via a read-only workbench branch.** A local-only branch called `agents-workbench` serves as the planning and coordination hub. Source code is read-only on this branch. Agents plan here and implement in worktrees. The workbench is never pushed to any remote.
 
@@ -191,7 +191,7 @@ The detection logic handles both fork setups (where `upstream` is the authoritat
 
 ### Phase 3: TDD Cycle (in Worktree)
 
-All implementation happens inside the worktree. The TDD cycle is enforced mechanically by `tdd-guard.sh`.
+All implementation happens inside the worktree. The TDD cycle is skill-driven — the `superpowers:test-driven-development` skill, the local `/tdd-protocol` skill, and the constitution's theater-test rules keep Red before Green. There is no filesystem hook gating writes; the discipline lives in the workflow the agent follows.
 
 **[RED] — Write a Failing Test First**
 
@@ -203,18 +203,7 @@ Before writing any implementation code, write a test that describes the desired 
 $EDITOR pkg/auth/refresh_test.go
 ```
 
-The `tdd-guard.sh` hook watches for writes to implementation files. If you attempt to write `pkg/auth/refresh.go` before any test file has been modified in the current Git session, the hook blocks the write:
-
-```
-TDD GUARD: No test file found for implementation file.
-File: pkg/auth/refresh.go
-
-Write the failing test FIRST (Red phase), then implement.
-Expected test file locations:
-  pkg/auth/refresh_test.go
-  pkg/auth/refresh.test.go
-  pkg/auth/tests/refresh_test.go
-```
+Reaching for `pkg/auth/refresh.go` before a failing test exists means you are in the wrong phase. The skill-driven protocol catches this: write and run the test first, then implement.
 
 Run the test to confirm it fails. This is the Red phase. A test that has never failed is a test that has never proven it can catch the bug it is supposed to catch.
 
@@ -226,7 +215,7 @@ Write the minimum implementation to make the failing test pass. Do not over-engi
 $EDITOR pkg/auth/refresh.go
 ```
 
-Run the tests again. All tests should now pass. The `tdd-guard.sh` hook allows the implementation write because a test file has been modified in the current session.
+Run the tests again. All tests should now pass. Because the failing test came first, the implementation write is exactly what the skill-driven Green phase calls for.
 
 **Critical rule: never modify tests and implementation in the same turn.** If your implementation requires changing the test, that means the test was wrong. Stop, reconsider the design, and fix the test in a separate step before continuing with implementation.
 
@@ -294,7 +283,7 @@ The `.worktrees/` directory is gitignored, so there is nothing to clean up in ve
 
 ## 5. Hook Enforcement Matrix
 
-This table covers all eleven hooks across both Claude Code and Cursor, showing exactly what each one enforces and what it blocks.
+This table covers all ten hooks across both Claude Code and Cursor, showing exactly what each one enforces and what it blocks. TDD discipline is intentionally absent from this table — it is skill-driven, not hook-enforced (see the design rationale below).
 
 | Hook | Tool | Trigger | What It Enforces | What It Blocks |
 |------|------|---------|-----------------|----------------|
@@ -302,7 +291,6 @@ This table covers all eleven hooks across both Claude Code and Cursor, showing e
 | `sign-commits.sh` | Claude Code | `PreToolUse` (Bash) | Requires `-s` (DCO signoff) and `-S` (GPG signature) on all commits | Any `git commit` command missing either flag |
 | `prevent-push-workbench.sh` | Claude Code | `PreToolUse` (Bash) | `agents-workbench` branch stays local-only | Pushing `agents-workbench` to any remote, by name or implicitly from that branch |
 | `enforce-worktree.sh` | Claude Code | `PreToolUse` (Write, Edit) | Source code is read-only on `agents-workbench` branch | Writing or editing any non-coordination file while on `agents-workbench` |
-| `tdd-guard.sh` | Claude Code | `PreToolUse` (Write, Edit) | Test-first discipline: implementation requires a corresponding test | Writing implementation files when no test file has been modified in the current session |
 | `validate-year.sh` | Claude Code | `PreToolUse` (Write) | New files must use the current calendar year in copyright/license headers | Creating new files with copyright headers that contain outdated years |
 | `format.sh` | Cursor | `afterFileEdit` | Auto-formats files after edit (`gofmt` for Go, `jq` for JSON) | N/A (auto-corrects rather than blocking) |
 | `sign-commits.sh` | Cursor | `beforeShellExecution` | Same as Claude Code: requires `-s -S` on all commits | Any `git commit` without both signoff and GPG flags |
@@ -316,7 +304,7 @@ This table covers all eleven hooks across both Claude Code and Cursor, showing e
 
 **Cursor hooks** use a JSON output contract: `{"continue": true}` allows, `{"continue": false, "error": "..."}` blocks. The `afterFileEdit` hook always continues (it auto-corrects rather than blocking). The `beforeShellExecution` hooks can block with an error or allow with an optional `permission` field that triggers a user confirmation prompt.
 
-**The escape hatch.** The `tdd-guard.sh` hook respects the environment variable `SKIP_TDD_GUARD=1` for exceptional cases (hotfix branches, generated code, scaffold commits where tests cannot meaningfully precede the scaffolding). This should be used sparingly and with intentionality, not as a routine bypass.
+**TDD is not in this contract.** TDD discipline is not a hook, so it has no exit-code or JSON gate to bypass. Exceptional cases (hotfix branches, generated code, scaffold commits where tests cannot meaningfully precede the scaffolding) are handled as a documented judgment call within the skill-driven workflow, not by flipping an escape-hatch flag.
 
 ---
 
@@ -352,11 +340,11 @@ Hooks fire automatically, without requiring anyone to remember. They encode the 
 
 This is especially important for AI agents: they have no inherent understanding of your workflow conventions. They will do whatever produces code that satisfies the prompt. Hooks are the mechanism by which workflow discipline is enforced on agents that cannot internalize it through social norms.
 
-### Why TDD hooks?
+### Why skill-driven TDD instead of a hook?
 
-AI coding agents are prompt-satisfying machines. If the prompt is "implement this feature," they implement the feature. They do not spontaneously write a failing test first. Without `tdd-guard.sh`, an AI agent asked to build a feature will produce implementation-first code every time.
+AI coding agents are prompt-satisfying machines. If the prompt is "implement this feature," they implement the feature. They do not spontaneously write a failing test first. Left unprompted, an AI agent asked to build a feature will produce implementation-first code every time.
 
-The `tdd-guard.sh` hook makes TDD non-optional for implementation files. The agent is blocked from writing implementation until it has written a test. This is not about distrust of AI — it is about the same discipline that applies to human developers. TDD is valuable because it forces you to think about the interface and behavior before the implementation. Hooks make this discipline apply equally to agents and humans.
+TDD discipline is therefore enforced by the workflow the agent runs, not by intercepting writes. The `superpowers:test-driven-development` skill, the local `/tdd-protocol` skill, and the constitution's theater-test rules drive the Red → Green → Refactor cycle and call out the wrong phase when implementation is attempted before a failing test exists. A filesystem hook can tell that *some* test file changed, but it cannot tell whether the test is meaningful or whether the agent is genuinely in the Red phase; the skills reason about that directly. This is not about distrust of AI — it is the same discipline that applies to human developers. TDD is valuable because it forces you to think about the interface and behavior before the implementation, and the skill-driven approach makes that discipline apply equally to agents and humans.
 
 ### Why signed commits?
 

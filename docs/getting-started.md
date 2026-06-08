@@ -128,13 +128,12 @@ After deploying, run the following checks to confirm everything is in place.
 ls -la ~/.claude/hooks/
 ```
 
-You should see six scripts, all with executable permissions (`-rwxr-xr-x`):
+You should see five scripts, all with executable permissions (`-rwxr-xr-x`):
 
 - `enforce-worktree.sh` — blocks source edits on the `agents-workbench` branch
 - `inject-date.sh` — injects the current date into Claude Code context
 - `prevent-push-workbench.sh` — prevents pushing the `agents-workbench` branch
 - `sign-commits.sh` — enforces signed commits (`-s -S` flags)
-- `tdd-guard.sh` — blocks writing implementation files when no test file exists
 - `validate-year.sh` — validates that year references in generated content are current
 
 If any file is missing the executable bit:
@@ -147,16 +146,9 @@ chmod +x ~/.claude/hooks/*.sh
 
 Open a Claude Code session inside any Git repository and ask it to commit something without the `-s -S` flags. The `sign-commits.sh` hook should block the commit and ask you to use `git commit -s -S -m "..."` instead.
 
-### TDD guard
+### TDD discipline (skill-driven)
 
-In a Claude Code session, ask it to write an implementation file (for example, a new `.go` or `.py` file) without first creating a corresponding test file. The `tdd-guard.sh` hook should block the write and prompt you to write the test first.
-
-To bypass for a one-off case (for example, when adding a config file that genuinely has no test), export the variable before the file write/edit operation that triggers the hook:
-
-```bash
-export SKIP_TDD_GUARD=1
-# then perform the write/edit operation that triggers tdd-guard.sh
-```
+There is no TDD hook to verify — TDD is skill-driven. In a Claude Code session, ask it to implement a feature; with the `superpowers:test-driven-development` and `/tdd-protocol` skills active, it should write a failing test first (Red) before any implementation (Green). If it reaches for implementation with no failing test, it is in the wrong phase. Exceptional cases such as config files or generated code that genuinely have no test are a documented judgment call, not a flag you set.
 
 ### Claude Code plugins loaded
 
@@ -205,7 +197,7 @@ cd .worktrees/my-feature
 
 ### Step 3: Write a failing test first
 
-The TDD guard requires a test file to exist before you can write implementation. Create your test:
+The skill-driven TDD protocol puts the test before the implementation. Create your test:
 
 ```bash
 # Example for a Go project
@@ -216,7 +208,7 @@ go test ./pkg/myfeature/...
 
 ### Step 4: Write the implementation
 
-Now that a test file exists, the TDD guard will allow implementation files. Write the minimum code to make the test pass.
+With the failing test in place (the Red phase done), write the minimum code to make the test pass.
 
 ### Step 5: Commit with signing flags
 
@@ -309,17 +301,6 @@ git worktree list
 # Remove stale entries
 git worktree prune
 ```
-
-### TDD guard blocking unexpectedly
-
-The guard checks for the presence of a test file before allowing implementation writes. If it is blocking something that genuinely does not need a test (configuration files, generated files, documentation):
-
-```bash
-export SKIP_TDD_GUARD=1
-# then perform the write/edit operation that triggers tdd-guard.sh
-```
-
-Use this sparingly. The guard exists to enforce TDD discipline. Note that `SKIP_TDD_GUARD` is checked by the Write/Edit hook, not by `git commit`, so it must be set in the environment before the file operation.
 
 ### Deploy overwrote my local changes
 

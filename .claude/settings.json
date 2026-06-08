@@ -97,6 +97,16 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/eduardoa/.claude/hooks/validate-recommendation.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -121,10 +131,6 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/validate-year.sh"
-          },
-          {
-            "type": "command",
-            "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
           }
         ]
       },
@@ -134,10 +140,6 @@
           {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/enforce-worktree.sh"
-          },
-          {
-            "type": "command",
-            "command": "/Users/eduardoa/.claude/hooks/tdd-guard.sh"
           }
         ]
       }
@@ -180,14 +182,6 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if the assistant's last response claims work is complete, fixed, or passing. If it does, verify: did the assistant actually run a verification command (test, build, lint) and show the output BEFORE making the claim? If the claim is unverified, respond with 'STOP: You claimed completion without running verification. Run the relevant test/build command first.' Otherwise respond with 'OK'."
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
             "type": "command",
             "command": "/Users/eduardoa/.claude/hooks/context-watch.sh"
           },
@@ -209,6 +203,10 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
   "enabledPlugins": {
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
@@ -218,13 +216,15 @@
   },
   "sandbox": {
     "enabled": true,
-    "autoAllowBashIfSandboxed": true
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "allowWrite": [
+        "/Users/eduardoa/.claude/panel/work"
+      ]
+    }
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "autoMemoryEnabled": true,
   "teammateMode": "in-process",
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh"
-  }
+  "skipWorkflowUsageWarning": true
 }
