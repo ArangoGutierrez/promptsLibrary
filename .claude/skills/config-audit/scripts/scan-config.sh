@@ -30,6 +30,10 @@ while IFS= read -r f; do
   while IFS=: read -r ln text; do
     [ -n "${ln:-}" ] || continue
     case "$text" in *'<'*'>'*|*example*|*EXAMPLE*|*REDACTED*|*xxxx*|*placeholder*|*your_*) continue;; esac
+    # example-code, not a credential: value is a dotted method/property chain (a.b.c)
+    printf '%s\n' "$text" | grep -qEi "(api[_-]?key|secret|token|password|bearer)[\"' ]*[:=][\"' ]*[A-Za-z_]+(\.[A-Za-z_]+)+" && continue
+    # ...or a bare ALL_CAPS_CONSTANT name (screaming-snake, no digits-only token would have '_')
+    printf '%s\n' "$text" | grep -qE  "(api[_-]?key|secret|token|password|bearer)[\"' ]*[:=][\"' ]*[A-Z][A-Z0-9]*_[A-Z0-9_]*" && continue
     is_suppressed "$f" "$ln" secrets && continue
     add 2 secrets "$f:$ln" "possible hardcoded secret"
   done < <(grep -nEi "(api[_-]?key|secret|token|password|bearer)[\"' ]*[:=][\"' ]*[A-Za-z0-9_/+.-]{16,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{12,}|BEGIN [A-Z ]*PRIVATE KEY" "$f" 2>/dev/null)
@@ -37,6 +41,9 @@ while IFS= read -r f; do
   # injection-sink (sev 2)
   while IFS=: read -r ln text; do
     [ -n "${ln:-}" ] || continue
+    # printed as advice (echo/printf) or commented out — not an executed sink
+    printf '%s\n' "$text" | grep -qE '^[[:space:]]*(echo|printf)[[:space:]]' && continue
+    printf '%s\n' "$text" | grep -qE '^[[:space:]]*#' && continue
     is_suppressed "$f" "$ln" injection-sink && continue
     add 2 injection-sink "$f:$ln" "untrusted content piped to shell / eval"
   done < <(grep -nE 'curl[^|]*\|[[:space:]]*(ba)?sh|eval[[:space:]]+"?\$\(|\$\(curl' "$f" 2>/dev/null)
