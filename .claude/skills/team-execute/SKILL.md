@@ -54,8 +54,7 @@ c. **Workers LAST** (each in own worktree)
 
 ### 3. Worker Implementation
 
-Workers follow TDD (Red → Green → Refactor). Hooks enforce this:
-- `tdd-guard.sh`: blocks implementation without failing test
+Workers follow TDD (Red → Green → Refactor). Discipline is skill-driven (the `superpowers:test-driven-development` and `/tdd-protocol` skills plus the constitution's theater-test rules) — no failing test before implementation means the wrong phase, so write a test first. Hooks enforce the surrounding workflow:
 - `enforce-worktree.sh`: blocks writes on agents-workbench
 - `test-quality-lint.sh`: flags theater tests
 
