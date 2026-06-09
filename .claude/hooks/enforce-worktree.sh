@@ -23,6 +23,19 @@ BRANCH=$(git branch --show-current 2>/dev/null)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // empty')
 [ -z "$FILE_PATH" ] && exit 0
 
+# Only govern files INSIDE this repo. An absolute path outside the repo root
+# (e.g. the global ~/.claude memory/config dirs — not repo source) must be
+# allowed: otherwise the prefix-strip below leaves it absolute and the
+# repo-relative allowlist never matches it, wrongly blocking the write.
+case "$FILE_PATH" in
+    /*)
+        case "$FILE_PATH" in
+            "$GIT_ROOT"/*) ;;   # inside repo: continue to the allowlist
+            *) exit 0 ;;        # outside repo: allow
+        esac
+        ;;
+esac
+
 # Normalize: strip git root prefix to get relative path
 REL_PATH="${FILE_PATH#"$GIT_ROOT"/}"
 REL_PATH="${REL_PATH#./}"
