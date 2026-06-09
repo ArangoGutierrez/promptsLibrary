@@ -35,7 +35,7 @@ Probe rig: `/tmp/claude-stop-probe/`.
 | A2 | CRIT | both | ◑ | transcript is **nested** (tool_use in `assistant.content[]`; result in *next* `user` msg by `tool_use_id`), not a flat event stream | rewrite parser to nested walk | **v2** + DH2 |
 | H5 | HIGH | completion-gate | ◑ | mtime debounce defeated by `auto-format.sh` churn; `edit→delete` blocks a gone file; `edit→revert` blocks clean content | content-hash not mtime; drop nonexistent + `git`-clean paths | **v2** |
 | H4 | HIGH | both | ◑ | no kill-switch | `COMPLETION_GATE=off` / `DONE_LOOP=on` (1 line) | **v2** + DH2 |
-| M1 | MED | completion-gate | ◑ | clear-all mis-clears: `go test … \|\| true`, `-run NoSuchTest` (exit 0, ran nothing), cosmetic `go vet` clears unrelated edits | document residual; don't treat `vet` alone as sufficient | **v2** |
+| M1 | MED | completion-gate | ◑ | clear-all `mis-clears`: `go test … \|\| true`, `-run NoSuchTest` (exit 0, ran nothing), cosmetic `go vet` clears unrelated edits | document residual; don't treat `vet` alone as sufficient | **v2** |
 | M2 | MED | both | ✅ | project `settings.json` duplicates the `context-watch`/`done-hook` command block → double-fire | remove **only** the `type:prompt` element; de-dupe the command block | **v2** |
 | M4 | MED | both | — | observability: per-*decision* log w/ `latency_ms`, derive block/waiver/override rates | structured decision log | **v2** + DH2 |
 | L1 | LOW | completion-gate | ◑ | 5 MB byte-cap can truncate the earliest unverified edit | track event lines, not bytes | **v2** |
