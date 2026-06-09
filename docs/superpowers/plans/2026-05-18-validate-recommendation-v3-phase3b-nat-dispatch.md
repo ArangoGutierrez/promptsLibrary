@@ -1054,7 +1054,7 @@ The v1 panel still works for the runtime path; Phase 3b ships parallel code that
 cd ~/.claude && git log --oneline -5
 ```
 
-Expected: 2 new commits land on top of the Phase 3a + cfo-skill baseline:
+Expected: 2 new commits land on top of the Phase 3a + private-skill-skill baseline:
 - `feat(panel): dispatch.py NAT integration with _invoke_nat seam`
 - `feat(panel): wire CLI dispatch to real NAT integration`
 

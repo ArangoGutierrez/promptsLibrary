@@ -29,7 +29,7 @@ There is also a **disclosure risk**: the live config contains NVIDIA-internal
 references (MemPalace MCP, `nvinfo-cli` skill, `managing-omnistation` skill,
 internal Atlassian/LMS hosts in the network allowlist) and a private project
 path leaking through `installed_plugins.json` (`frontend-design` scoped to
-`/Users/eduardoa/src/github/staiconnected/stayconnected`). The repo is public.
+`/Users/eduardoa/src/github/private-org/private-repo`). The repo is public.
 
 ## Goals
 

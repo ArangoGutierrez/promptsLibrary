@@ -35,7 +35,7 @@
 
 All work happens in this worktree: `/Users/eduardoa/src/github/ArangoGutierrez/promptsLibrary/.claude/worktrees/competent-matsumoto-8be15b/` (the `.claude/` here is the **repo's** internal worktree directory, not the user's `~/.claude/`). The audit DOC lives in the repo (`docs/audits/`), but the audit MEASURES `~/.claude/` directly — see escalation below.
 
-**Revised 2026-05-25 after Phase A T2 escalation:** measurements happen against **live `~/.claude/`**, not the repo mirror. The repo holds ~12 shareable/public skills; live has 25 (the extras are CFO, NVIDIA-internal, and panel infrastructure that are intentionally not in the repo). Auditing the repo mirror would miss most of the friction the user reported. Per the revised editing strategy (dual-track, spec §6.1): shared config edits flow through the repo; private config edits go directly to `~/.claude/`.
+**Revised 2026-05-25 after Phase A T2 escalation:** measurements happen against **live `~/.claude/`**, not the repo mirror. The repo holds ~12 shareable/public skills; live has 25 (the extras are private, NVIDIA-internal, and panel infrastructure that are intentionally not in the repo). Auditing the repo mirror would miss most of the friction the user reported. Per the revised editing strategy (dual-track, spec §6.1): shared config edits flow through the repo; private config edits go directly to `~/.claude/`.
 
 **Excludes when measuring `~/.claude/`:** skip runtime-only state — `projects/`, `sessions/`, `paste-cache/`, `shell-snapshots/`, `tasks/`, `file-history/`, `session-env/`, `telemetry/`, `debug/`, `ide/`, `backups/`, `cache/`, anything with timestamps in the name like `*.pre-nuke-*`. These churn constantly and aren't part of the config surface.
 
@@ -84,7 +84,7 @@ Write to `docs/audits/2026-05-25-claude-config-audit.md`:
 ### 3.2 Cache-TTL regression (1h → 5m)
 ### 3.3 Opus 4.7 tokenizer expansion (~35%)
 ### 3.4 TDD-guard removal — mechanics
-### 3.5 CFO skill relocation — mechanics
+### 3.5 private skill relocation — mechanics
 ### 3.6 Worktrees: experimental flag vs official GA
 ### 3.7 Security posture
 ### 3.8 Plan-routing via cheap classifier (new)
@@ -423,17 +423,17 @@ done
 
 This shows per-skill description length (pre-loaded cost) and body length (load-on-trigger cost).
 
-- [ ] **Step 2: Identify the CFO subtree**
+- [ ] **Step 2: Identify the private subtree**
 
-The CFO-related skills slated for relocation per locked decision:
-- `cfo`, `cfo-dcf`, `cfo-earnings-review`, `cfo-rebalance`, `cfo-rsu-decision`, `cfo-state-refresh`, `cfo-tax-check`
+The private-related skills slated for relocation per locked decision:
+- `private-skill`, `private-skill-1`, `private-skill-2`, `private-skill-3`, `private-skill-4`, `private-skill-5`, `private-skill-6`
 
 Measure their combined contribution to the auto-loaded skill-description surface.
 
 - [ ] **Step 3: Write F-SKILL-NN findings**
 
 Minimum:
-- F-SKILL-01: CFO subtree relocation (P1, medium, locked decision — references spec §4.5)
+- F-SKILL-01: private subtree relocation (P1, medium, locked decision — references spec §4.5)
 - F-SKILL-02: skill description bloat (any descriptions >300 chars are flagged)
 - F-SKILL-03: skill body size violators (any SKILL.md >500 lines per Anthropic guidance)
 - F-SKILL-04: redundancy with plugin-provided skills (e.g., `superpowers:test-driven-development` vs local `tdd-protocol`)
@@ -445,7 +445,7 @@ Minimum:
 git add docs/audits/2026-05-25-claude-config-audit.md
 git commit -sS -m "docs(audit): F-SKILL findings
 
-Findings for ~/.claude/skills/* per spec rubric. Includes CFO
+Findings for ~/.claude/skills/* per spec rubric. Includes private
 relocation mapping, description bloat measurements, and overlap
 with plugin-provided skills."
 ```
@@ -534,7 +534,7 @@ Themes (must include all eight):
 - 3.2 Cache-TTL regression
 - 3.3 Opus 4.7 tokenizer expansion
 - 3.4 TDD-guard removal mechanics
-- 3.5 CFO skill relocation mechanics
+- 3.5 private skill relocation mechanics
 - 3.6 Worktrees experimental flag vs official GA
 - 3.7 Security posture (incl. PANEL_DA_API_KEY rotation requirement)
 - 3.8 Plan-routing via cheap classifier — generalizes validate-recommendation; cross-ref F-META-01
@@ -573,7 +573,7 @@ For §4.1, list each P0 action item as a numbered task that references the findi
 - [ ] **Step 2: Build P1 — Structural**
 
 Same shape. Items per spec §5 P1:
-1. CFO subtree relocation (resolves F-SKILL-01)
+1. private subtree relocation (resolves F-SKILL-01)
 2. Migrate experimental agent-teams to official `isolation: worktree` (resolves F-SETTINGS-NN, F-AGENT-NN)
 3. Compress rules/ where redundant (resolves F-RULES-NN aggregate)
 4. Tighten skill descriptions (resolves F-SKILL-02)
@@ -632,7 +632,7 @@ Read the full audit doc. Confirm:
 - No `<N>` or `TBD` placeholders survived.
 - Every cross-cutting theme is cross-referenced to at least one finding ID.
 - §4 P0/P1/P2 items each reference at least one finding ID they resolve.
-- Locked decisions (TDD removal, CFO move, edit-repo-first, 20% target) appear in §3 themes consistently.
+- Locked decisions (TDD removal, private move, edit-repo-first, 20% target) appear in §3 themes consistently.
 
 Fix any issues inline. No need to re-review after fixing.
 

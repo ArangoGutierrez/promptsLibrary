@@ -543,7 +543,7 @@ now (audit F-HOOK-02)."
 
 ## Task 8: Deploy to live ~/.claude and remove the live tdd-guard.sh
 
-Track A → live sync. **Never use `--delete`** — it would remove private-only skills/hooks absent from the repo (CFO suite, gh-*, nvinfo-cli, mempalace, etc.).
+Track A → live sync. **Never use `--delete`** — it would remove private-only skills/hooks absent from the repo (private suite, gh-*, nvinfo-cli, mempalace, etc.).
 
 **Files:** none (local deploy action)
 
