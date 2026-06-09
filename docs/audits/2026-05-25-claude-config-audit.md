@@ -48,17 +48,17 @@
 | hooks/ | `~/.claude/hooks/validate-recommendation.sh` | 122 | 4955 | helper | active |
 | hooks/ | `~/.claude/hooks/validate-recommendation_test.sh` | 160 | 6506 | Hook test | active |
 | hooks/ | (6 `.bak` files in `~/.claude/hooks/`) | — | — | Stale backup | flagged: delete |
-| skills/ | `~/.claude/skills/cfo/SKILL.md` | 75 | 5111 | Skill (local) | flagged: relocate (private skill, locked-decision) |
-| skills/ | `~/.claude/skills/cfo-dcf/SKILL.md` | 149 | 7473 | Skill (local) | flagged: relocate (private skill, locked-decision) |
-| skills/ | `~/.claude/skills/cfo-earnings-review/SKILL.md` | 179 | 6521 | Skill (local) | flagged: relocate (private skill, locked-decision) |
-| skills/ | `~/.claude/skills/cfo-rebalance/SKILL.md` | 78 | 5421 | Skill (local) | flagged: relocate (private skill, locked-decision) |
-| skills/ | `~/.claude/skills/cfo-rsu-decision/SKILL.md` | 115 | 6592 | Skill (local) | flagged: relocate (private skill, locked-decision) |
-| skills/ | `~/.claude/skills/cfo-state-refresh/SKILL.md` | 80 | 4686 | Skill (local) | flagged: relocate (private skill, locked-decision) |
-| skills/ | `~/.claude/skills/cfo-tax-check/SKILL.md` | 98 | 4713 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill/SKILL.md` | 75 | 5111 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill-1/SKILL.md` | 149 | 7473 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill-2/SKILL.md` | 179 | 6521 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill-3/SKILL.md` | 78 | 5421 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill-4/SKILL.md` | 115 | 6592 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill-5/SKILL.md` | 80 | 4686 | Skill (local) | flagged: relocate (private skill, locked-decision) |
+| skills/ | `~/.claude/skills/private-skill-6/SKILL.md` | 98 | 4713 | Skill (local) | flagged: relocate (private skill, locked-decision) |
 | skills/ | `~/.claude/skills/done/SKILL.md` | 37 | 1681 | Skill (local) | active |
 | skills/ | `~/.claude/skills/eureka/SKILL.md` | 48 | 1275 | Skill (local) | active |
-| skills/ | `~/.claude/skills/gh-activity-gather/SKILL.md` | 278 | 12088 | Skill (local) | active |
-| skills/ | `~/.claude/skills/gh-jira-activity/SKILL.md` | 155 | 7482 | Skill (local) | active |
+| skills/ | `~/.claude/skills/private-skill-7/SKILL.md` | 278 | 12088 | Skill (local) | active |
+| skills/ | `~/.claude/skills/private-skill-8/SKILL.md` | 155 | 7482 | Skill (local) | active |
 | skills/ | `~/.claude/skills/go-review/SKILL.md` | 39 | 1018 | Skill (local) | active |
 | skills/ | `~/.claude/skills/goal/SKILL.md` | 39 | 1229 | Skill (local) | active |
 | skills/ | `~/.claude/skills/handoff/SKILL.md` | 177 | 7280 | Skill (local) | active |
@@ -460,35 +460,35 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Friction:** high
 - **Confidence:** high
 - **Effort:** medium (requires trimming each offending description)
-- **Current state:** All 25 skill descriptions are injected into every session context regardless of whether those skills are relevant. Total measured description payload is 5,438 chars (~1,359 tokens). The 12 skills with descriptions >200 chars collectively account for 4,133 chars (~1,033 tokens) — 76% of the total description load. The 7 CFO skills alone contribute 2,358 chars (~590 tokens), 43% of total.
-- **Recommended fix:** (1) Relocate CFO subtree per spec §4.5 (see F-SKILL-02) to eliminate 2,358 chars (~590 tokens), leaving 3,080 chars. (2) Trim the 5 remaining bloat offenders to ≤200 chars each (see F-SKILL-03), saving ~880 chars of excess. Combined effect reduces description payload to ~2,200 chars (~550 tokens), an ~60% reduction.
-- **Evidence:** `~/.claude/skills/*/SKILL.md` frontmatters; measured 2026-05-27. Full per-skill table: `cfo`=604, `nvinfo-cli`=373, `cfo-earnings-review`=372, `cfo-tax-check`=362, `gh-activity-gather`=292, `cfo-rsu-decision`=277, `managing-omnistation`=272, `cfo-dcf`=271, `goal`=240, `cfo-state-refresh`=238, `cfo-rebalance`=234, `gh-jira-activity`=216. Spec §5 P1 item 4.
+- **Current state:** All 25 skill descriptions are injected into every session context regardless of whether those skills are relevant. Total measured description payload is 5,438 chars (~1,359 tokens). The 12 skills with descriptions >200 chars collectively account for 4,133 chars (~1,033 tokens) — 76% of the total description load. The 7 private skills alone contribute 2,358 chars (~590 tokens), 43% of total.
+- **Recommended fix:** (1) Relocate private subtree per spec §4.5 (see F-SKILL-02) to eliminate 2,358 chars (~590 tokens), leaving 3,080 chars. (2) Trim the 5 remaining bloat offenders to ≤200 chars each (see F-SKILL-03), saving ~880 chars of excess. Combined effect reduces description payload to ~2,200 chars (~550 tokens), an ~60% reduction.
+- **Evidence:** `~/.claude/skills/*/SKILL.md` frontmatters; measured 2026-05-27. Full per-skill table: `private-skill`=604, `nvinfo-cli`=373, `private-skill-2`=372, `private-skill-6`=362, `private-skill-7`=292, `private-skill-4`=277, `managing-omnistation`=272, `private-skill-1`=271, `goal`=240, `private-skill-5`=238, `private-skill-3`=234, `private-skill-8`=216. Spec §5 P1 item 4.
 
 ---
 
-#### F-SKILL-02 — CFO subtree must relocate out of global skills
+#### F-SKILL-02 — private subtree must relocate out of global skills
 
 - **Severity:** P1
 - **Token impact:** 590 tokens/session reclaimed (2,358 chars eliminated from global load)
-- **Friction:** medium (requires new `~/cfo/` project + `.claude/skills/` symlinks or plugin)
+- **Friction:** medium (requires new `~/private-project/` project + `.claude/skills/` symlinks or plugin)
 - **Confidence:** high
 - **Effort:** small
-- **Current state:** 7 CFO skills (`cfo`, `cfo-dcf`, `cfo-earnings-review`, `cfo-rebalance`, `cfo-rsu-decision`, `cfo-state-refresh`, `cfo-tax-check`) live in `~/.claude/skills/` and are injected into every session. These skills are exclusively relevant when working in the `~/cfo/` personal-finance project. Combined description payload: 2,358 chars (590 tokens). Individual sizes: `cfo`=5,111 B, `cfo-dcf`=7,473 B, `cfo-earnings-review`=6,521 B, `cfo-rebalance`=5,421 B, `cfo-rsu-decision`=6,592 B, `cfo-state-refresh`=4,686 B, `cfo-tax-check`=4,713 B (total: 40,517 B / ~10,129 tokens of body).
-- **Recommended fix:** Move all 7 skills to `~/cfo/.claude/skills/`. They will only load when the `~/cfo/` project is active. This is a locked decision per spec §4.5; no design debate needed — execute it.
-- **Evidence:** `~/.claude/skills/cfo*/SKILL.md`; spec §4.5 (locked). Cross-ref F-SKILL-01.
+- **Current state:** 7 private skills (`private-skill`, `private-skill-1`, `private-skill-2`, `private-skill-3`, `private-skill-4`, `private-skill-5`, `private-skill-6`) live in `~/.claude/skills/` and are injected into every session. These skills are exclusively relevant when working in the `~/private-project/` personal-finance project. Combined description payload: 2,358 chars (590 tokens). Individual sizes: `private-skill`=5,111 B, `private-skill-1`=7,473 B, `private-skill-2`=6,521 B, `private-skill-3`=5,421 B, `private-skill-4`=6,592 B, `private-skill-5`=4,686 B, `private-skill-6`=4,713 B (total: 40,517 B / ~10,129 tokens of body).
+- **Recommended fix:** Move all 7 skills to `~/private-project/.claude/skills/`. They will only load when the `~/private-project/` project is active. This is a locked decision per spec §4.5; no design debate needed — execute it.
+- **Evidence:** `~/.claude/skills/private-skill-N/SKILL.md`; spec §4.5 (locked). Cross-ref F-SKILL-01.
 
 ---
 
-#### F-SKILL-03 — Description bloat: 5 non-CFO skills exceed 200-char limit
+#### F-SKILL-03 — Description bloat: 5 non-private skills exceed 200-char limit
 
 - **Severity:** P1
 - **Token impact:** ~220 tokens/session over-budget (880 chars excess across 5 skills)
 - **Friction:** low (description trimming is in-place edit)
 - **Confidence:** high
 - **Effort:** trivial
-- **Current state:** After CFO relocation (F-SKILL-02), 5 non-CFO skills still have descriptions >200 chars: `nvinfo-cli` (373 chars, 173 over budget), `gh-activity-gather` (292 chars, 92 over), `managing-omnistation` (272 chars, 72 over), `goal` (240 chars, 40 over), `gh-jira-activity` (216 chars, 16 over). The 200-char target is per spec §5 P1 item 4; Anthropic guidance is "pushy but compact."
+- **Current state:** After private relocation (F-SKILL-02), 5 non-private skills still have descriptions >200 chars: `nvinfo-cli` (373 chars, 173 over budget), `private-skill-7` (292 chars, 92 over), `managing-omnistation` (272 chars, 72 over), `goal` (240 chars, 40 over), `private-skill-8` (216 chars, 16 over). The 200-char target is per spec §5 P1 item 4; Anthropic guidance is "pushy but compact."
 - **Recommended fix:** Trim each description to ≤200 chars. Remove internal trigger-phrase lists from the description field — those belong in the skill body or a `trigger:` frontmatter key, not in the description that loads every session. Target: convey what the skill does and the primary invocation signal only.
-- **Evidence:** `~/.claude/skills/nvinfo-cli/SKILL.md:3` (373 chars); `~/.claude/skills/gh-activity-gather/SKILL.md:3` (292 chars); `~/.claude/skills/managing-omnistation/SKILL.md:3` (272 chars); `~/.claude/skills/goal/SKILL.md:3` (240 chars); `~/.claude/skills/gh-jira-activity/SKILL.md:3` (216 chars). Spec §5 P1 item 4.
+- **Evidence:** `~/.claude/skills/nvinfo-cli/SKILL.md:3` (373 chars); `~/.claude/skills/private-skill-7/SKILL.md:3` (292 chars); `~/.claude/skills/managing-omnistation/SKILL.md:3` (272 chars); `~/.claude/skills/goal/SKILL.md:3` (240 chars); `~/.claude/skills/private-skill-8/SKILL.md:3` (216 chars). Spec §5 P1 item 4.
 
 ---
 
@@ -499,22 +499,22 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 - **Friction:** low
 - **Confidence:** medium
 - **Effort:** trivial
-- **Current state:** `validate-recommendation` has 359 body lines (13,605 bytes), the largest skill body in the set. The 400-line hard limit is not breached but is close. The skill includes verbose panel-dispatch protocol, JSON schema examples, and full error-case handling inline. Two other skills are in the 250–275 range: `nvinfo-cli` (271 lines) and `gh-activity-gather` (268 lines).
+- **Current state:** `validate-recommendation` has 359 body lines (13,605 bytes), the largest skill body in the set. The 400-line hard limit is not breached but is close. The skill includes verbose panel-dispatch protocol, JSON schema examples, and full error-case handling inline. Two other skills are in the 250–275 range: `nvinfo-cli` (271 lines) and `private-skill-7` (268 lines).
 - **Recommended fix:** Extract the JSON schema examples and panel-wiring details from `validate-recommendation` into a separate referenced doc (`~/.claude/skills/validate-recommendation/PANEL-PROTOCOL.md`) and reference it by path. Keeps invocation body under 200 lines. Lower priority than P1 items; address if editing the skill for other reasons.
-- **Evidence:** `~/.claude/skills/validate-recommendation/SKILL.md` (359 body lines, 13,605 bytes); `~/.claude/skills/nvinfo-cli/SKILL.md` (271 body lines); `~/.claude/skills/gh-activity-gather/SKILL.md` (268 body lines).
+- **Evidence:** `~/.claude/skills/validate-recommendation/SKILL.md` (359 body lines, 13,605 bytes); `~/.claude/skills/nvinfo-cli/SKILL.md` (271 body lines); `~/.claude/skills/private-skill-7/SKILL.md` (268 body lines).
 
 ---
 
-#### F-SKILL-05 — YAML frontmatter syntax errors in 2 CFO skills
+#### F-SKILL-05 — YAML frontmatter syntax errors in 2 private skills
 
 - **Severity:** P2
 - **Token impact:** N/A
 - **Friction:** low (only matters if a YAML-strict loader processes frontmatter)
 - **Confidence:** high
 - **Effort:** trivial
-- **Current state:** `cfo-earnings-review` and `cfo-tax-check` have unquoted colons inside their `description:` values (e.g., `description: Post-earnings review: auto-fetches…`). Python `yaml.safe_load` fails with `mapping values are not allowed here`. Claude Code's runtime likely parses these with a more lenient parser, so no functional regression, but the files are technically invalid YAML.
-- **Recommended fix:** Quote the description values: `description: "Post-earnings review: auto-fetches…"`. Moot if CFO skills are relocated (F-SKILL-02) — fix en passant during the move.
-- **Evidence:** `~/.claude/skills/cfo-earnings-review/SKILL.md:3`; `~/.claude/skills/cfo-tax-check/SKILL.md:3`; `yaml.safe_load` traceback (measured 2026-05-27). Cross-ref F-SKILL-02.
+- **Current state:** `private-skill-2` and `private-skill-6` have unquoted colons inside their `description:` values (e.g., `description: Post-earnings review: auto-fetches…`). Python `yaml.safe_load` fails with `mapping values are not allowed here`. Claude Code's runtime likely parses these with a more lenient parser, so no functional regression, but the files are technically invalid YAML.
+- **Recommended fix:** Quote the description values: `description: "Post-earnings review: auto-fetches…"`. Moot if private skills are relocated (F-SKILL-02) — fix en passant during the move.
+- **Evidence:** `~/.claude/skills/private-skill-2/SKILL.md:3`; `~/.claude/skills/private-skill-6/SKILL.md:3`; `yaml.safe_load` traceback (measured 2026-05-27). Cross-ref F-SKILL-02.
 
 ---
 
@@ -695,13 +695,13 @@ Total registered SessionStart output measured: **504 bytes** (inject-date.sh: 40
 
 ---
 
-### 3.5 CFO skill relocation — mechanics
+### 3.5 private skill relocation — mechanics
 
-**Summary:** Seven CFO skills living in `~/.claude/skills/` inject 2,358 chars (~590 tokens) of description text into every session — even sessions with no personal-finance context (F-SKILL-02, F-SKILL-01). This is 43% of the total 5,438-char skill-description load. Individual skill bodies total 40,517 bytes (~10,129 tokens) available per invocation. The relocation is a locked decision per spec §4.5.
+**Summary:** Seven private skills living in `~/.claude/skills/` inject 2,358 chars (~590 tokens) of description text into every session — even sessions with no personal-finance context (F-SKILL-02, F-SKILL-01). This is 43% of the total 5,438-char skill-description load. Individual skill bodies total 40,517 bytes (~10,129 tokens) available per invocation. The relocation is a locked decision per spec §4.5.
 
 **Cross-references:** F-SKILL-01, F-SKILL-02, F-SKILL-05.
 
-**Recommendation direction:** Move all 7 skills (`cfo`, `cfo-dcf`, `cfo-earnings-review`, `cfo-rebalance`, `cfo-rsu-decision`, `cfo-state-refresh`, `cfo-tax-check`) to `~/cfo/.claude/skills/`. Fix the YAML unquoted-colon syntax errors in `cfo-earnings-review` and `cfo-tax-check` during the move (F-SKILL-05). Remove any CFO references from `~/.claude/CLAUDE.md` after relocation.
+**Recommendation direction:** Move all 7 skills (`private-skill`, `private-skill-1`, `private-skill-2`, `private-skill-3`, `private-skill-4`, `private-skill-5`, `private-skill-6`) to `~/private-project/.claude/skills/`. Fix the YAML unquoted-colon syntax errors in `private-skill-2` and `private-skill-6` during the move (F-SKILL-05). Remove any private references from `~/.claude/CLAUDE.md` after relocation.
 
 ---
 
@@ -775,7 +775,7 @@ Stays under 2h with the "delete Stop hook entirely" decision on item 4. If you c
 
 Target: 3–5 PRs to `promptsLibrary/.claude`, each independently shippable. Locked decisions land here.
 
-1. **Relocate all CFO skills out of `~/.claude/skills/`** — move `cfo`, `cfo-earnings-review`, `cfo-dcf`, `cfo-tax-check`, `cfo-state-refresh`, `cfo-rsu-decision`, `cfo-rebalance`, and any `cfo/` journal references to a dedicated `~/cfo/` project directory. Update `~/.claude/settings.json` to remove CFO skill paths. Fix the two YAML frontmatter syntax errors discovered during the audit while relocating. (resolves F-SKILL-02, F-SKILL-05; see §2.6)
+1. **Relocate all private skills out of `~/.claude/skills/`** — move `private-skill`, `private-skill-2`, `private-skill-1`, `private-skill-6`, `private-skill-5`, `private-skill-4`, `private-skill-3`, and any `private-skill/` journal references to a dedicated `~/private-project/` project directory. Update `~/.claude/settings.json` to remove private skill paths. Fix the two YAML frontmatter syntax errors discovered during the audit while relocating. (resolves F-SKILL-02, F-SKILL-05; see §2.6)
 
 2. **Migrate from `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` to the official `isolation: worktree` subagent pattern** — remove the env var from `~/.claude/settings.json`, update `agents/` role definitions, `skills/team-execute/SKILL.md`, and `skills/worktree-guide/SKILL.md` to reflect the official pattern. Fix the role-name mismatch between `commands/team-execute.md` and `skills/team-execute/SKILL.md`. (resolves F-SETTINGS-03, F-AGENT-02; see §2.3, §2.7)
 
@@ -787,7 +787,7 @@ Target: 3–5 PRs to `promptsLibrary/.claude`, each independently shippable. Loc
 
 6. **Set `effortLevel` context-sensitively and document cache-TTL strategy** — remove the global `effortLevel: "high"` override (or scope it to team-execute sessions only via env var); document in `CLAUDE.md` which flows (team-execute, multi-worktree) explicitly opt into 1h-TTL writes vs. the 5-minute default. Capture the tradeoff: opus[1m] + 5m TTL causes cache thrashing on long tasks. (resolves F-SETTINGS-05, F-SETTINGS-06; see §2.3)
 
-7. **Tighten non-CFO skill descriptions to ≤200 chars** — edit `description` fields in `skills/code-review/SKILL.md`, `skills/loop/SKILL.md`, `skills/schedule/SKILL.md`, `skills/claude-api/SKILL.md`, `skills/run/SKILL.md`, and any others that remain over-limit after the P0 pass. (resolves F-SKILL-03; see §2.6)
+7. **Tighten non-private skill descriptions to ≤200 chars** — edit `description` fields in `skills/code-review/SKILL.md`, `skills/loop/SKILL.md`, `skills/schedule/SKILL.md`, `skills/claude-api/SKILL.md`, `skills/run/SKILL.md`, and any others that remain over-limit after the P0 pass. (resolves F-SKILL-03; see §2.6)
 
 8. **Replace `code-simplifier` plugin with a Go/K8s-appropriate equivalent or remove it** — the current plugin body hardcodes JavaScript/TypeScript/React rules; either replace the system prompt with Go/K8s conventions or disable the plugin in `enabledPlugins`. (resolves F-PLUGIN-01; see §2.8)
 

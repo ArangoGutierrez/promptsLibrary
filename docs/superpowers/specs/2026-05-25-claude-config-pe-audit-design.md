@@ -28,7 +28,7 @@ User reports: token waste, over-prompting friction, TDD-guard producing false po
 - Project-specific `.claude/` directories in other repos
 - MCP server internals (treated as black boxes)
 - Plugin internals
-- The CFO journal repo (referenced by cfo-* skills)
+- The private journal repo (referenced by private-skill-N skills)
 
 ### Method
 1. Local context pass — read all files in scope, measure sizes.
@@ -50,9 +50,9 @@ User-prioritized grading axes: Token cost per session, Friction, Capability leve
 | Decision | Direction |
 |---|---|
 | TDD guard | **Remove the PreToolUse hook**; move TDD discipline to skill-only (`superpowers:test-driven-development` and CLAUDE.md rule). Trust + skill discipline instead of mechanical enforcement. |
-| CFO/personal-finance skills | **Move to dedicated CFO project**, project-scoped. Free ~30KB of skill metadata from every NVIDIA k8s session. |
+| private/personal-finance skills | **Move to dedicated private project**, project-scoped. Free ~30KB of skill metadata from every NVIDIA k8s session. |
 | Research depth | Targeted (official docs + 2-3 practitioner posts). |
-| Editing strategy | **Dual-track** (revised 2026-05-25 after Phase A T2 escalation). For **shared/public** config (CLAUDE.md, rules/, settings.json, hooks, and skills already in the repo): edit `promptsLibrary/.claude` first, validate, then promote to `~/.claude`. For **private** config (CFO skills, NVIDIA-internal skills like `nvinfo-cli`, panel infra, anything containing personal-finance or company-confidential content): edit `~/.claude` directly — these are intentionally not in the repo. |
+| Editing strategy | **Dual-track** (revised 2026-05-25 after Phase A T2 escalation). For **shared/public** config (CLAUDE.md, rules/, settings.json, hooks, and skills already in the repo): edit `promptsLibrary/.claude` first, validate, then promote to `~/.claude`. For **private** config (private skills, NVIDIA-internal skills like `nvinfo-cli`, panel infra, anything containing personal-finance or company-confidential content): edit `~/.claude` directly — these are intentionally not in the repo. |
 | Audit measurement target | **`~/.claude/` (live)**, not the repo mirror (revised 2026-05-25 after Phase A T2 escalation). The repo holds ~12 shareable skills; live has 25. The friction the user reported (TDD-guard false positives, Stop-hook prompt cost, `.bak` debris) lives in the live config. Auditing the repo mirror would miss most of it. |
 
 ### SOTA reference points (2026)
@@ -96,7 +96,7 @@ Areas: permission allow-list completeness (`gh *` already permitted; verify sand
 Areas: stale `.bak` files (6 to delete), false-positive rate per hook, SessionStart hook output size (every byte costs tokens), `tdd-guard.sh` removal mechanics, `validate-recommendation.sh` sandbox-write friction (`~/.claude/panel/work/` is outside sandbox writable paths), Stop hook configuration.
 
 ### 3.5 skills (`~/.claude/skills/`)
-Areas: description token cost (pre-loaded per session), per-skill body size vs Anthropic <500-line guideline, redundancy with plugin-provided skills (`superpowers:*`), CFO subtree relocation plan (7 cfo-* skills + cfo + state/journal pointers).
+Areas: description token cost (pre-loaded per session), per-skill body size vs Anthropic <500-line guideline, redundancy with plugin-provided skills (`superpowers:*`), private subtree relocation plan (7 private-skill-N skills + private-skill + state/journal pointers).
 
 ### 3.6 agents (`~/.claude/agents/`)
 Areas: 4 agents (doc-writer, explorer, principal-engineer, qa-engineer) — used by team-execute. Verify roles still match the team-execute orchestration skill; check tool allowlists per agent.
@@ -125,8 +125,8 @@ Older line-count heuristics undercount the actual token cost. The audit's per-se
 ### 4.4 TDD-guard removal (locked decision)
 Mechanics: (1) drop `tdd-guard.sh` from `PreToolUse.Write/Edit` arrays in `settings.json`; (2) move TDD discipline language from "MUST" enforcement into "should" guidance in CLAUDE.md and rules/constitution.md; (3) keep theater-test detection (constitution remains the source of truth for what counts as a real test); (4) delete the 229-line script and 4 `.bak` siblings; (5) add a note to CLAUDE.md: "TDD is the default for production code paths; opt out for docs, install scripts, hacky one-offs, and exploratory work. Theater tests are still a blocking issue."
 
-### 4.5 CFO skill relocation (locked decision)
-Target structure: `~/cfo/` project root with its own `.claude/skills/cfo*/` subtree, plus `~/.claude/skills/cfo*/` removed. `~/.claude/CLAUDE.md` loses any CFO references; the CFO project gets its own `.claude/CLAUDE.md` with the persona-engine doctrine. State (`state/YYYY-MM-DD-snapshot.md`) and panel config stay where they are if already in the CFO journal repo. Migration commands listed in the implementation plan.
+### 4.5 private skill relocation (locked decision)
+Target structure: `~/private-project/` project root with its own `.claude/skills/private-skill-N/` subtree, plus `~/.claude/skills/private-skill-N/` removed. `~/.claude/CLAUDE.md` loses any private references; the private project gets its own `.claude/CLAUDE.md` with the persona-engine doctrine. State (`state/YYYY-MM-DD-snapshot.md`) and panel config stay where they are if already in the private journal repo. Migration commands listed in the implementation plan.
 
 ### 4.6 Worktrees pattern — experimental flag vs GA
 `settings.json` sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and `teammateMode: in-process`. Official docs now ship `isolation: worktree` on subagents as the GA path. The audit confirms whether the experimental flag is still needed, deprecated, or co-exists. Adjust `agents/`, `team-execute`, and `worktree-guide` skills accordingly.
@@ -169,7 +169,7 @@ Four phases. **Phase A produces the audit deliverable**; P0/P1/P2 are action pha
 7. Rotate `PANEL_DA_API_KEY` (out-of-band, not via Claude).
 
 ### P1 — Structural (target: 3-5 PRs to `promptsLibrary/.claude`, locked decisions land here)
-1. Relocate 7 `cfo-*` skills + `cfo/` skill + journal references to `~/cfo/` project. Update `~/.claude/skills/` accordingly. Sanity-check that no global skill or hook references CFO paths.
+1. Relocate 7 `private-skill-N` skills + `private-skill/` skill + journal references to `~/private-project/` project. Update `~/.claude/skills/` accordingly. Sanity-check that no global skill or hook references private paths.
 2. Migrate from `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` to official `isolation: worktree` subagent pattern. Update `agents/`, `team-execute`, `worktree-guide`. Remove the env var if no longer required.
 3. Compress `rules/*.md` where redundant with CLAUDE.md (or vice versa). Set per-file line ceilings (suggested: rules ≤50 lines/file, CLAUDE.md ≤120 lines).
 4. Tighten skill descriptions across remaining skills. Target ≤200 chars per `description` field. (Anthropic guidance: descriptions should be pushy but compact.)
@@ -208,7 +208,7 @@ If a phase fails its validation gate, do not promote to `~/.claude`; debug in th
 
 **Files in each track**, baseline as of 2026-05-25:
 - **Track A** (in repo): `CLAUDE.md`, `rules/`, `settings.json` (with redaction for any private fields), `hooks/` (most), skills under repo `.claude/skills/` (12 today).
-- **Track B** (live only): `cfo`, `cfo-*` (7 skills), `gh-activity-gather`, `gh-jira-activity`, `nvinfo-cli`, `managing-omnistation`, `validate-recommendation`, `panel/` infrastructure, and any future personal/NVIDIA-internal skill.
+- **Track B** (live only): `private-skill`, `private-skill-N` (7 skills), `private-skill-7`, `private-skill-8`, `nvinfo-cli`, `managing-omnistation`, `validate-recommendation`, `panel/` infrastructure, and any future personal/NVIDIA-internal skill.
 
 The audit doc (`docs/audits/...`) lives in the repo regardless of track — its content describes both tracks.
 
@@ -234,7 +234,7 @@ The audit doc (`docs/audits/...`) lives in the repo regardless of track — its 
 
 ### 6.4 Locked-decision traceability
 - TDD guard removal — decided 2026-05-25 brainstorm session. User chose "Remove the hook, move TDD to skill".
-- CFO skills relocation — decided 2026-05-25 brainstorm session. User chose "Move to a dedicated CFO project, project-scope them".
+- private skills relocation — decided 2026-05-25 brainstorm session. User chose "Move to a dedicated private project, project-scope them".
 - Editing strategy — decided 2026-05-25. User: "we first edit promptsLibrary/.claude, make sure everything is ok, then promote to ~/.claude".
 - Stop-hook scoping confirmed in scope on user prompt 2026-05-25.
 - 20% reduction target — accepted 2026-05-25.

@@ -618,7 +618,7 @@ enforce_web_search_mcp_isolation flags (all set to false)."
 
 ```bash
 /usr/bin/jq -e '[.plugins[][] | select(.scope == "local")] | length == 0' .claude/plugins/installed_plugins.json
-/usr/bin/grep -q "stayconnected\|staiconnected" .claude/plugins/installed_plugins.json && echo "LEAK" || echo "OK"
+/usr/bin/grep -q "private-repo\|private-org" .claude/plugins/installed_plugins.json && echo "LEAK" || echo "OK"
 ```
 Expected: `true` then `OK`.
 
