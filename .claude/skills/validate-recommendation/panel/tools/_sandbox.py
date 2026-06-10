@@ -17,6 +17,8 @@ DENY_NAME_GLOBS = (
 )
 DENY_DIRS = (".ssh", ".aws")
 DENY_PATH_SUFFIXES = (".kube/config",)
+# Substrings denied in ANY path component within a root (honors **/*secret* etc.).
+SUBSTR_DENY = ("secret", "credential", "token", "password")
 
 DEFAULT_MAX_BYTES = 262_144
 DEFAULT_MAX_MATCHES = 200
@@ -33,8 +35,11 @@ class Sandbox:
         resolved = tuple(Path(os.path.realpath(Path(p).expanduser())) for p in paths)
         return Sandbox(roots=resolved)
 
-    def _within_roots(self, real: Path) -> bool:
-        return any(real == r or r in real.parents for r in self.roots)
+    def _matched_root(self, real: Path) -> Path | None:
+        for r in self.roots:
+            if real == r or r in real.parents:
+                return r
+        return None
 
     def is_denied(self, p: Path) -> bool:
         if any(fnmatch(p.name, g) for g in DENY_NAME_GLOBS):
@@ -44,13 +49,25 @@ class Sandbox:
         s = str(p)
         return any(s.endswith(suf) for suf in DENY_PATH_SUFFIXES)
 
+    def _denied_relative(self, real: Path, root: Path) -> bool:
+        """Deny if any path component *within the root* contains a deny-substring."""
+        try:
+            rel = real.relative_to(root)
+        except ValueError:
+            return True
+        return any(
+            any(sub in comp.lower() for sub in SUBSTR_DENY)
+            for comp in rel.parts
+        )
+
     def resolve(self, path: str) -> Path | None:
         """Realpath-resolve; return Path iff within a root and not denied, else None."""
         cand = Path(path).expanduser()
         base = self.roots[0] if self.roots else Path.cwd()
         raw = cand if cand.is_absolute() else (base / cand)
         real = Path(os.path.realpath(raw))
-        if not self._within_roots(real) or self.is_denied(real):
+        root = self._matched_root(real)
+        if root is None or self.is_denied(real) or self._denied_relative(real, root):
             return None
         return real
 

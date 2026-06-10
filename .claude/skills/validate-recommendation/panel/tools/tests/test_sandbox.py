@@ -31,3 +31,21 @@ def test_read_text_happy(sandbox):
 def test_missing_file_is_error_string_not_exception(sandbox):
     out = sandbox.read_text("pkg/nope.py")
     assert out.startswith("ERROR:")
+
+def test_secret_dir_component_denied(tmp_path):
+    # **/*secret* denies at ANY depth, not just the filename
+    root = tmp_path / "repo"
+    (root / "secrets").mkdir(parents=True)
+    (root / "secrets" / "prod.yaml").write_text("api: xyz\n", encoding="utf-8")
+    sb = Sandbox.from_roots([root])
+    assert sb.resolve("secrets/prod.yaml") is None
+
+def test_denyword_in_root_path_not_overdenied(tmp_path):
+    # Root's OWN path contains a deny-word ("mytokens"); a benign file under it
+    # must stay readable — deny-substring checks apply to the in-sandbox
+    # (relative) portion only, not the absolute root prefix.
+    root = tmp_path / "mytokens" / "repo"
+    root.mkdir(parents=True)
+    (root / "app.py").write_text("x = 1\n", encoding="utf-8")
+    sb = Sandbox.from_roots([root])
+    assert sb.resolve("app.py") is not None
