@@ -38,3 +38,11 @@ def test_read_rules_concatenates(tmp_path):
     sb = Sandbox.from_roots([rules, claude])
     out = files.read_rules(sb, claude_md=claude, rules_dir=rules)
     assert "wrap errors" in out and "Standards" in out
+
+def test_glob_files_excludes_vcs_noise(repo_tree):
+    # parity with grep_repo: .git/__pycache__ internals are not glob noise
+    (repo_tree / ".git").mkdir()
+    (repo_tree / ".git" / "config").write_text("[core]\n", encoding="utf-8")
+    out = files.glob_files(Sandbox.from_roots([repo_tree]), "**/*")
+    assert ".git/config" not in out
+    assert "pkg/app.py" in out

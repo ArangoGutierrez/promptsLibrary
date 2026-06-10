@@ -65,6 +65,8 @@ def glob_files(sb: Sandbox, pattern: str) -> str:
         if root.is_file():
             continue
         for p in sorted(root.glob(pattern)):
+            if {".git", "__pycache__"} & set(p.parts):
+                continue  # parity with grep_repo: VCS/cache internals are not results
             if p.is_file() and sb.resolve(str(p)) is not None:
                 out.append(_rel(sb, p))
                 if len(out) >= sb.max_matches:
